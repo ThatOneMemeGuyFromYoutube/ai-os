@@ -1,34 +1,34 @@
 #include <stdint.h>
-
-#define VGA ((volatile uint16_t*)0xB8000)
-static uint16_t cursor;
-
-static void putc(char c) {
-    if (c == '\n') { cursor = (uint16_t)((cursor / 80 + 1) * 80); return; }
-    VGA[cursor++] = (uint16_t)(0x07 << 8) | (uint8_t)c;
-}
-
-static void puts(const char *s) { while (*s) putc(*s++); }
+#include "gui.h"
 
 /* BDOS-like service numbers will live here as the ABI stabilizes. */
 enum { SVC_CONSOLE = 1, SVC_FILES = 2, SVC_PROCESS = 3 };
 
-static int streq(const char *a, const char *b) {
-    while (*a && *b && *a == *b) { ++a; ++b; }
-    return *a == *b;
+static uint8_t inb(uint16_t port) {
+    uint8_t value;
+    __asm__ volatile ("inb %1, %0" : "=a"(value) : "Nd"(port));
+    return value;
 }
 
-static void ccp(void) {
-    puts("AsterOS 0.1\n");
-    puts("CCP/M-style command processor online.\n");
-    puts("Type HELP for the planned command set.\n\n");
-    puts("A:> ");
-    /* Keyboard, filesystem, and transient-program loading are next milestones. */
-    (void)streq;
+static char keyboard_getchar(void) {
+    static const char normal[] = "?1234567890-=?qwertyuiop[]?asdfghjkl;'`?zxcvbnm,./";
+    uint8_t scancode;
+    for (;;) {
+        if (!(inb(0x64) & 1)) continue;
+        scancode = inb(0x60);
+        if (scancode & 0x80) continue;
+        if (scancode == 0x1C) return '\r';
+        if (scancode == 0x10) return 'q';
+        if (scancode == 0x11) return 'w';
+        if (scancode == 0x1F) return 's';
+        if (scancode == 0x1E) return 'a';
+        if (scancode < sizeof(normal) - 1) return normal[scancode];
+    }
 }
 
 void kmain(void) {
-    cursor = 0;
-    ccp();
-    for (;;) { __asm__ volatile ("hlt"); }
+    gui_init();
+    for (;;) {
+        gui_handle_key(keyboard_getchar());
+    }
 }
