@@ -1,12 +1,33 @@
-# Toolchain
+# TinyLang toolchain
 
-The first implementation can use an external i386 cross-compiler. The native/self-hosting path will add a small compiler that runs as an AsterOS transient program and emits the same program format consumed by the CCP loader.
+TinyLang is the first concrete program-building tool for AsterOS. It is intentionally small and host-buildable today so beginners can experiment without first needing to build a complete cross-compiler.
 
-This directory is intentionally a placeholder rather than pretending the compiler already exists.
+## Try it
 
-Planned stages:
+From the repository root:
 
-1. Tiny source language and bytecode/intermediate format.
-2. Host compiler that emits the format.
-3. Native compiler port running inside AsterOS.
-4. Compiler bootstrap: rebuild the native compiler from its own source.
+```sh
+make program
+```
+
+That creates `build/hello.com`, a flat 32-bit x86 program image. You can also compile your own source:
+
+```sh
+python3 toolchain/tinylang.py my_program.tl build/my_program.com
+```
+
+A TinyLang program can use `mov`, `add`, `sub`, `int`, `jmp`, labels, `db`, and `exit`. Comments begin with `#`. See `examples/hello.tl` for the smallest example.
+
+## Why this exists
+
+The output is a simple CP/M-inspired `.COM`-style image intended for the future CCP transient-program loader. Keeping the program format simple gives AsterOS a clear path from a host compiler to a compiler that runs as an AsterOS transient program, without changing the kernel/BDOS/CCP boundary.
+
+## Roadmap
+
+1. TinyLang source language and flat program format (current)
+2. Load TinyLang `.com` images through the CCP/program loader
+3. Add more useful language features and BDOS service calls
+4. Port the compiler to AsterOS as a transient program
+5. Bootstrap the native compiler from its own source
+
+TinyLang is a development tool today; it is not yet a self-hosting compiler.
