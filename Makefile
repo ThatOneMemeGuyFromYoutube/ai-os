@@ -28,10 +28,16 @@ build/hello.com: toolchain/tinylang.py toolchain/examples/hello.tl | build
 
 program: build/hello.com
 
+check:
+	PYTHONPATH=toolchain $(PYTHON) toolchain/test_tinylang.py
+	$(MAKE) program
+
+test: check
+
 run: build/kernel.bin
 	qemu-system-i386 -kernel build/kernel.bin
 
 clean:
 	rm -rf build
 
-.PHONY: all program run clean
+.PHONY: all check clean program run test
