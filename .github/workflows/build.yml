@@ -16,20 +16,23 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install cross compiler and QEMU
         run: |
           sudo apt-get update
           sudo apt-get install -y gcc-i686-linux-gnu binutils-i686-linux-gnu qemu-system-x86
 
-      - name: Build kernel
+      - name: Validate TinyLang and build kernel
         run: |
+          make TARGET=i686-linux-gnu check
           make TARGET=i686-linux-gnu
           file build/kernel.bin
 
       - name: Package binary
         run: |
-          tar -C build -czf ai-os-${GITHUB_SHA}.tar.gz kernel.bin
+          tar -C build -czf ai-os-${GITHUB_SHA}.tar.gz kernel.bin hello.com
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
@@ -37,18 +40,22 @@ jobs:
           name: ai-os-${{ github.sha }}
           path: ai-os-${{ github.sha }}.tar.gz
 
-      - name: Publish first release
+      - name: Publish validated main build
         if: github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh release view v0.1.0 >/dev/null 2>&1; then
-            echo "v0.1.0 already exists; skipping release."
+          latest="$(git tag --list 'v0.1.*' --sort=-version:refname | head -n 1)"
+          if [ -z "$latest" ]; then
+            version="v0.1.0"
           else
-            gh release create v0.1.0 ai-os-${GITHUB_SHA}.tar.gz \
-              --title "AI-OS v0.1.0" \
-              --generate-notes
+            patch="${latest##*.}"
+            version="v0.1.$((patch + 1))"
           fi
+          gh release create "$version" "ai-os-${GITHUB_SHA}.tar.gz" \
+            --target "$GITHUB_SHA" \
+            --title "AI-OS $version" \
+            --generate-notes
 
       - name: Create tagged release
         if: startsWith(github.ref, 'refs/tags/v')
