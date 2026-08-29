@@ -39,9 +39,14 @@ jobs:
         run: |
           timeout 8s qemu-system-i386 -cdrom build/ai-os.iso -display none -serial stdio -no-reboot -no-shutdown || test $? -eq 124
 
+      - name: Generate checksums
+        run: |
+          sha256sum build/kernel.bin build/hello.com build/ai-os.iso > build/SHA256SUMS
+          cat build/SHA256SUMS
+
       - name: Package validated outputs
         run: |
-          tar -C build -czf ai-os-${GITHUB_SHA}.tar.gz kernel.bin hello.com ai-os.iso
+          tar -C build -czf ai-os-${GITHUB_SHA}.tar.gz kernel.bin hello.com ai-os.iso SHA256SUMS
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
@@ -50,6 +55,7 @@ jobs:
           path: |
             ai-os-${{ github.sha }}.tar.gz
             build/ai-os.iso
+            build/SHA256SUMS
 
       - name: Publish validated main build
         if: github.ref == 'refs/heads/main'
@@ -63,7 +69,7 @@ jobs:
             patch="${latest##*.}"
             version="v0.1.$((patch + 1))"
           fi
-          gh release create "$version" "ai-os-${GITHUB_SHA}.tar.gz" build/ai-os.iso \
+          gh release create "$version" "ai-os-${GITHUB_SHA}.tar.gz" build/ai-os.iso build/SHA256SUMS \
             --target "$GITHUB_SHA" \
             --title "AI-OS $version" \
             --generate-notes
@@ -73,7 +79,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${GITHUB_REF_NAME}" "ai-os-${GITHUB_SHA}.tar.gz" build/ai-os.iso \
+          gh release create "${GITHUB_REF_NAME}" "ai-os-${GITHUB_SHA}.tar.gz" build/ai-os.iso build/SHA256SUMS \
             --target "$GITHUB_SHA" \
             --title "AI-OS ${GITHUB_REF_NAME}" \
             --generate-notes
