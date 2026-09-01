@@ -2,6 +2,8 @@ TARGET ?= i386-elf
 CC ?= $(TARGET)-gcc
 LD ?= $(TARGET)-ld
 AS ?= $(TARGET)-as
+OBJCOPY ?= $(TARGET)-objcopy
+SIZE ?= $(TARGET)-size
 PYTHON ?= python3
 GRUB_MKRESCUE ?= grub-mkrescue
 CFLAGS ?= -m32 -ffreestanding -fno-pie -fno-stack-protector -O2 -Wall -Wextra
@@ -42,6 +44,9 @@ check:
 	PYTHONPATH=toolchain $(PYTHON) toolchain/test_tinylang.py
 	$(MAKE) program
 
+size: build/kernel.bin
+	$(SIZE) $<
+
 test: check
 
 run: build/kernel.bin
@@ -53,4 +58,4 @@ run-iso: build/ai-os.iso
 clean:
 	rm -rf build
 
-.PHONY: all check clean iso program run run-iso test
+.PHONY: all check clean iso program run run-iso size test
