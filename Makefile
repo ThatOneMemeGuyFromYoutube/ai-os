@@ -29,6 +29,10 @@ build/kernel.bin: build/boot.o build/kernel.o build/gui.o linker.ld
 build/hello.com: toolchain/tinylang.py toolchain/examples/hello.tl | build
 	$(PYTHON) toolchain/tinylang.py toolchain/examples/hello.tl $@
 
+program: build/hello.com
+
+iso: build/ai-os.iso
+
 build/ai-os.iso: build/kernel.bin iso/boot/grub/grub.cfg
 	rm -rf build/isodir
 	mkdir -p build/isodir/boot/grub
@@ -36,11 +40,14 @@ build/ai-os.iso: build/kernel.bin iso/boot/grub/grub.cfg
 	cp iso/boot/grub/grub.cfg build/isodir/boot/grub/grub.cfg
 	$(GRUB_MKRESCUE) -o $@ build/isodir
 
-program: build/hello.com
+check-toolchain:
+	@command -v $(CC) >/dev/null || (echo "error: missing compiler $(CC)" >&2; exit 1)
+	@command -v $(LD) >/dev/null || (echo "error: missing linker $(LD)" >&2; exit 1)
+	@command -v $(AS) >/dev/null || (echo "error: missing assembler $(AS)" >&2; exit 1)
+	@$(CC) -dumpmachine | grep -Eq '(^|-)i[3-6]86(-|$$)' || (echo "error: $(CC) is not an i386-targeting compiler" >&2; exit 1)
+	@$(LD) -V 2>&1 | grep -q 'elf_i386' || (echo "error: $(LD) does not advertise elf_i386 support" >&2; exit 1)
 
-iso: build/ai-os.iso
-
-check:
+check: check-toolchain
 	PYTHONPATH=toolchain $(PYTHON) toolchain/test_tinylang.py
 	$(MAKE) program
 
@@ -58,4 +65,4 @@ run-iso: build/ai-os.iso
 clean:
 	rm -rf build
 
-.PHONY: all check clean iso program run run-iso size test
+.PHONY: all check check-toolchain clean iso program run run-iso size test
