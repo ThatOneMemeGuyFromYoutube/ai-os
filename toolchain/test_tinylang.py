@@ -6,8 +6,8 @@ from tinylang import compile_source
 
 def main() -> None:
     image = compile_source("""
-        start:
-            mov eax, 1
+        start: ; labels may be followed by semicolon comments
+            mov eax, 1 ; inline comments are ignored
             add eax, 2
             jmp done
             db 0x90
