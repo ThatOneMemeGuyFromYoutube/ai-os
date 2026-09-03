@@ -15,7 +15,7 @@ Supported statements:
     db 0x90, 0x90
     exit
 
-Numbers may be decimal or hexadecimal (0x...). Comments start with '#'.
+Numbers may be decimal or hexadecimal (0x...). Comments start with '#' or ';'.
 """
 
 from __future__ import annotations
@@ -79,7 +79,7 @@ def compile_source(source: str) -> bytes:
     fixups: list[tuple[int, str, int]] = []
 
     for line_no, raw_line in enumerate(source.splitlines(), start=1):
-        line = raw_line.split("#", 1)[0].strip()
+        line = re.split(r"[#;]", raw_line, maxsplit=1)[0].strip()
         if not line:
             continue
 
