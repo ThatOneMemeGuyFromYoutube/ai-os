@@ -47,17 +47,19 @@ check-toolchain:
 	@$(CC) -dumpmachine | grep -Eq '(^|-)i[3-6]86(-|$$)' || (echo "error: $(CC) is not an i386-targeting compiler" >&2; exit 1)
 	@$(LD) -V 2>&1 | grep -q 'elf_i386' || (echo "error: $(LD) does not advertise elf_i386 support" >&2; exit 1)
 
+check-artifacts: all program
+	@test -s build/kernel.bin || (echo "error: kernel artifact is empty" >&2; exit 1)
+	@test -s build/hello.com || (echo "error: TinyLang program artifact is empty" >&2; exit 1)
+	@$(SIZE) build/kernel.bin
+
 check: check-toolchain
 	PYTHONPATH=toolchain $(PYTHON) toolchain/test_tinylang.py
-	$(MAKE) program
-
-size: build/kernel.bin
-	$(SIZE) $<
+	$(MAKE) check-artifacts
 
 test: check
 
 run: build/kernel.bin
-	qemu-system-i386 -kernel build/kernel.bin
+	qemu-system-i386 -kernel build/kernel.bin -no-reboot -no-shutdown
 
 run-iso: build/ai-os.iso
 	qemu-system-i386 -cdrom build/ai-os.iso -display none -serial stdio -no-reboot -no-shutdown
@@ -65,4 +67,4 @@ run-iso: build/ai-os.iso
 clean:
 	rm -rf build
 
-.PHONY: all check check-toolchain clean iso program run run-iso size test
+.PHONY: all check check-artifacts check-toolchain clean iso program run run-iso test
