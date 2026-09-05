@@ -9,6 +9,10 @@ GRUB_MKRESCUE ?= grub-mkrescue
 CFLAGS ?= -m32 -ffreestanding -fno-pie -fno-stack-protector -O2 -Wall -Wextra
 LDFLAGS ?= -m elf_i386 -T linker.ld
 
+CC_BIN := $(firstword $(CC))
+LD_BIN := $(firstword $(LD))
+AS_BIN := $(firstword $(AS))
+
 all: build/kernel.bin
 
 build:
@@ -41,9 +45,9 @@ build/ai-os.iso: build/kernel.bin iso/boot/grub/grub.cfg
 	$(GRUB_MKRESCUE) -o $@ build/isodir
 
 check-toolchain:
-	@command -v $(CC) >/dev/null || (echo "error: missing compiler $(CC)" >&2; exit 1)
-	@command -v $(LD) >/dev/null || (echo "error: missing linker $(LD)" >&2; exit 1)
-	@command -v $(AS) >/dev/null || (echo "error: missing assembler $(AS)" >&2; exit 1)
+	@command -v $(CC_BIN) >/dev/null || (echo "error: missing compiler $(CC_BIN)" >&2; exit 1)
+	@command -v $(LD_BIN) >/dev/null || (echo "error: missing linker $(LD_BIN)" >&2; exit 1)
+	@command -v $(AS_BIN) >/dev/null || (echo "error: missing assembler $(AS_BIN)" >&2; exit 1)
 	@$(CC) -dumpmachine | grep -Eq '(^|-)i[3-6]86(-|$$)' || (echo "error: $(CC) is not an i386-targeting compiler" >&2; exit 1)
 	@$(LD) -V 2>&1 | grep -q 'elf_i386' || (echo "error: $(LD) does not advertise elf_i386 support" >&2; exit 1)
 
