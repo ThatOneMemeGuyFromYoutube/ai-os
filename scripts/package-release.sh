@@ -2,10 +2,17 @@
 set -euo pipefail
 
 OUT_DIR="${1:-dist}"
+TARGET="${TARGET:-i686-linux-gnu}"
+QEMU="${QEMU:-qemu-system-i386}"
+
 mkdir -p "$OUT_DIR"
 
-make check
-make iso
+# Keep packaging aligned with the CI toolchain and the 32-bit x86 target.
+make TARGET="$TARGET" check
+make TARGET="$TARGET" iso
+
+timeout 8s "$QEMU" -cdrom build/ai-os.iso -display none -serial stdio -no-reboot -no-shutdown \
+  || test "$?" -eq 124
 
 cp build/kernel.bin "$OUT_DIR/kernel.bin"
 cp build/hello.com "$OUT_DIR/hello.com"
@@ -25,9 +32,9 @@ cat > "$OUT_DIR/RELEASE_NOTES.md" <<EOF
 
 ## Validation
 
-- \\`make check\\`
-- \\`make iso\\`
-- \\`qemu-system-i386 -cdrom ai-os.iso -display none -serial stdio -no-reboot -no-shutdown\\`
+- \\`make TARGET=$TARGET check\\`
+- \\`make TARGET=$TARGET iso\\`
+- \\`timeout 8s $QEMU -cdrom ai-os.iso -display none -serial stdio -no-reboot -no-shutdown\\`
 EOF
 
 echo "Packaged release artifacts in $OUT_DIR"
