@@ -62,6 +62,9 @@ check: check-toolchain
 
 test: check
 
+package-release:
+	bash scripts/package-release.sh $(OUT_DIR)
+
 run: build/kernel.bin
 	qemu-system-i386 -kernel build/kernel.bin -no-reboot -no-shutdown
 
@@ -71,4 +74,4 @@ run-iso: build/ai-os.iso
 clean:
 	rm -rf build
 
-.PHONY: all check check-artifacts check-toolchain clean iso program run run-iso test
+.PHONY: all check check-artifacts check-toolchain clean iso package-release program run run-iso test
