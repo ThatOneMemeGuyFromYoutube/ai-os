@@ -35,9 +35,9 @@ jobs:
           make TARGET=i686-linux-gnu iso
           file build/ai-os.iso
 
-      - name: Boot-test ISO with QEMU
+      - name: Boot-test ISO with repository target
         run: |
-          timeout 8s qemu-system-i386 -cdrom build/ai-os.iso -display none -serial stdio -no-reboot -no-shutdown || test $? -eq 124
+          make TARGET=i686-linux-gnu QEMU=qemu-system-i386 QEMU_TIMEOUT=8 check-iso
 
       - name: Generate checksums
         run: |
@@ -66,7 +66,7 @@ jobs:
           - TinyLang regression tests passed.
           - 32-bit i386 cross-compiler, linker, and assembler checks passed.
           - Kernel and `.COM` program artifacts were generated and verified non-empty.
-          - Bootable ISO was built and boot-tested under `qemu-system-i386`.
+          - Bootable ISO was built and boot-tested via the repository's `make check-iso` target under `qemu-system-i386`.
           - SHA-256 checksums are included in `SHA256SUMS`.
           EOF
 
