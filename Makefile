@@ -6,6 +6,8 @@ OBJCOPY ?= $(TARGET)-objcopy
 SIZE ?= $(TARGET)-size
 PYTHON ?= python3
 GRUB_MKRESCUE ?= grub-mkrescue
+QEMU ?= qemu-system-i386
+QEMU_TIMEOUT ?= 8
 CFLAGS ?= -m32 -ffreestanding -fno-pie -fno-stack-protector -O2 -Wall -Wextra
 LDFLAGS ?= -m elf_i386 -T linker.ld
 
@@ -56,6 +58,10 @@ check-artifacts: all program
 	@test -s build/hello.com || (echo "error: TinyLang program artifact is empty" >&2; exit 1)
 	@$(SIZE) build/kernel.bin
 
+check-iso: iso
+	@command -v $(QEMU) >/dev/null || (echo "error: missing QEMU binary $(QEMU)" >&2; exit 1)
+	@timeout $(QEMU_TIMEOUT)s $(QEMU) -cdrom build/ai-os.iso -display none -serial stdio -no-reboot -no-shutdown || test $$? -eq 124
+
 check: check-toolchain
 	PYTHONPATH=toolchain $(PYTHON) toolchain/test_tinylang.py
 	$(MAKE) check-artifacts
@@ -66,12 +72,12 @@ package-release:
 	bash scripts/package-release.sh $(OUT_DIR)
 
 run: build/kernel.bin
-	qemu-system-i386 -kernel build/kernel.bin -no-reboot -no-shutdown
+	$(QEMU) -kernel build/kernel.bin -no-reboot -no-shutdown
 
 run-iso: build/ai-os.iso
-	qemu-system-i386 -cdrom build/ai-os.iso -display none -serial stdio -no-reboot -no-shutdown
+	$(QEMU) -cdrom build/ai-os.iso -display none -serial stdio -no-reboot -no-shutdown
 
 clean:
 	rm -rf build
 
-.PHONY: all check check-artifacts check-toolchain clean iso package-release program run run-iso test
+.PHONY: all check check-artifacts check-iso check-toolchain clean iso package-release program run run-iso test
