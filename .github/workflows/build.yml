@@ -10,6 +10,10 @@ on:
 permissions:
   contents: write
 
+env:
+  # Proactively exercise the upcoming GitHub Actions runtime migration.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -49,7 +53,7 @@ jobs:
           tar -C build -czf ai-os-${GITHUB_SHA}.tar.gz kernel.bin hello.com ai-os.iso SHA256SUMS
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ai-os-${{ github.sha }}
           path: |
@@ -67,6 +71,7 @@ jobs:
           - 32-bit i386 cross-compiler, linker, and assembler checks passed.
           - Kernel and `.COM` program artifacts were generated and verified non-empty.
           - Bootable ISO was built and boot-tested via the repository's `make check-iso` target under `qemu-system-i386`.
+          - GitHub Actions was forced through the Node 24 compatibility path with `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true`.
           - SHA-256 checksums are included in `SHA256SUMS`.
           EOF
 
