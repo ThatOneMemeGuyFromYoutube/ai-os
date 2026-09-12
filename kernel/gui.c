@@ -11,6 +11,8 @@
 #define ATTR_SELECT 0x71
 
 static uint8_t selected;
+static int8_t active_app;
+static uint8_t terminal_page;
 static const char *items[] = { "Terminal", "Files", "Programs", "About" };
 
 static void cell(uint8_t x, uint8_t y, char c, uint8_t attr) {
@@ -40,11 +42,21 @@ static void border(uint8_t x, uint8_t y, uint8_t w, uint8_t h) {
 
 static void draw_terminal(void) {
     text(22, 5, "AsterOS terminal", ATTR_STATUS);
-    text(22, 7, "aster> help", ATTR_NORMAL);
-    text(22, 8, "  help   show built-in commands", ATTR_NORMAL);
-    text(22, 9, "  clear  redraw the GUI shell", ATTR_NORMAL);
-    text(22, 10, "  apps   list GUI applications", ATTR_NORMAL);
-    text(22, 12, "This view is backed by the keyboard event loop.", ATTR_NORMAL);
+    if (terminal_page == 0) {
+        text(22, 7, "aster> help", ATTR_NORMAL);
+        text(22, 8, "  h  help      c  clear screen", ATTR_NORMAL);
+        text(22, 9, "  a  list apps q  launcher", ATTR_NORMAL);
+        text(22, 11, "Press a command key to execute it.", ATTR_NORMAL);
+    } else if (terminal_page == 1) {
+        text(22, 7, "AsterOS built-in commands", ATTR_NORMAL);
+        text(22, 8, "h - show this help", ATTR_NORMAL);
+        text(22, 9, "c - clear terminal output", ATTR_NORMAL);
+        text(22, 10, "a - list GUI applications", ATTR_NORMAL);
+        text(22, 11, "q - return to launcher", ATTR_NORMAL);
+    } else {
+        text(22, 7, "Applications: Terminal, Files, Programs, About", ATTR_NORMAL);
+        text(22, 9, "The GUI shell is interactive; Enter opens an app.", ATTR_NORMAL);
+    }
 }
 
 static void draw_files(void) {
@@ -53,32 +65,36 @@ static void draw_files(void) {
     text(22, 8, "README.MD             text", ATTR_NORMAL);
     text(22, 9, "KERNEL.BIN            system", ATTR_NORMAL);
     text(22, 10, "PROGRAMS/             directory", ATTR_NORMAL);
-    text(22, 12, "Filesystem browser placeholder is now an", ATTR_NORMAL);
-    text(22, 13, "explicit read-only system view, not a blank panel.", ATTR_NORMAL);
+    text(22, 12, "Read-only filesystem view", ATTR_NORMAL);
+    text(22, 13, "Press Q to return to the launcher.", ATTR_NORMAL);
 }
 
 static void draw_programs(void) {
     text(22, 5, "Programs", ATTR_STATUS);
     text(22, 7, "BUILT-IN PROGRAMS", ATTR_NORMAL);
-    text(22, 8, "- Terminal   keyboard-driven command view", ATTR_NORMAL);
-    text(22, 9, "- Files      read-only filesystem view", ATTR_NORMAL);
-    text(22, 10, "- Programs   this launcher and inventory", ATTR_NORMAL);
-    text(22, 11, "- About      OS/runtime information", ATTR_NORMAL);
+    text(22, 8, "Terminal   interactive command view", ATTR_NORMAL);
+    text(22, 9, "Files      read-only filesystem view", ATTR_NORMAL);
+    text(22, 10, "Programs   application inventory", ATTR_NORMAL);
+    text(22, 11, "About      OS/runtime information", ATTR_NORMAL);
+    text(22, 13, "Press Q to return to the launcher.", ATTR_NORMAL);
 }
 
 static void draw_about(void) {
     text(22, 5, "About AsterOS", ATTR_STATUS);
     text(22, 7, "32-bit x86 experimental operating system", ATTR_NORMAL);
     text(22, 8, "GUI shell over the CCP/BDOS direction", ATTR_NORMAL);
-    text(22, 10, "Keyboard: W/S or arrow keys, Enter to open", ATTR_NORMAL);
-    text(22, 11, "Q returns to the launcher", ATTR_NORMAL);
+    text(22, 10, "Enter opens the selected app.", ATTR_NORMAL);
+    text(22, 11, "Q returns to the launcher from any app.", ATTR_NORMAL);
 }
 
 static void draw_selected_app(void) {
     fill(21, 4, 57, 18, ' ', ATTR_NORMAL);
-    if (selected == 0) draw_terminal();
-    else if (selected == 1) draw_files();
-    else if (selected == 2) draw_programs();
+    if (active_app < 0) {
+        text(22, 5, "Select an application", ATTR_STATUS);
+        text(22, 7, "Use W/S (or arrow keys) and press Enter.", ATTR_NORMAL);
+    } else if (active_app == 0) draw_terminal();
+    else if (active_app == 1) draw_files();
+    else if (active_app == 2) draw_programs();
     else draw_about();
 }
 
@@ -98,24 +114,43 @@ void gui_draw(void) {
     draw_selected_app();
 
     fill(0, 23, WIDTH, 2, ' ', ATTR_STATUS);
-    text(2, 23, "Enter Open   W/S Navigate   Q Launcher", ATTR_STATUS);
+    text(2, 23, active_app < 0 ? "Enter Open   W/S Navigate" : "Q Launcher   Enter/keys interact", ATTR_STATUS);
 }
 
 void gui_init(void) {
     selected = 0;
+    active_app = -1;
+    terminal_page = 0;
     gui_draw();
 }
 
 void gui_handle_key(char key) {
-    if (key == 'w' || key == 'W') {
-        if (selected == 0) selected = 3; else --selected;
+    if (active_app < 0) {
+        if (key == 'w' || key == 'W') {
+            if (selected == 0) selected = 3; else --selected;
+            gui_draw();
+        } else if (key == 's' || key == 'S') {
+            selected = (uint8_t)((selected + 1) % 4);
+            gui_draw();
+        } else if (key == '\r' || key == '\n') {
+            active_app = (int8_t)selected;
+            terminal_page = 0;
+            gui_draw();
+        }
+        return;
+    }
+
+    if (key == 'q' || key == 'Q') {
+        active_app = -1;
         gui_draw();
-    } else if (key == 's' || key == 'S') {
-        selected = (uint8_t)((selected + 1) % 4);
+    } else if (active_app == 0 && (key == 'h' || key == 'H')) {
+        terminal_page = 1;
         gui_draw();
-    } else if (key == '\r' || key == '\n') {
-        draw_selected_app();
-    } else if (key == 'q' || key == 'Q') {
+    } else if (active_app == 0 && (key == 'a' || key == 'A')) {
+        terminal_page = 2;
+        gui_draw();
+    } else if (active_app == 0 && (key == 'c' || key == 'C')) {
+        terminal_page = 0;
         gui_draw();
     }
 }
