@@ -3,14 +3,15 @@ SECTIONS
 {
   . = 1M;
 
-  /* GRUB's Multiboot v1 header must be near the beginning of the image.
-     Keep the complete header before the normal text section so GRUB can find it. */
-  .multiboot ALIGN(4) :
+  /* The Multiboot header must be among the first 8192 bytes of the ELF
+     file.  Put the boot text section first so the header is emitted before
+     the rest of the kernel sections. */
+  .text :
   {
-    KEEP(*(.multiboot))
+    KEEP(*(.text.boot))
+    *(.text*)
   }
 
-  .text : { *(.text*) }
   .rodata : { *(.rodata*) }
   .data : { *(.data*) }
   .bss : { *(COMMON) *(.bss*) }
