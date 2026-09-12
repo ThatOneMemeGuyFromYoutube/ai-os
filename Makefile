@@ -6,6 +6,7 @@ OBJCOPY ?= $(TARGET)-objcopy
 SIZE ?= $(TARGET)-size
 PYTHON ?= python3
 GRUB_MKRESCUE ?= grub-mkrescue
+GRUB_FILE ?= grub-file
 QEMU ?= qemu-system-i386
 QEMU_TIMEOUT ?= 8
 CFLAGS ?= -m32 -ffreestanding -fno-pie -fno-stack-protector -O2 -Wall -Wextra
@@ -57,6 +58,8 @@ check-artifacts: all program
 	@test -s build/kernel.bin || (echo "error: kernel artifact is empty" >&2; exit 1)
 	@test -s build/hello.com || (echo "error: TinyLang program artifact is empty" >&2; exit 1)
 	@$(SIZE) build/kernel.bin
+	@command -v $(GRUB_FILE) >/dev/null || (echo "error: missing grub-file" >&2; exit 1)
+	@$(GRUB_FILE) --is-x86-multiboot build/kernel.bin || (echo "error: kernel.bin is not recognized as a Multiboot v1 kernel" >&2; exit 1)
 
 check-iso: iso
 	@command -v $(QEMU) >/dev/null || (echo "error: missing QEMU binary $(QEMU)" >&2; exit 1)
