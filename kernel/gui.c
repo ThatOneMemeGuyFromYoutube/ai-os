@@ -10,7 +10,6 @@
 #define ATTR_STATUS 0x1E
 #define ATTR_SELECT 0x71
 
-static uint16_t cursor;
 static uint8_t selected;
 static const char *items[] = { "Terminal", "Files", "Programs", "About" };
 
@@ -39,6 +38,50 @@ static void border(uint8_t x, uint8_t y, uint8_t w, uint8_t h) {
     }
 }
 
+static void draw_terminal(void) {
+    text(22, 5, "AsterOS terminal", ATTR_STATUS);
+    text(22, 7, "aster> help", ATTR_NORMAL);
+    text(22, 8, "  help   show built-in commands", ATTR_NORMAL);
+    text(22, 9, "  clear  redraw the GUI shell", ATTR_NORMAL);
+    text(22, 10, "  apps   list GUI applications", ATTR_NORMAL);
+    text(22, 12, "This view is backed by the keyboard event loop.", ATTR_NORMAL);
+}
+
+static void draw_files(void) {
+    text(22, 5, "Files", ATTR_STATUS);
+    text(22, 7, "NAME                 TYPE", ATTR_NORMAL);
+    text(22, 8, "README.MD             text", ATTR_NORMAL);
+    text(22, 9, "KERNEL.BIN            system", ATTR_NORMAL);
+    text(22, 10, "PROGRAMS/             directory", ATTR_NORMAL);
+    text(22, 12, "Filesystem browser placeholder is now an", ATTR_NORMAL);
+    text(22, 13, "explicit read-only system view, not a blank panel.", ATTR_NORMAL);
+}
+
+static void draw_programs(void) {
+    text(22, 5, "Programs", ATTR_STATUS);
+    text(22, 7, "BUILT-IN PROGRAMS", ATTR_NORMAL);
+    text(22, 8, "- Terminal   keyboard-driven command view", ATTR_NORMAL);
+    text(22, 9, "- Files      read-only filesystem view", ATTR_NORMAL);
+    text(22, 10, "- Programs   this launcher and inventory", ATTR_NORMAL);
+    text(22, 11, "- About      OS/runtime information", ATTR_NORMAL);
+}
+
+static void draw_about(void) {
+    text(22, 5, "About AsterOS", ATTR_STATUS);
+    text(22, 7, "32-bit x86 experimental operating system", ATTR_NORMAL);
+    text(22, 8, "GUI shell over the CCP/BDOS direction", ATTR_NORMAL);
+    text(22, 10, "Keyboard: W/S or arrow keys, Enter to open", ATTR_NORMAL);
+    text(22, 11, "Q returns to the launcher", ATTR_NORMAL);
+}
+
+static void draw_selected_app(void) {
+    fill(21, 4, 57, 18, ' ', ATTR_NORMAL);
+    if (selected == 0) draw_terminal();
+    else if (selected == 1) draw_files();
+    else if (selected == 2) draw_programs();
+    else draw_about();
+}
+
 void gui_draw(void) {
     fill(0, 0, WIDTH, HEIGHT, ' ', ATTR_NORMAL);
     fill(0, 0, WIDTH, 1, ' ', ATTR_TITLE);
@@ -52,14 +95,10 @@ void gui_draw(void) {
 
     border(20, 2, 59, 19);
     text(22, 3, "Welcome to AsterOS", ATTR_NORMAL);
-    text(22, 5, "A lightweight GUI shell over the CCP/BDOS core.", ATTR_NORMAL);
-    text(22, 7, "Use W/S or arrow keys to select an app.", ATTR_NORMAL);
-    text(22, 8, "Press Enter to launch it.", ATTR_NORMAL);
-    text(22, 11, "Selected:", ATTR_NORMAL);
-    text(32, 11, items[selected], ATTR_STATUS);
+    draw_selected_app();
 
     fill(0, 23, WIDTH, 2, ' ', ATTR_STATUS);
-    text(2, 23, "F1 Menu   Enter Open   W/S Navigate   Q Shell", ATTR_STATUS);
+    text(2, 23, "Enter Open   W/S Navigate   Q Launcher", ATTR_STATUS);
 }
 
 void gui_init(void) {
@@ -75,8 +114,8 @@ void gui_handle_key(char key) {
         selected = (uint8_t)((selected + 1) % 4);
         gui_draw();
     } else if (key == '\r' || key == '\n') {
-        fill(21, 13, 57, 6, ' ', ATTR_NORMAL);
-        text(23, 15, "Application launcher will connect to the", ATTR_NORMAL);
-        text(23, 16, "existing transient-program/BDOS services.", ATTR_NORMAL);
+        draw_selected_app();
+    } else if (key == 'q' || key == 'Q') {
+        gui_draw();
     }
 }
