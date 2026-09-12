@@ -13,6 +13,12 @@ permissions:
 env:
   # Proactively exercise the upcoming GitHub Actions runtime migration.
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  TARGET: i686-linux-gnu
+  CC: i686-linux-gnu-gcc
+  LD: i686-linux-gnu-ld
+  AS: i686-linux-gnu-as
+  OBJCOPY: i686-linux-gnu-objcopy
+  SIZE: i686-linux-gnu-size
 
 jobs:
   build:
@@ -28,20 +34,26 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y gcc-i686-linux-gnu binutils-i686-linux-gnu grub-pc-bin grub-common xorriso mtools qemu-system-x86
 
+      - name: Verify cross compiler
+        run: |
+          command -v "$CC"
+          "$CC" -dumpmachine
+          "$LD" -V 2>&1 | grep -q 'elf_i386'
+
       - name: Validate TinyLang and build kernel
         run: |
-          make TARGET=i686-linux-gnu check
-          make TARGET=i686-linux-gnu
+          make check
+          make all
           file build/kernel.bin
 
       - name: Build bootable ISO
         run: |
-          make TARGET=i686-linux-gnu iso
+          make iso
           file build/ai-os.iso
 
       - name: Boot-test ISO with repository target
         run: |
-          make TARGET=i686-linux-gnu QEMU=qemu-system-i386 QEMU_TIMEOUT=8 check-iso
+          make QEMU=qemu-system-i386 QEMU_TIMEOUT=8 check-iso
 
       - name: Generate checksums
         run: |
