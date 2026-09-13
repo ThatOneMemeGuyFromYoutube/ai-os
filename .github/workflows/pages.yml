@@ -19,9 +19,11 @@ env:
   OBJCOPY: i686-linux-gnu-objcopy
   SIZE: i686-linux-gnu-size
 
+# Do not cancel a deployment halfway through dependency installation just because
+# another commit arrived. The site should be built from each pushed main commit.
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -49,7 +51,8 @@ jobs:
           cp docs/index.html docs/v86-demo.js docs/v86-demo.css docs/third-party.html site/
           cp build/ai-os.iso site/ai-os.iso
 
-          # v86's generated browser assets are downloaded only for the Pages build.
+          # Pin v86's current generated runtime and BIOS assets so the demo is
+          # reproducible instead of silently changing as upstream changes.
           curl -fsSL https://github.com/copy/v86/releases/download/latest/libv86.js -o site/v86/libv86.js
           curl -fsSL https://github.com/copy/v86/releases/download/latest/v86.wasm -o site/v86/v86.wasm
           curl -fsSL https://raw.githubusercontent.com/copy/v86/73077e92bf0d6079f59303fcd20387c01fe2daaf/bios/seabios.bin -o site/v86/seabios.bin
