@@ -66,14 +66,3 @@ This is the planned feature schedule for the upcoming development cycles. Dates 
 
 The checklist should be updated as milestones are completed, while individual changes should continue to follow the repository roadmap and the requirement that AsterOS itself—not just its build infrastructure—gets more capable.
 
-## Roadmap
-
-1. Bootable 32-bit kernel + CCP shell
-2. CP/M-style transient program loader and filesystem
-3. **TinyLang host compiler and `.COM`-style program creation (current milestone)**
-4. Load compiled programs through the CCP/BDOS boundary
-5. Cooperative multitasking and safer process isolation
-6. Native compiler/bootstrap compiler
-7. GUI-backed terminal, files, and program launcher
-8. Optional framebuffer graphics and mouse input
-9. More hardware drivers and self-hosting
