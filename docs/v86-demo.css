@@ -14,10 +14,11 @@ h1 { margin-bottom: 10px; font-size: clamp(2rem, 5vw, 3.3rem); line-height: 1.05
 .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 14px; border-bottom: 1px solid #333d57; background: #151d31; }
 .status { min-width: 0; font-size: .9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .controls { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
-.screen { position: relative; display: block; width: 100%; min-height: 0; margin: 0; padding: 0; overflow: auto; background: #000; outline: none; user-select: none; cursor: crosshair; touch-action: none; }
+.screen { position: relative; width: 100%; margin: 0; padding: 0; overflow: auto; background: #000; outline: none; user-select: none; cursor: crosshair; touch-action: none; text-align: left; }
 .screen:focus-visible { box-shadow: inset 0 0 0 2px #89a8ff; }
-.v86-text-screen { margin: 0; padding: 0; white-space: pre; font-family: "Courier New", Courier, monospace; font-size: 14px; line-height: 14px; color: #d7d7d7; background: #000; }
-.screen canvas { display: block; margin: 0; image-rendering: pixelated; image-rendering: crisp-edges; background: #000; }
+.screen > div, .screen > canvas { margin: 0; }
+.v86-text-screen { white-space: pre; font: 14px monospace; line-height: 14px; color: #d7d7d7; background: #000; text-align: left; }
+.screen canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; background: #000; }
 .screen-fallback { position: absolute; inset: 0; display: grid; place-items: center; color: #a9b2c8; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; pointer-events: none; }
 .hint { margin: 0; padding: 11px 14px 13px; color: #a9b2c8; border-top: 1px solid #333d57; font-size: .85rem; line-height: 1.5; }
 .notes { padding-top: 28px; }
