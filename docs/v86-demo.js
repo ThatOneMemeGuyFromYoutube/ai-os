@@ -12,17 +12,11 @@
   var running = true;
   var mouseLocked = false;
 
-  function setStatus(text) {
-    status.textContent = text;
-  }
-
+  function setStatus(text) { status.textContent = text; }
   function setMouseState(locked) {
     mouseLocked = locked;
-    if (mouseButton) {
-      mouseButton.textContent = locked ? "Release mouse" : "Capture mouse";
-    }
+    if (mouseButton) mouseButton.textContent = locked ? "Release mouse" : "Capture mouse";
   }
-
   function captureMouse() {
     if (!emulator || mouseLocked) return;
     emulator.lock_mouse();
@@ -32,7 +26,6 @@
 
   function boot() {
     setStatus("Booting AsterOS…");
-
     try {
       emulator = new V86({
         wasm_path: "v86/v86.wasm",
@@ -42,7 +35,7 @@
         bios: { url: "v86/seabios.bin" },
         vga_bios: { url: "v86/vgabios.bin" },
         cdrom: { url: "ai-os.iso" },
-        autostart: true,
+        autostart: true
       });
 
       emulator.add_listener("emulator-ready", function () {
@@ -64,7 +57,6 @@
 
   pauseButton.addEventListener("click", function () {
     if (!emulator) return;
-
     if (running) {
       emulator.stop();
       running = false;
@@ -81,9 +73,7 @@
 
   resetButton.addEventListener("click", function () {
     if (!emulator) return;
-    if (document.pointerLockElement && document.exitPointerLock) {
-      document.exitPointerLock();
-    }
+    if (document.pointerLockElement && document.exitPointerLock) document.exitPointerLock();
     emulator.restart();
     running = true;
     setMouseState(false);
@@ -111,14 +101,10 @@
   document.addEventListener("pointerlockchange", function () {
     var locked = document.pointerLockElement === screen;
     setMouseState(locked);
-    if (!locked && emulator) {
-      setStatus(running ? "AsterOS is running · mouse released" : "AsterOS paused");
-    }
+    if (!locked && emulator) setStatus(running ? "AsterOS is running · mouse released" : "AsterOS paused");
   });
 
-  screen.addEventListener("contextmenu", function (event) {
-    event.preventDefault();
-  });
+  screen.addEventListener("contextmenu", function (event) { event.preventDefault(); });
 
   fullscreenButton.addEventListener("click", function () {
     if (!emulator) return;
