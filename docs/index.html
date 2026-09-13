@@ -16,23 +16,25 @@
 
     <section class="emulator-card" aria-label="AsterOS v86 emulator">
       <div class="toolbar">
-        <div id="status" class="status">Preparing emulator…</div>
+        <div id="status" class="status" aria-live="polite">Preparing emulator…</div>
         <div class="controls">
+          <button id="mouse" type="button">Capture mouse</button>
           <button id="pause" type="button">Pause</button>
           <button id="reset" type="button">Reset</button>
           <button id="fullscreen" type="button">Fullscreen</button>
         </div>
       </div>
-      <div id="screen_container" class="screen" tabindex="0">
-        <div class="screen-fallback">Loading v86…</div>
-        <canvas style="display:none"></canvas>
+      <div id="screen_container" class="screen" tabindex="0" aria-label="AsterOS virtual PC screen">
+        <div class="screen-fallback">Loading AsterOS…</div>
+        <div style="white-space: pre; font: 14px monospace; line-height: 14px"></div>
+        <canvas style="display: none"></canvas>
       </div>
-      <p class="hint">Click the emulator to focus the keyboard. AsterOS uses the existing VGA text-mode interface, so everything runs directly in the emulated PC.</p>
+      <p class="hint">Click the emulator to focus the keyboard and capture the mouse. Press Esc to release the pointer. Fullscreen uses v86’s built-in browser fullscreen support.</p>
     </section>
 
     <section class="notes">
       <h2>About this demo</h2>
-      <p>The browser build downloads pinned v86 assets during the Pages deployment and builds a fresh AsterOS ISO from this repository. v86 is an x86 emulator/JIT designed to run in the browser.</p>
+      <p>The browser build downloads pinned v86 assets during the Pages deployment and builds a fresh AsterOS ISO from this repository. v86 provides an x86 PC environment directly in the browser.</p>
       <p>Third-party licensing details are documented in <a href="third-party.html">Third-party notices</a>.</p>
     </section>
   </main>
