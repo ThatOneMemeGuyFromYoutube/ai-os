@@ -14,13 +14,13 @@ h1 { margin-bottom: 10px; font-size: clamp(2rem, 5vw, 3.3rem); line-height: 1.05
 .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 14px; border-bottom: 1px solid #333d57; background: #151d31; }
 .status { min-width: 0; font-size: .9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .controls { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
-.screen { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; min-height: 420px; padding: 24px; overflow: auto; background: #000; outline: none; user-select: none; cursor: crosshair; touch-action: none; }
+.screen { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; width: min(100%, 1024px); aspect-ratio: 4 / 3; min-height: 0; margin: 0 auto; padding: 24px; overflow: auto; background: #000; outline: none; user-select: none; cursor: crosshair; touch-action: none; }
 .screen:focus-visible { box-shadow: inset 0 0 0 2px #89a8ff; }
 .v86-text-screen { flex: 0 0 auto; margin: 0; padding: 0; white-space: pre; font-family: "Courier New", Courier, monospace; font-size: 14px; line-height: 14px; color: #d7d7d7; background: #000; }
-.screen canvas { display: block !important; flex: 0 0 auto; width: auto; height: auto; max-width: 100%; max-height: calc(100vh - 260px); image-rendering: pixelated; image-rendering: crisp-edges; background: #000; }
+.screen canvas { flex: 0 0 auto; width: auto; height: auto; max-width: 100%; max-height: calc(100vh - 260px); image-rendering: pixelated; image-rendering: crisp-edges; background: #000; }
 .screen-fallback { position: absolute; inset: 0; display: grid; place-items: center; color: #a9b2c8; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; pointer-events: none; }
 .hint { margin: 0; padding: 11px 14px 13px; color: #a9b2c8; border-top: 1px solid #333d57; font-size: .85rem; line-height: 1.5; }
 .notes { padding-top: 28px; }
 .notes p { max-width: 860px; color: #b7c0d4; line-height: 1.65; }
 .notes a { color: #9eb8ff; }
-@media (max-width: 760px) { .page { width: min(100% - 18px, 1120px); padding-top: 22px; } .toolbar { align-items: stretch; flex-direction: column; } .controls { justify-content: flex-start; } .screen { min-height: 260px; padding: 10px; } }
+@media (max-width: 760px) { .page { width: min(100% - 18px, 1120px); padding-top: 22px; } .toolbar { align-items: stretch; flex-direction: column; } .controls { justify-content: flex-start; } .screen { width: 100%; padding: 10px; } }
