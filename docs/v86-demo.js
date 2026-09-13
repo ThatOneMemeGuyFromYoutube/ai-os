@@ -7,16 +7,24 @@
   var pauseButton = document.getElementById("pause");
   var resetButton = document.getElementById("reset");
   var fullscreenButton = document.getElementById("fullscreen");
+  var mouseButton = document.getElementById("mouse");
   var emulator;
   var running = true;
+  var mouseLocked = false;
 
   function setStatus(text) {
     status.textContent = text;
   }
 
+  function setMouseState(locked) {
+    mouseLocked = locked;
+    if (mouseButton) {
+      mouseButton.textContent = locked ? "Release mouse" : "Capture mouse";
+    }
+  }
+
   function boot() {
     setStatus("Booting AsterOS…");
-    screen.focus();
 
     try {
       emulator = new V86({
@@ -36,10 +44,18 @@
       emulator.add_listener("emulator-loaded", function () {
         setStatus("AsterOS is running");
       });
+
+      screen.addEventListener("mouseenter", function () {
+        if (!mouseLocked && emulator) {
+          setStatus("AsterOS is running · click the screen to capture the mouse");
+        }
+      });
     } catch (error) {
       running = false;
       pauseButton.disabled = true;
       resetButton.disabled = true;
+      if (mouseButton) mouseButton.disabled = true;
+      fullscreenButton.disabled = true;
       setStatus("Unable to start v86: " + error.message);
       console.error(error);
     }
@@ -66,21 +82,50 @@
     if (!emulator) return;
     emulator.restart();
     running = true;
+    setMouseState(false);
     pauseButton.textContent = "Pause";
     setStatus("Rebooting AsterOS…");
     screen.focus();
   });
 
-  fullscreenButton.addEventListener("click", function () {
-    if (screen.requestFullscreen) {
-      screen.requestFullscreen();
-    } else if (screen.webkitRequestFullscreen) {
-      screen.webkitRequestFullscreen();
-    }
-  });
+  if (mouseButton) {
+    mouseButton.addEventListener("click", function () {
+      if (!emulator) return;
+
+      if (mouseLocked) {
+        if (document.exitPointerLock) {
+          document.exitPointerLock();
+        }
+        return;
+      }
+
+      emulator.lock_mouse();
+      screen.focus();
+      setMouseState(true);
+      setStatus("Mouse captured · press Esc to release");
+    });
+  }
 
   screen.addEventListener("click", function () {
     screen.focus();
+    if (emulator && !mouseLocked) {
+      emulator.lock_mouse();
+      setMouseState(true);
+      setStatus("Mouse captured · press Esc to release");
+    }
+  });
+
+  document.addEventListener("pointerlockchange", function () {
+    var locked = document.pointerLockElement === screen;
+    setMouseState(locked);
+    if (!locked && emulator) {
+      setStatus(running ? "AsterOS is running · mouse released" : "AsterOS paused");
+    }
+  });
+
+  fullscreenButton.addEventListener("click", function () {
+    if (!emulator) return;
+    emulator.screen_go_fullscreen();
   });
 
   boot();
