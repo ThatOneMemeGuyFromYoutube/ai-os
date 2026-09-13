@@ -25,6 +25,16 @@ make run
 
 The current milestone boots into the lightweight GUI shell. Use **W/S** to navigate and **Enter** to select an application. The GUI uses the existing VGA text buffer at `0xB8000`, keeping memory and code overhead small.
 
+## Browser demo
+
+AsterOS now has a browser demo powered by [v86](https://github.com/copy/v86), an x86 emulator that runs in the browser. The GitHub Pages deployment builds a fresh AsterOS ISO, bundles the v86 browser assets, and publishes an interactive emulator with Pause, Reset, and Fullscreen controls.
+
+After GitHub Pages is enabled for the repository, the demo is available at:
+
+```text
+https://thatonememeguyfromyoutube.github.io/ai-os/
+```
+
 ## Architecture
 
 ```text
@@ -65,4 +75,3 @@ This is the planned feature schedule for the upcoming development cycles. Dates 
 - [ ] **October 15–29 — Windows 98-like subsystem:** build a substantial Windows-98-inspired compatibility/user-environment subsystem, with two development windows reserved because of its larger scope.
 
 The checklist should be updated as milestones are completed, while individual changes should continue to follow the repository roadmap and the requirement that AsterOS itself—not just its build infrastructure—gets more capable.
-
