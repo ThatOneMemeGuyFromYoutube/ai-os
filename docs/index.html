@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AsterOS — Browser Demo</title>
+  <link rel="stylesheet" href="v86-demo.css">
+</head>
+<body>
+  <main class="page">
+    <header>
+      <p class="eyebrow">ASTEROS</p>
+      <h1>Run AsterOS in your browser</h1>
+      <p class="lede">AsterOS is a 32-bit x86 operating system. This page boots the same ISO used by the project inside the v86 PC emulator.</p>
+    </header>
+
+    <section class="emulator-card" aria-label="AsterOS v86 emulator">
+      <div class="toolbar">
+        <div id="status" class="status">Preparing emulator…</div>
+        <div class="controls">
+          <button id="pause" type="button">Pause</button>
+          <button id="reset" type="button">Reset</button>
+          <button id="fullscreen" type="button">Fullscreen</button>
+        </div>
+      </div>
+      <div id="screen_container" class="screen" tabindex="0">
+        <div class="screen-fallback">Loading v86…</div>
+        <canvas style="display:none"></canvas>
+      </div>
+      <p class="hint">Click the emulator to focus the keyboard. AsterOS uses the existing VGA text-mode interface, so everything runs directly in the emulated PC.</p>
+    </section>
+
+    <section class="notes">
+      <h2>About this demo</h2>
+      <p>The browser build downloads pinned v86 assets during the Pages deployment and builds a fresh AsterOS ISO from this repository. v86 is an x86 emulator/JIT designed to run in the browser.</p>
+      <p>Third-party licensing details are documented in <a href="third-party.html">Third-party notices</a>.</p>
+    </section>
+  </main>
+
+  <script src="v86/libv86.js"></script>
+  <script src="v86-demo.js"></script>
+</body>
+</html>
