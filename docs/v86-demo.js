@@ -23,6 +23,13 @@
     }
   }
 
+  function captureMouse() {
+    if (!emulator || mouseLocked) return;
+    emulator.lock_mouse();
+    screen.focus();
+    setStatus("Mouse captured · press Esc to release");
+  }
+
   function boot() {
     setStatus("Booting AsterOS…");
 
@@ -39,16 +46,10 @@
       });
 
       emulator.add_listener("emulator-ready", function () {
-        setStatus("AsterOS is running");
+        setStatus("AsterOS is running · click the screen to capture the mouse");
       });
       emulator.add_listener("emulator-loaded", function () {
-        setStatus("AsterOS is running");
-      });
-
-      screen.addEventListener("mouseenter", function () {
-        if (!mouseLocked && emulator) {
-          setStatus("AsterOS is running · click the screen to capture the mouse");
-        }
+        setStatus("AsterOS is running · click the screen to capture the mouse");
       });
     } catch (error) {
       running = false;
@@ -80,6 +81,9 @@
 
   resetButton.addEventListener("click", function () {
     if (!emulator) return;
+    if (document.pointerLockElement && document.exitPointerLock) {
+      document.exitPointerLock();
+    }
     emulator.restart();
     running = true;
     setMouseState(false);
@@ -91,28 +95,17 @@
   if (mouseButton) {
     mouseButton.addEventListener("click", function () {
       if (!emulator) return;
-
       if (mouseLocked) {
-        if (document.exitPointerLock) {
-          document.exitPointerLock();
-        }
-        return;
+        if (document.exitPointerLock) document.exitPointerLock();
+      } else {
+        captureMouse();
       }
-
-      emulator.lock_mouse();
-      screen.focus();
-      setMouseState(true);
-      setStatus("Mouse captured · press Esc to release");
     });
   }
 
   screen.addEventListener("click", function () {
     screen.focus();
-    if (emulator && !mouseLocked) {
-      emulator.lock_mouse();
-      setMouseState(true);
-      setStatus("Mouse captured · press Esc to release");
-    }
+    captureMouse();
   });
 
   document.addEventListener("pointerlockchange", function () {
@@ -121,6 +114,10 @@
     if (!locked && emulator) {
       setStatus(running ? "AsterOS is running · mouse released" : "AsterOS paused");
     }
+  });
+
+  screen.addEventListener("contextmenu", function (event) {
+    event.preventDefault();
   });
 
   fullscreenButton.addEventListener("click", function () {
