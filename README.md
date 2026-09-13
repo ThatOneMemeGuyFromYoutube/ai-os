@@ -54,6 +54,18 @@ python3 toolchain/tinylang.py my_program.tl build/my_program.com
 
 The language supports a deliberately small set of 32-bit x86 operations (`mov`, `add`, `sub`, `int`, `jmp`, labels, `db`, and `exit`). This is enough to make real executable byte images now while the native/self-hosting compiler path is developed.
 
+## Development checklist
+
+This is the planned feature schedule for the upcoming development cycles. Dates use the project's current weekly planning windows.
+
+- [ ] **September 13–20 — Command line:** make the CCP/terminal genuinely useful with practical commands, stronger parsing, filesystem interaction, program launching, system information, and a smoother CLI workflow.
+- [ ] **September 21–28 — Window system & desktop:** build a traditional user-friendly window system and desktop environment on top of the existing AsterOS GUI foundation.
+- [ ] **September 29–October 6 — IDE:** create an integrated development environment and supporting developer tools for writing, building, and running AsterOS programs.
+- [ ] **October 7–14 — Networking:** implement networking capabilities, starting with a sensible hardware-independent foundation and progressing toward usable network features.
+- [ ] **October 15–29 — Windows 98-like subsystem:** build a substantial Windows-98-inspired compatibility/user-environment subsystem, with two development windows reserved because of its larger scope.
+
+The checklist should be updated as milestones are completed, while individual changes should continue to follow the repository roadmap and the requirement that AsterOS itself—not just its build infrastructure—gets more capable.
+
 ## Roadmap
 
 1. Bootable 32-bit kernel + CCP shell
