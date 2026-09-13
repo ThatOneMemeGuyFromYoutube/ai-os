@@ -1,0 +1,82 @@
+name: Deploy AsterOS Browser Demo
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  TARGET: i686-linux-gnu
+  CC: i686-linux-gnu-gcc
+  LD: i686-linux-gnu-ld
+  AS: i686-linux-gnu-as
+  OBJCOPY: i686-linux-gnu-objcopy
+  SIZE: i686-linux-gnu-size
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install AsterOS build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-i686-linux-gnu binutils-i686-linux-gnu grub-pc-bin grub-common xorriso mtools
+
+      - name: Build AsterOS ISO
+        run: |
+          make check
+          make all
+          make iso
+          grub-file --is-x86-multiboot build/kernel.bin
+          test -s build/ai-os.iso
+
+      - name: Prepare Pages site
+        run: |
+          mkdir -p site/v86
+          cp docs/index.html docs/v86-demo.js docs/v86-demo.css docs/third-party.html site/
+          cp build/ai-os.iso site/ai-os.iso
+
+          # v86's generated browser assets are downloaded only for the Pages build.
+          curl -fsSL https://github.com/copy/v86/releases/download/latest/libv86.js -o site/v86/libv86.js
+          curl -fsSL https://github.com/copy/v86/releases/download/latest/v86.wasm -o site/v86/v86.wasm
+          curl -fsSL https://raw.githubusercontent.com/copy/v86/73077e92bf0d6079f59303fcd20387c01fe2daaf/bios/seabios.bin -o site/v86/seabios.bin
+          curl -fsSL https://raw.githubusercontent.com/copy/v86/73077e92bf0d6079f59303fcd20387c01fe2daaf/bios/vgabios.bin -o site/v86/vgabios.bin
+
+          test -s site/v86/libv86.js
+          test -s site/v86/v86.wasm
+          test -s site/v86/seabios.bin
+          test -s site/v86/vgabios.bin
+          test -s site/ai-os.iso
+          touch site/.nojekyll
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
