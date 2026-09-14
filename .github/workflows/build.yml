@@ -117,7 +117,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          for version in v0.1.11; do
+          for version in v0.1.11; do # Keep the just-published release intact.
             gh release delete "$version" --cleanup-tag --yes 2>/dev/null || true
           done
 
