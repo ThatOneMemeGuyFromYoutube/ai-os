@@ -1,34 +1,26 @@
 #include <stdint.h>
 #include "gui.h"
-
-/* BDOS-like service numbers will live here as the ABI stabilizes. */
 enum { SVC_CONSOLE = 1, SVC_FILES = 2, SVC_PROCESS = 3 };
-
-static uint8_t inb(uint16_t port) {
-    uint8_t value;
-    __asm__ volatile ("inb %1, %0" : "=a"(value) : "Nd"(port));
-    return value;
-}
-
+static uint8_t inb(uint16_t port) { uint8_t value; __asm__ volatile ("inb %1, %0" : "=a"(value) : "Nd"(port)); return value; }
 static char keyboard_getchar(void) {
-    static const char normal[] = "?1234567890-=?qwertyuiop[]?asdfghjkl;'`?zxcvbnm,./";
-    uint8_t scancode;
     for (;;) {
+        uint8_t scancode;
         if (!(inb(0x64) & 1)) continue;
         scancode = inb(0x60);
         if (scancode & 0x80) continue;
-        if (scancode == 0x1C) return '\r';
-        if (scancode == 0x10) return 'q';
-        if (scancode == 0x11) return 'w';
-        if (scancode == 0x1F) return 's';
-        if (scancode == 0x1E) return 'a';
-        if (scancode < sizeof(normal) - 1) return normal[scancode];
+        switch (scancode) {
+            case 0x1C: return '\r'; case 0x0E: return '\b'; case 0x39: return ' ';
+            case 0x10: return 'q'; case 0x11: return 'w'; case 0x12: return 'e'; case 0x13: return 'r';
+            case 0x14: return 't'; case 0x15: return 'y'; case 0x16: return 'u'; case 0x17: return 'i';
+            case 0x18: return 'o'; case 0x19: return 'p'; case 0x1E: return 'a'; case 0x1F: return 's';
+            case 0x20: return 'd'; case 0x21: return 'f'; case 0x22: return 'g'; case 0x23: return 'h';
+            case 0x24: return 'j'; case 0x25: return 'k'; case 0x26: return 'l'; case 0x2C: return 'z';
+            case 0x2D: return 'x'; case 0x2E: return 'c'; case 0x2F: return 'v'; case 0x30: return 'b';
+            case 0x31: return 'n'; case 0x32: return 'm'; case 0x02: return '1'; case 0x03: return '2';
+            case 0x04: return '3'; case 0x05: return '4'; case 0x06: return '5'; case 0x07: return '6';
+            case 0x08: return '7'; case 0x09: return '8'; case 0x0A: return '9'; case 0x0B: return '0';
+            default: break;
+        }
     }
 }
-
-void kmain(void) {
-    gui_init();
-    for (;;) {
-        gui_handle_key(keyboard_getchar());
-    }
-}
+void kmain(void){gui_init();for(;;){gui_handle_key(keyboard_getchar());}}
