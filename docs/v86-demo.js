@@ -90,14 +90,28 @@
   resetButton.addEventListener("click", function () {
     if (!emulator) return;
     if (document.pointerLockElement && document.exitPointerLock) document.exitPointerLock();
-    emulator.stop();
-    emulator.destroy();
-    emulator = null;
-    running = true;
-    setMouseState(false);
-    pauseButton.textContent = "Pause";
-    screen.focus();
-    boot();
+    resetButton.disabled = true;
+    pauseButton.disabled = true;
+    if (networkDevice) networkDevice.disabled = true;
+    setStatus("Rebooting AsterOS…");
+    emulator.stop().then(function () {
+      return emulator.destroy();
+    }).then(function () {
+      emulator = null;
+      running = true;
+      setMouseState(false);
+      pauseButton.textContent = "Pause";
+      resetButton.disabled = false;
+      if (networkDevice) networkDevice.disabled = false;
+      screen.focus();
+      boot();
+    }).catch(function (error) {
+      resetButton.disabled = false;
+      pauseButton.disabled = false;
+      if (networkDevice) networkDevice.disabled = false;
+      setStatus("Unable to reset v86: " + error.message);
+      console.error(error);
+    });
   });
 
   if (mouseButton) {
