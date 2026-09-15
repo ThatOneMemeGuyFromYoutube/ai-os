@@ -18,6 +18,13 @@
       <div class="toolbar">
         <div id="status" class="status" aria-live="polite">Preparing emulator…</div>
         <div class="controls">
+          <label class="device-control" for="network_device">Network device
+            <select id="network_device">
+              <option value="none">None</option>
+              <option value="ne2k" selected>NE2K</option>
+              <option value="virtio">VirtIO</option>
+            </select>
+          </label>
           <button id="mouse" type="button">Capture mouse</button>
           <button id="pause" type="button">Pause</button>
           <button id="reset" type="button">Reset</button>
@@ -30,7 +37,7 @@
         <canvas style="display: none"></canvas>
       </div>
 
-      <p class="hint">Click the emulator to focus the keyboard and capture the mouse. Press Esc to release the pointer. The Fullscreen button uses v86's built-in browser fullscreen support.</p>
+      <p class="hint">Choose NE2K or VirtIO before Reset to control which virtual NIC v86 presents to AsterOS. The selector only prepares the emulated device; host networking still requires a configured v86 network backend. Click the emulator to focus the keyboard and capture the mouse. Press Esc to release the pointer.</p>
     </section>
 
     <section class="notes">
