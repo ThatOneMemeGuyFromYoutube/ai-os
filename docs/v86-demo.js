@@ -8,11 +8,18 @@
   var resetButton = document.getElementById("reset");
   var fullscreenButton = document.getElementById("fullscreen");
   var mouseButton = document.getElementById("mouse");
+  var networkDevice = document.getElementById("network_device");
   var emulator;
   var running = true;
   var mouseLocked = false;
 
   function setStatus(text) { status.textContent = text; }
+  function selectedNetworkType() {
+    return networkDevice && networkDevice.value !== "none" ? networkDevice.value : null;
+  }
+  function networkLabel(type) {
+    return type === "virtio" ? "VirtIO" : "NE2K";
+  }
   function setMouseState(locked) {
     mouseLocked = locked;
     if (mouseButton) mouseButton.textContent = locked ? "Release mouse" : "Capture mouse";
@@ -25,9 +32,10 @@
   }
 
   function boot() {
-    setStatus("Booting AsterOS…");
+    var networkType = selectedNetworkType();
+    setStatus(networkType ? "Booting AsterOS with " + networkLabel(networkType) + " network device…" : "Booting AsterOS…");
     try {
-      emulator = new V86({
+      var options = {
         wasm_path: "v86/v86.wasm",
         memory_size: 64 * 1024 * 1024,
         vga_memory_size: 8 * 1024 * 1024,
@@ -36,19 +44,27 @@
         vga_bios: { url: "v86/vgabios.bin" },
         cdrom: { url: "ai-os.iso" },
         autostart: true
-      });
+      };
+      if (networkType) options.net_device = { type: networkType };
+
+      emulator = new V86(options);
 
       emulator.add_listener("emulator-ready", function () {
-        setStatus("AsterOS is running · click the screen to capture the mouse");
+        setStatus(networkType
+          ? "AsterOS is running · " + networkLabel(networkType) + " network device selected"
+          : "AsterOS is running · no network device selected");
       });
       emulator.add_listener("emulator-loaded", function () {
-        setStatus("AsterOS is running · click the screen to capture the mouse");
+        setStatus(networkType
+          ? "AsterOS is running · " + networkLabel(networkType) + " network device selected"
+          : "AsterOS is running · no network device selected");
       });
     } catch (error) {
       running = false;
       pauseButton.disabled = true;
       resetButton.disabled = true;
       if (mouseButton) mouseButton.disabled = true;
+      if (networkDevice) networkDevice.disabled = true;
       fullscreenButton.disabled = true;
       setStatus("Unable to start v86: " + error.message);
       console.error(error);
@@ -74,12 +90,14 @@
   resetButton.addEventListener("click", function () {
     if (!emulator) return;
     if (document.pointerLockElement && document.exitPointerLock) document.exitPointerLock();
-    emulator.restart();
+    emulator.stop();
+    emulator.destroy();
+    emulator = null;
     running = true;
     setMouseState(false);
     pauseButton.textContent = "Pause";
-    setStatus("Rebooting AsterOS…");
     screen.focus();
+    boot();
   });
 
   if (mouseButton) {
