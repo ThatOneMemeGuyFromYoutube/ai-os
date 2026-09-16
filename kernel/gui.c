@@ -29,16 +29,20 @@ static void border(uint8_t x,uint8_t y,uint8_t w,uint8_t h){for(uint8_t i=0;i<w;
 static uint8_t text_equals(const char *a,const char *b){while(*a&&*b){if(*a++!=*b++)return 0;}return (uint8_t)(*a==*b);}
 static uint8_t starts_with(const char *text_value,const char *prefix){while(*prefix){if(*text_value++!=*prefix++)return 0;}return 1;}
 static void copy_text(char *destination,const char *source){uint8_t i=0;while(source[i]&&i<TERM_INPUT_MAX){destination[i]=source[i];i++;}destination[i]='\0';}
+static void trim_leading_spaces(char **value){while(**value==' ')(*value)++;}
 static void terminal_reset_input(void){terminal_length=0;terminal_buffer[0]='\0';}
 static void terminal_execute(void){
+    char *command=terminal_buffer;
     terminal_output[0]='\0';
-    if(text_equals(terminal_buffer,"help")) terminal_result=TERM_HELP;
-    else if(text_equals(terminal_buffer,"clear")||text_equals(terminal_buffer,"cls")) terminal_result=TERM_READY;
-    else if(text_equals(terminal_buffer,"apps")) terminal_result=TERM_APPS;
-    else if(text_equals(terminal_buffer,"info")) terminal_result=TERM_INFO;
-    else if(text_equals(terminal_buffer,"ver")) terminal_result=TERM_VER;
-    else if(starts_with(terminal_buffer,"echo ")) {copy_text(terminal_output,terminal_buffer+5);terminal_result=TERM_ECHO;}
-    else if(terminal_length) terminal_result=TERM_UNKNOWN;
+    trim_leading_spaces(&command);
+    if(text_equals(command,"help")) terminal_result=TERM_HELP;
+    else if(text_equals(command,"clear")||text_equals(command,"cls")) terminal_result=TERM_READY;
+    else if(text_equals(command,"apps")) terminal_result=TERM_APPS;
+    else if(text_equals(command,"info")) terminal_result=TERM_INFO;
+    else if(text_equals(command,"ver")) terminal_result=TERM_VER;
+    else if(text_equals(command,"echo")) terminal_result=TERM_ECHO;
+    else if(starts_with(command,"echo ")) {copy_text(terminal_output,command+5);terminal_result=TERM_ECHO;}
+    else if(*command) terminal_result=TERM_UNKNOWN;
     else terminal_result=TERM_READY;
     terminal_reset_input();
 }
@@ -46,8 +50,8 @@ static void draw_terminal_result(void){
     switch(terminal_result){
         case TERM_HELP:
             text(22,9,"help  clear  cls  apps  info  ver  echo",ATTR_NORMAL);
-            text(22,10,"Type a command and press Enter.",ATTR_NORMAL);
-            text(22,11,"Backspace edits the command line.",ATTR_NORMAL);
+            text(22,10,"Commands ignore leading spaces.",ATTR_NORMAL);
+            text(22,11,"Type a command and press Enter.",ATTR_NORMAL);
             break;
         case TERM_APPS:
             text(22,9,"Terminal  Files  Programs  About",ATTR_NORMAL);
