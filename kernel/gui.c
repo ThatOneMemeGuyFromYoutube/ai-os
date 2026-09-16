@@ -37,8 +37,8 @@ static void terminal_execute(void){
     trim_leading_spaces(&command);
     if(text_equals(command,"help")) terminal_result=TERM_HELP;
     else if(text_equals(command,"clear")||text_equals(command,"cls")) terminal_result=TERM_READY;
-    else if(text_equals(command,"apps")) terminal_result=TERM_APPS;
-    else if(text_equals(command,"info")) terminal_result=TERM_INFO;
+    else if(text_equals(command,"apps")||text_equals(command,"ls")) terminal_result=TERM_APPS;
+    else if(text_equals(command,"info")||text_equals(command,"about")) terminal_result=TERM_INFO;
     else if(text_equals(command,"ver")) terminal_result=TERM_VER;
     else if(text_equals(command,"echo")) terminal_result=TERM_ECHO;
     else if(starts_with(command,"echo ")) {copy_text(terminal_output,command+5);terminal_result=TERM_ECHO;}
@@ -49,7 +49,7 @@ static void terminal_execute(void){
 static void draw_terminal_result(void){
     switch(terminal_result){
         case TERM_HELP:
-            text(22,9,"help  clear  cls  apps  info  ver  echo",ATTR_NORMAL);
+            text(22,9,"help clear/cls apps/ls info/about ver echo",ATTR_NORMAL);
             text(22,10,"Commands ignore leading spaces.",ATTR_NORMAL);
             text(22,11,"Type a command and press Enter.",ATTR_NORMAL);
             break;
