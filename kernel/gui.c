@@ -47,6 +47,10 @@ static void terminal_execute(void){
         copy_text(terminal_output,command);
         terminal_result=TERM_ECHO;
     }
+    else if(text_equals(command,"menu")) {
+        active_app=-1;
+        terminal_result=TERM_READY;
+    }
     else if(*command) terminal_result=TERM_UNKNOWN;
     else terminal_result=TERM_READY;
     terminal_reset_input();
@@ -54,10 +58,11 @@ static void terminal_execute(void){
 static void draw_terminal_result(void){
     switch(terminal_result){
         case TERM_HELP:
-            text(22,9,"help clear/cls apps/ls info/about ver echo",ATTR_NORMAL);
+            text(22,9,"help clear/cls apps/ls info/about ver echo menu",ATTR_NORMAL);
             text(22,10,"Commands ignore leading spaces.",ATTR_NORMAL);
             text(22,11,"echo accepts repeated spaces before text.",ATTR_NORMAL);
-            text(22,12,"Type a command and press Enter.",ATTR_NORMAL);
+            text(22,12,"menu returns to the application launcher.",ATTR_NORMAL);
+            text(22,13,"Type a command and press Enter.",ATTR_NORMAL);
             break;
         case TERM_APPS:
             text(22,9,"Terminal  Files  Programs  About",ATTR_NORMAL);
