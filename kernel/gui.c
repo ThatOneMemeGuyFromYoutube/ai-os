@@ -17,6 +17,7 @@ static uint8_t terminal_length;
 static int8_t active_app;
 static char terminal_buffer[TERM_INPUT_MAX + 1];
 static char terminal_output[TERM_INPUT_MAX + 1];
+static char terminal_last[TERM_INPUT_MAX + 1];
 static const char *items[] = {"Terminal", "Files", "Programs", "About"};
 
 enum { TERM_READY = 0, TERM_HELP, TERM_APPS, TERM_INFO, TERM_VER, TERM_ECHO, TERM_UNKNOWN };
@@ -35,6 +36,12 @@ static void terminal_execute(void){
     char *command=terminal_buffer;
     terminal_output[0]='\0';
     trim_leading_spaces(&command);
+    if(text_equals(command,"!!")&&terminal_last[0]){
+        copy_text(terminal_buffer,terminal_last);
+        command=terminal_buffer;
+        trim_leading_spaces(&command);
+    }
+    if(*command)copy_text(terminal_last,command);
     if(text_equals(command,"help")) terminal_result=TERM_HELP;
     else if(text_equals(command,"clear")||text_equals(command,"cls")) terminal_result=TERM_READY;
     else if(text_equals(command,"apps")||text_equals(command,"ls")) terminal_result=TERM_APPS;
@@ -61,8 +68,9 @@ static void draw_terminal_result(void){
             text(22,9,"help clear/cls apps/ls info/about ver echo menu",ATTR_NORMAL);
             text(22,10,"Commands ignore leading spaces.",ATTR_NORMAL);
             text(22,11,"echo accepts repeated spaces before text.",ATTR_NORMAL);
-            text(22,12,"menu returns to the application launcher.",ATTR_NORMAL);
-            text(22,13,"Type a command and press Enter.",ATTR_NORMAL);
+            text(22,12,"!! repeats the previous command.",ATTR_NORMAL);
+            text(22,13,"menu returns to the application launcher.",ATTR_NORMAL);
+            text(22,14,"Type a command and press Enter.",ATTR_NORMAL);
             break;
         case TERM_APPS:
             text(22,9,"Terminal  Files  Programs  About",ATTR_NORMAL);
@@ -96,7 +104,7 @@ static void draw_programs(void){text(22,5,"Programs",ATTR_STATUS);text(22,7,"BUI
 static void draw_about(void){text(22,5,"About AsterOS",ATTR_STATUS);text(22,7,"32-bit x86 experimental operating system",ATTR_NORMAL);text(22,8,"GUI shell over the CCP/BDOS direction",ATTR_NORMAL);text(22,10,"Enter opens the selected app.",ATTR_NORMAL);text(22,11,"Q returns to the launcher.",ATTR_NORMAL);}
 static void draw_selected_app(void){fill(21,4,57,18,' ',ATTR_NORMAL);if(active_app<0){text(22,5,"Select an application",ATTR_STATUS);text(22,7,"Use W/S (or arrow keys) and press Enter.",ATTR_NORMAL);}else if(active_app==0)draw_terminal();else if(active_app==1)draw_files();else if(active_app==2)draw_programs();else draw_about();}
 void gui_draw(void){fill(0,0,WIDTH,HEIGHT,' ',ATTR_NORMAL);fill(0,0,WIDTH,1,' ',ATTR_TITLE);text(2,0,"AsterOS",ATTR_TITLE);text(68,0,"GUI Shell",ATTR_TITLE);border(1,2,18,19);text(3,3,"Applications",ATTR_PANEL);for(uint8_t i=0;i<4;i++)text(3,(uint8_t)(5+i*2),items[i],i==selected?ATTR_SELECT:ATTR_PANEL);border(20,2,59,19);text(22,3,"Welcome to AsterOS",ATTR_NORMAL);draw_selected_app();fill(0,23,WIDTH,2,' ',ATTR_STATUS);text(2,23,active_app<0?"Enter Open   W/S Navigate":"Q Launcher   Type commands   Enter",ATTR_STATUS);}
-void gui_init(void){selected=0;active_app=-1;terminal_result=TERM_READY;terminal_output[0]='\0';terminal_reset_input();gui_draw();}
+void gui_init(void){selected=0;active_app=-1;terminal_result=TERM_READY;terminal_output[0]='\0';terminal_last[0]='\0';terminal_reset_input();gui_draw();}
 void gui_handle_key(char key){
     if(active_app<0){
         if(key=='w'||key=='W'){if(selected==0)selected=3;else--selected;gui_draw();}
