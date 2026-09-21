@@ -10,6 +10,8 @@
 #define TERM_X 22
 #define TERM_W 54
 #define TERM_INPUT_MAX (TERM_W - 8)
+#define KEY_UP 0x80
+#define KEY_DOWN 0x81
 
 static uint8_t selected;
 static uint8_t terminal_result;
@@ -112,14 +114,14 @@ static void draw_terminal(void){
 }
 static void draw_files(void){text(22,5,"Files",ATTR_STATUS);text(22,7,"NAME                 TYPE",ATTR_NORMAL);text(22,8,"README.MD             text",ATTR_NORMAL);text(22,9,"KERNEL.BIN            system",ATTR_NORMAL);text(22,10,"PROGRAMS/             directory",ATTR_NORMAL);text(22,12,"Read-only filesystem view",ATTR_NORMAL);text(22,13,"Press Q to return to the launcher.",ATTR_NORMAL);}
 static void draw_programs(void){text(22,5,"Programs",ATTR_STATUS);text(22,7,"BUILT-IN PROGRAMS",ATTR_NORMAL);text(22,8,"Terminal   interactive command view",ATTR_NORMAL);text(22,9,"Files      read-only filesystem view",ATTR_NORMAL);text(22,10,"Programs   application inventory",ATTR_NORMAL);text(22,11,"About      OS/runtime information",ATTR_NORMAL);text(22,13,"Press Q to return to the launcher.",ATTR_NORMAL);}
-static void draw_about(void){text(22,5,"About AsterOS",ATTR_STATUS);text(22,7,"32-bit x86 experimental operating system",ATTR_NORMAL);text(22,8,"GUI shell over the CCP/BDOS direction",ATTR_NORMAL);text(22,10,"Enter opens the selected app.",ATTR_NORMAL);text(22,11,"1-4 launches apps directly.",ATTR_NORMAL);text(22,12,"Q returns to the launcher.",ATTR_NORMAL);}
-static void draw_selected_app(void){fill(21,4,57,18,' ',ATTR_NORMAL);if(active_app<0){text(22,5,"Select an application",ATTR_STATUS);text(22,7,"Use W/S (or arrow keys) and press Enter.",ATTR_NORMAL);text(22,8,"Press 1-4 to launch an app directly.",ATTR_NORMAL);}else if(active_app==0)draw_terminal();else if(active_app==1)draw_files();else if(active_app==2)draw_programs();else draw_about();}
-void gui_draw(void){fill(0,0,WIDTH,HEIGHT,' ',ATTR_NORMAL);fill(0,0,WIDTH,1,' ',ATTR_TITLE);text(2,0,"AsterOS",ATTR_TITLE);text(68,0,"GUI Shell",ATTR_TITLE);border(1,2,18,19);text(3,3,"Applications",ATTR_PANEL);for(uint8_t i=0;i<4;i++)text(3,(uint8_t)(5+i*2),items[i],i==selected?ATTR_SELECT:ATTR_PANEL);border(20,2,59,19);text(22,3,"Welcome to AsterOS",ATTR_NORMAL);draw_selected_app();fill(0,23,WIDTH,2,' ',ATTR_STATUS);text(2,23,active_app<0?"Enter Open   W/S Navigate":"Q Launcher   Type commands   Enter",ATTR_STATUS);}
+static void draw_about(void){text(22,5,"About AsterOS",ATTR_STATUS);text(22,7,"32-bit x86 experimental operating system",ATTR_NORMAL);text(22,8,"GUI shell over the CCP/BDOS direction",ATTR_NORMAL);text(22,10,"Enter opens the selected app.",ATTR_NORMAL);text(22,11,"Arrow keys or W/S navigate.",ATTR_NORMAL);text(22,12,"1-4 launches apps directly.",ATTR_NORMAL);text(22,13,"Q returns to the launcher.",ATTR_NORMAL);}
+static void draw_selected_app(void){fill(21,4,57,18,' ',ATTR_NORMAL);if(active_app<0){text(22,5,"Select an application",ATTR_STATUS);text(22,7,"Use W/S or arrow keys and press Enter.",ATTR_NORMAL);text(22,8,"Press 1-4 to launch an app directly.",ATTR_NORMAL);}else if(active_app==0)draw_terminal();else if(active_app==1)draw_files();else if(active_app==2)draw_programs();else draw_about();}
+void gui_draw(void){fill(0,0,WIDTH,HEIGHT,' ',ATTR_NORMAL);fill(0,0,WIDTH,1,' ',ATTR_TITLE);text(2,0,"AsterOS",ATTR_TITLE);text(68,0,"GUI Shell",ATTR_TITLE);border(1,2,18,19);text(3,3,"Applications",ATTR_PANEL);for(uint8_t i=0;i<4;i++)text(3,(uint8_t)(5+i*2),items[i],i==selected?ATTR_SELECT:ATTR_PANEL);border(20,2,59,19);text(22,3,"Welcome to AsterOS",ATTR_NORMAL);draw_selected_app();fill(0,23,WIDTH,2,' ',ATTR_STATUS);text(2,23,active_app<0?"Enter Open   W/S/Arrows Navigate":"Q Launcher   Type commands   Enter",ATTR_STATUS);}
 void gui_init(void){selected=0;active_app=-1;terminal_result=TERM_READY;terminal_output[0]='\0';terminal_last[0]='\0';terminal_reset_input();gui_draw();}
 void gui_handle_key(char key){
     if(active_app<0){
-        if(key=='w'||key=='W'){if(selected==0)selected=3;else--selected;gui_draw();}
-        else if(key=='s'||key=='S'){selected=(uint8_t)((selected+1)%4);gui_draw();}
+        if((uint8_t)key==KEY_UP||key=='w'||key=='W'){if(selected==0)selected=3;else--selected;gui_draw();}
+        else if((uint8_t)key==KEY_DOWN||key=='s'||key=='S'){selected=(uint8_t)((selected+1)%4);gui_draw();}
         else if(key>='1'&&key<='4'){selected=(uint8_t)(key-'1');active_app=(int8_t)selected;terminal_result=TERM_READY;terminal_output[0]='\0';terminal_reset_input();gui_draw();}
         else if(key=='\r'||key=='\n'){active_app=(int8_t)selected;terminal_result=TERM_READY;terminal_output[0]='\0';terminal_reset_input();gui_draw();}
         return;
