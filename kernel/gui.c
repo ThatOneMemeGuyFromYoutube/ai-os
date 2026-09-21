@@ -58,7 +58,7 @@ static void terminal_execute(void){
         copy_text(terminal_output,command);
         terminal_result=TERM_ECHO;
     }
-    else if(text_equals(command,"menu")) {
+    else if(text_equals(command,"menu")||text_equals(command,"exit")) {
         active_app=-1;
         terminal_result=TERM_READY;
     }
@@ -70,13 +70,13 @@ static void draw_terminal_result(void){
     switch(terminal_result){
         case TERM_HELP:
             text(22,9,"help clear/cls apps/ls info/about ver pwd echo",ATTR_NORMAL);
-            text(22,10,"history menu",ATTR_NORMAL);
+            text(22,10,"history menu/exit",ATTR_NORMAL);
             text(22,11,"Commands ignore leading spaces.",ATTR_NORMAL);
             text(22,12,"echo accepts repeated spaces before text.",ATTR_NORMAL);
             text(22,13,"!! repeats the previous command.",ATTR_NORMAL);
             text(22,14,"history shows the previous command.",ATTR_NORMAL);
             text(22,15,"pwd shows the current filesystem path.",ATTR_NORMAL);
-            text(22,16,"menu returns to the application launcher.",ATTR_NORMAL);
+            text(22,16,"menu/exit returns to the application launcher.",ATTR_NORMAL);
             text(22,17,"Type a command and press Enter.",ATTR_NORMAL);
             break;
         case TERM_APPS:
