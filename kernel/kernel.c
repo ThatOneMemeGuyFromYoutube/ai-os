@@ -1,12 +1,24 @@
 #include <stdint.h>
 #include "gui.h"
 enum { SVC_CONSOLE = 1, SVC_FILES = 2, SVC_PROCESS = 3 };
+enum { KEY_UP = 0x80, KEY_DOWN = 0x81 };
 static uint8_t inb(uint16_t port) { uint8_t value; __asm__ volatile ("inb %1, %0" : "=a"(value) : "Nd"(port)); return value; }
 static char keyboard_getchar(void) {
     for (;;) {
         uint8_t scancode;
         if (!(inb(0x64) & 1)) continue;
         scancode = inb(0x60);
+        if (scancode == 0xE0) {
+            for (;;) {
+                if (!(inb(0x64) & 1)) continue;
+                scancode = inb(0x60);
+                if (scancode & 0x80) break;
+                if (scancode == 0x48) return (char)KEY_UP;
+                if (scancode == 0x50) return (char)KEY_DOWN;
+                break;
+            }
+            continue;
+        }
         if (scancode & 0x80) continue;
         switch (scancode) {
             case 0x1C: return '\r'; case 0x0E: return '\b'; case 0x39: return ' ';
