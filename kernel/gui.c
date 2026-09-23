@@ -43,6 +43,12 @@ static void terminal_execute(void){
         command=terminal_buffer;
         trim_leading_spaces(&command);
     }
+    if(text_equals(command,"history clear")){
+        terminal_last[0]='\0';
+        terminal_result=TERM_HISTORY;
+        terminal_reset_input();
+        return;
+    }
     if(*command)copy_text(terminal_last,command);
     if(text_equals(command,"help")) terminal_result=TERM_HELP;
     else if(text_equals(command,"clear")||text_equals(command,"cls")) terminal_result=TERM_READY;
@@ -71,15 +77,15 @@ static void draw_terminal_result(void){
     switch(terminal_result){
         case TERM_HELP:
             text(22,9,"help clear/cls apps/ls info/about ver uname pwd",ATTR_NORMAL);
-            text(22,10,"echo history menu/exit",ATTR_NORMAL);
+            text(22,10,"echo history/history clear menu/exit",ATTR_NORMAL);
             text(22,11,"Commands ignore leading spaces.",ATTR_NORMAL);
             text(22,12,"echo accepts repeated spaces before text.",ATTR_NORMAL);
             text(22,13,"!! repeats the previous command.",ATTR_NORMAL);
             text(22,14,"history shows the previous command.",ATTR_NORMAL);
-            text(22,15,"pwd shows the current filesystem path.",ATTR_NORMAL);
-            text(22,16,"uname shows the kernel architecture.",ATTR_NORMAL);
-            text(22,17,"menu/exit returns to the application launcher.",ATTR_NORMAL);
-            text(22,18,"Type a command and press Enter.",ATTR_NORMAL);
+            text(22,15,"history clear forgets the previous command.",ATTR_NORMAL);
+            text(22,16,"pwd shows the current filesystem path.",ATTR_NORMAL);
+            text(22,17,"uname shows the kernel architecture.",ATTR_NORMAL);
+            text(22,18,"menu/exit returns to the application launcher.",ATTR_NORMAL);
             break;
         case TERM_APPS:
             text(22,9,"Terminal  Files  Programs  About",ATTR_NORMAL);
