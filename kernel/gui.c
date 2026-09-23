@@ -22,7 +22,7 @@ static char terminal_output[TERM_INPUT_MAX + 1];
 static char terminal_last[TERM_INPUT_MAX + 1];
 static const char *items[] = {"Terminal", "Files", "Programs", "About"};
 
-enum { TERM_READY = 0, TERM_HELP, TERM_APPS, TERM_INFO, TERM_VER, TERM_ECHO, TERM_PWD, TERM_HISTORY, TERM_UNKNOWN };
+enum { TERM_READY = 0, TERM_HELP, TERM_APPS, TERM_INFO, TERM_VER, TERM_ECHO, TERM_PWD, TERM_HISTORY, TERM_UNAME, TERM_UNKNOWN };
 
 static void cell(uint8_t x,uint8_t y,char c,uint8_t a){if(x<WIDTH&&y<HEIGHT)VGA[(uint16_t)y*WIDTH+x]=((uint16_t)a<<8)|(uint8_t)c;}
 static void fill(uint8_t x,uint8_t y,uint8_t w,uint8_t h,char c,uint8_t a){for(uint8_t r=0;r<h;r++)for(uint8_t col=0;col<w;col++)cell((uint8_t)(x+col),(uint8_t)(y+r),c,a);}
@@ -49,6 +49,7 @@ static void terminal_execute(void){
     else if(text_equals(command,"apps")||text_equals(command,"ls")) terminal_result=TERM_APPS;
     else if(text_equals(command,"info")||text_equals(command,"about")) terminal_result=TERM_INFO;
     else if(text_equals(command,"ver")) terminal_result=TERM_VER;
+    else if(text_equals(command,"uname")) terminal_result=TERM_UNAME;
     else if(text_equals(command,"pwd")) terminal_result=TERM_PWD;
     else if(text_equals(command,"history")) terminal_result=TERM_HISTORY;
     else if(text_equals(command,"echo")) terminal_result=TERM_ECHO;
@@ -69,15 +70,16 @@ static void terminal_execute(void){
 static void draw_terminal_result(void){
     switch(terminal_result){
         case TERM_HELP:
-            text(22,9,"help clear/cls apps/ls info/about ver pwd echo",ATTR_NORMAL);
-            text(22,10,"history menu/exit",ATTR_NORMAL);
+            text(22,9,"help clear/cls apps/ls info/about ver uname pwd",ATTR_NORMAL);
+            text(22,10,"echo history menu/exit",ATTR_NORMAL);
             text(22,11,"Commands ignore leading spaces.",ATTR_NORMAL);
             text(22,12,"echo accepts repeated spaces before text.",ATTR_NORMAL);
             text(22,13,"!! repeats the previous command.",ATTR_NORMAL);
             text(22,14,"history shows the previous command.",ATTR_NORMAL);
             text(22,15,"pwd shows the current filesystem path.",ATTR_NORMAL);
-            text(22,16,"menu/exit returns to the application launcher.",ATTR_NORMAL);
-            text(22,17,"Type a command and press Enter.",ATTR_NORMAL);
+            text(22,16,"uname shows the kernel architecture.",ATTR_NORMAL);
+            text(22,17,"menu/exit returns to the application launcher.",ATTR_NORMAL);
+            text(22,18,"Type a command and press Enter.",ATTR_NORMAL);
             break;
         case TERM_APPS:
             text(22,9,"Terminal  Files  Programs  About",ATTR_NORMAL);
@@ -88,6 +90,9 @@ static void draw_terminal_result(void){
             break;
         case TERM_VER:
             text(22,9,"AsterOS 0.1",ATTR_NORMAL);
+            break;
+        case TERM_UNAME:
+            text(22,9,"AsterOS i386 protected-mode kernel",ATTR_NORMAL);
             break;
         case TERM_ECHO:
             text_n(22,9,terminal_output,ATTR_NORMAL,TERM_INPUT_MAX);
