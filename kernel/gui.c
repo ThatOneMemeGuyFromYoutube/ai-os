@@ -12,6 +12,7 @@
 #define TERM_INPUT_MAX (TERM_W - 8)
 #define KEY_UP 0x80
 #define KEY_DOWN 0x81
+#define KEY_TAB 0x09
 
 static uint8_t selected;
 static uint8_t terminal_result;
@@ -145,7 +146,7 @@ static void draw_selected_app(void){
         else draw_about();
     }
 }
-void gui_draw(void){fill(0,0,WIDTH,HEIGHT,' ',ATTR_NORMAL);fill(0,0,WIDTH,1,' ',ATTR_TITLE);text(2,0,"AsterOS",ATTR_TITLE);text(68,0,"GUI Shell",ATTR_TITLE);border(1,2,18,19);text(3,3,"Applications",ATTR_PANEL);for(uint8_t i=0;i<4;i++)text(3,(uint8_t)(5+i*2),items[i],i==selected?ATTR_SELECT:ATTR_PANEL);border(20,2,59,19);text(22,3,"Welcome to AsterOS",ATTR_NORMAL);draw_selected_app();fill(0,23,WIDTH,2,' ',ATTR_STATUS);text(2,23,active_app<0?"Enter Open   W/S/Arrows Navigate":"Q/X/Esc Close   Type commands   Enter",ATTR_STATUS);}
+void gui_draw(void){fill(0,0,WIDTH,HEIGHT,' ',ATTR_NORMAL);fill(0,0,WIDTH,1,' ',ATTR_TITLE);text(2,0,"AsterOS",ATTR_TITLE);text(68,0,"GUI Shell",ATTR_TITLE);border(1,2,18,19);text(3,3,"Applications",ATTR_PANEL);for(uint8_t i=0;i<4;i++)text(3,(uint8_t)(5+i*2),items[i],i==selected?ATTR_SELECT:ATTR_PANEL);border(20,2,59,19);text(22,3,"Welcome to AsterOS",ATTR_NORMAL);draw_selected_app();fill(0,23,WIDTH,2,' ',ATTR_STATUS);text(2,23,active_app<0?"Enter Open   W/S/Arrows Navigate":"Tab Switch   Q/X/Esc Close   Type commands   Enter",ATTR_STATUS);}
 void gui_init(void){selected=0;active_app=-1;terminal_result=TERM_READY;terminal_output[0]='\0';terminal_last[0]='\0';terminal_reset_input();gui_draw();}
 void gui_handle_key(char key){
     if(active_app<0){
@@ -162,6 +163,7 @@ void gui_handle_key(char key){
         else if(key=='\r'||key=='\n'){active_app=(int8_t)selected;terminal_result=TERM_READY;terminal_output[0]='\0';terminal_reset_input();gui_draw();}
         return;
     }
+    if(key==KEY_TAB){selected=(uint8_t)((selected+1)%4);active_app=(int8_t)selected;terminal_result=TERM_READY;terminal_output[0]='\0';terminal_reset_input();gui_draw();return;}
     if(key=='q'||key=='Q'||key=='x'||key=='X'||key==27){active_app=-1;terminal_reset_input();gui_draw();return;}
     if(active_app!=0)return;
     if(key=='\b'){
