@@ -7,6 +7,10 @@
 #define ATTR_PANEL 0x70
 #define ATTR_STATUS 0x1E
 #define ATTR_SELECT 0x71
+#define ATTR_DESKTOP 0x1B
+#define ATTR_ICON 0x1F
+#define ATTR_TASK 0x70
+#define ATTR_TASK_ACTIVE 0x71
 #define TERM_X 22
 #define TERM_W 54
 #define TERM_INPUT_MAX (TERM_W - 8)
@@ -127,6 +131,31 @@ static void draw_terminal(void){
 static void draw_files(void){text(22,5,"Files",ATTR_STATUS);text(22,7,"NAME                 TYPE",ATTR_NORMAL);text(22,8,"README.MD             text",ATTR_NORMAL);text(22,9,"KERNEL.BIN            system",ATTR_NORMAL);text(22,10,"PROGRAMS/             directory",ATTR_NORMAL);text(22,12,"Read-only filesystem view",ATTR_NORMAL);text(22,13,"Press Q, X or Esc to close this window.",ATTR_NORMAL);}
 static void draw_programs(void){text(22,5,"Programs",ATTR_STATUS);text(22,7,"BUILT-IN PROGRAMS",ATTR_NORMAL);text(22,8,"Terminal   interactive command view",ATTR_NORMAL);text(22,9,"Files      read-only filesystem view",ATTR_NORMAL);text(22,10,"Programs   application inventory",ATTR_NORMAL);text(22,11,"About      OS/runtime information",ATTR_NORMAL);text(22,13,"Press Q, X or Esc to close this window.",ATTR_NORMAL);}
 static void draw_about(void){text(22,5,"About AsterOS",ATTR_STATUS);text(22,7,"32-bit x86 experimental operating system",ATTR_NORMAL);text(22,8,"GUI shell over the CCP/BDOS direction",ATTR_NORMAL);text(22,10,"Enter opens the selected app.",ATTR_NORMAL);text(22,11,"Arrow keys or W/S navigate.",ATTR_NORMAL);text(22,12,"1-4 or T/F/P/A launches apps directly.",ATTR_NORMAL);text(22,13,"Q, X or Esc closes the active window.",ATTR_NORMAL);}
+static void draw_desktop_surface(void){
+    fill(19,2,61,21,' ',ATTR_DESKTOP);
+    text(23,5,"ASTEROS",ATTR_TITLE);
+    text(23,7,"This computer",ATTR_ICON);
+    text(23,8,"[PC]",ATTR_ICON);
+    text(33,7,"Documents",ATTR_ICON);
+    text(33,8,"[DIR]",ATTR_ICON);
+    text(43,7,"Programs",ATTR_ICON);
+    text(43,8,"[APP]",ATTR_ICON);
+    text(53,7,"Recycle",ATTR_ICON);
+    text(53,8,"[BIN]",ATTR_ICON);
+    text(23,17,"AsterOS desktop",ATTR_TITLE);
+    text(23,18,"VGA text-mode workspace",ATTR_NORMAL);
+}
+static void draw_taskbar(void){
+    fill(0,23,WIDTH,2, ' ', ATTR_TASK);
+    text(1,23,"[ START ]",ATTR_TASK_ACTIVE);
+    text(12,23,"Terminal",active_app==0?ATTR_TASK_ACTIVE:ATTR_TASK);
+    text(22,23,"Files",active_app==1?ATTR_TASK_ACTIVE:ATTR_TASK);
+    text(29,23,"Programs",active_app==2?ATTR_TASK_ACTIVE:ATTR_TASK);
+    text(40,23,"About",active_app==3?ATTR_TASK_ACTIVE:ATTR_TASK);
+    text(70,23,"AsterOS",ATTR_TASK_ACTIVE);
+    text(2,24,active_app<0?"Desktop ready":"Window active",ATTR_TASK);
+    text(67,24,"i386 PM",ATTR_TASK);
+}
 static void draw_selected_app(void){
     fill(21,4,57,18,' ',ATTR_NORMAL);
     if(active_app<0){
@@ -146,7 +175,7 @@ static void draw_selected_app(void){
         else draw_about();
     }
 }
-void gui_draw(void){fill(0,0,WIDTH,HEIGHT,' ',ATTR_NORMAL);fill(0,0,WIDTH,1,' ',ATTR_TITLE);text(2,0,"AsterOS",ATTR_TITLE);text(68,0,"GUI Shell",ATTR_TITLE);border(1,2,18,19);text(3,3,"Applications",ATTR_PANEL);for(uint8_t i=0;i<4;i++)text(3,(uint8_t)(5+i*2),items[i],i==selected?ATTR_SELECT:ATTR_PANEL);border(20,2,59,19);text(22,3,"Welcome to AsterOS",ATTR_NORMAL);draw_selected_app();fill(0,23,WIDTH,2,' ',ATTR_STATUS);text(2,23,active_app<0?"Enter Open   W/S/Arrows Navigate":"Tab Switch   Q/X/Esc Close   Type commands   Enter",ATTR_STATUS);}
+void gui_draw(void){fill(0,0,WIDTH,HEIGHT,' ',ATTR_NORMAL);fill(0,0,WIDTH,1,' ',ATTR_TITLE);text(2,0,"AsterOS",ATTR_TITLE);text(68,0,"Desktop",ATTR_TITLE);border(1,2,18,19);text(3,3,"Applications",ATTR_PANEL);for(uint8_t i=0;i<4;i++)text(3,(uint8_t)(5+i*2),items[i],i==selected?ATTR_SELECT:ATTR_PANEL);draw_desktop_surface();border(20,2,59,19);text(22,3,"Welcome to AsterOS",ATTR_NORMAL);draw_selected_app();draw_taskbar();}
 void gui_init(void){selected=0;active_app=-1;terminal_result=TERM_READY;terminal_output[0]='\0';terminal_last[0]='\0';terminal_reset_input();gui_draw();}
 void gui_handle_key(char key){
     if(active_app<0){
