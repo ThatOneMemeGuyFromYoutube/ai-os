@@ -11,6 +11,7 @@
 #define ATTR_ICON 0x1F
 #define ATTR_TASK 0x70
 #define ATTR_TASK_ACTIVE 0x71
+#define ATTR_CURSOR 0x4F
 #define TERM_X 22
 #define TERM_W 54
 #define TERM_INPUT_MAX (TERM_W - 8)
@@ -22,6 +23,10 @@ static uint8_t selected;
 static uint8_t terminal_result;
 static uint8_t terminal_length;
 static int8_t active_app;
+static int16_t mouse_x;
+static int16_t mouse_y;
+static uint8_t cursor_active;
+static uint16_t cursor_saved;
 static char terminal_buffer[TERM_INPUT_MAX + 1];
 static char terminal_output[TERM_INPUT_MAX + 1];
 static char terminal_last[TERM_INPUT_MAX + 1];
@@ -30,6 +35,8 @@ static const char *items[] = {"Terminal", "Files", "Programs", "About"};
 enum { TERM_READY = 0, TERM_HELP, TERM_APPS, TERM_INFO, TERM_VER, TERM_ECHO, TERM_PWD, TERM_HISTORY, TERM_UNAME, TERM_UNKNOWN };
 
 static void cell(uint8_t x,uint8_t y,char c,uint8_t a){if(x<WIDTH&&y<HEIGHT)VGA[(uint16_t)y*WIDTH+x]=((uint16_t)a<<8)|(uint8_t)c;}
+static void cursor_clear(void){if(cursor_active){VGA[(uint16_t)mouse_y*WIDTH+(uint16_t)mouse_x]=cursor_saved;cursor_active=0;}}
+static void cursor_draw(void){if(mouse_x<WIDTH&&mouse_y<HEIGHT){uint16_t index=(uint16_t)mouse_y*WIDTH+(uint16_t)mouse_x;cursor_saved=VGA[index];VGA[index]=((uint16_t)ATTR_CURSOR<<8)|(uint8_t)'*';cursor_active=1;}}
 static void fill(uint8_t x,uint8_t y,uint8_t w,uint8_t h,char c,uint8_t a){for(uint8_t r=0;r<h;r++)for(uint8_t col=0;col<w;col++)cell((uint8_t)(x+col),(uint8_t)(y+r),c,a);}
 static void text(uint8_t x,uint8_t y,const char*s,uint8_t a){while(*s&&x<WIDTH)cell(x++,y,*s++,a);}
 static void text_n(uint8_t x,uint8_t y,const char*s,uint8_t a,uint8_t n){while(*s&&n--&&x<WIDTH)cell(x++,y,*s++,a);}
@@ -145,6 +152,27 @@ static void draw_desktop_surface(void){
     text(23,17,"AsterOS desktop",ATTR_TITLE);
     text(23,18,"VGA text-mode workspace",ATTR_NORMAL);
 }
+static int8_t hit_test(uint8_t x,uint8_t y){
+    if(y==23){
+        if(x>=1&&x<=9)return -1;
+        if(x>=12&&x<=19)return 0;
+        if(x>=22&&x<=27)return 1;
+        if(x>=29&&x<=37)return 2;
+        if(x>=40&&x<=44)return 3;
+    }
+    if(active_app>=0&&y==4&&x>=72&&x<=76)return -2;
+    if(active_app<0&&x>=2&&x<=17){
+        if(y>=5&&y<=6)return 0;
+        if(y>=7&&y<=8)return 1;
+        if(y>=9&&y<=10)return 2;
+        if(y>=11&&y<=12)return 3;
+    }
+    if(x>=23&&x<=30&&y>=7&&y<=9)return 0;
+    if(x>=33&&x<=40&&y>=7&&y<=9)return 1;
+    if(x>=43&&x<=50&&y>=7&&y<=9)return 2;
+    if(x>=53&&x<=60&&y>=7&&y<=9)return 1;
+    return -3;
+}
 static void draw_taskbar(void){
     fill(0,23,WIDTH,2, ' ', ATTR_TASK);
     text(1,23,"[ START ]",ATTR_TASK_ACTIVE);
@@ -175,8 +203,8 @@ static void draw_selected_app(void){
         else draw_about();
     }
 }
-void gui_draw(void){fill(0,0,WIDTH,HEIGHT,' ',ATTR_NORMAL);fill(0,0,WIDTH,1,' ',ATTR_TITLE);text(2,0,"AsterOS",ATTR_TITLE);text(68,0,"Desktop",ATTR_TITLE);border(1,2,18,19);text(3,3,"Applications",ATTR_PANEL);for(uint8_t i=0;i<4;i++)text(3,(uint8_t)(5+i*2),items[i],i==selected?ATTR_SELECT:ATTR_PANEL);draw_desktop_surface();border(20,2,59,19);text(22,3,"Welcome to AsterOS",ATTR_NORMAL);draw_selected_app();draw_taskbar();}
-void gui_init(void){selected=0;active_app=-1;terminal_result=TERM_READY;terminal_output[0]='\0';terminal_last[0]='\0';terminal_reset_input();gui_draw();}
+void gui_draw(void){cursor_active=0;fill(0,0,WIDTH,HEIGHT,' ',ATTR_NORMAL);fill(0,0,WIDTH,1,' ',ATTR_TITLE);text(2,0,"AsterOS",ATTR_TITLE);text(68,0,"Desktop",ATTR_TITLE);border(1,2,18,19);text(3,3,"Applications",ATTR_PANEL);for(uint8_t i=0;i<4;i++)text(3,(uint8_t)(5+i*2),items[i],i==selected?ATTR_SELECT:ATTR_PANEL);draw_desktop_surface();border(20,2,59,19);text(22,3,"Welcome to AsterOS",ATTR_NORMAL);draw_selected_app();draw_taskbar();}
+void gui_init(void){selected=0;active_app=-1;mouse_x=39;mouse_y=11;cursor_active=0;terminal_result=TERM_READY;terminal_output[0]='\0';terminal_last[0]='\0';terminal_reset_input();gui_draw();}
 void gui_handle_key(char key){
     if(active_app<0){
         if((uint8_t)key==KEY_UP||key=='w'||key=='W'){if(selected==0)selected=3;else--selected;gui_draw();}
@@ -202,4 +230,48 @@ void gui_handle_key(char key){
     }else if(key>=32&&key<=126){
         if(terminal_length<TERM_INPUT_MAX){terminal_buffer[terminal_length++]=key;terminal_buffer[terminal_length]='\0';gui_draw();}
     }
+}
+
+
+void gui_handle_mouse(int8_t dx,int8_t dy,uint8_t buttons){
+    uint8_t cell_x;
+    uint8_t cell_y;
+    int8_t target;
+    uint8_t redraw=0;
+    uint8_t pressed=(uint8_t)(buttons&1);
+    static uint8_t previous_buttons;
+    cursor_clear();
+    mouse_x+=(int16_t)dx;
+    mouse_y-=(int16_t)dy;
+    if(mouse_x<0)mouse_x=0;
+    if(mouse_y<0)mouse_y=0;
+    if(mouse_x>(WIDTH*4)-1)mouse_x=(WIDTH*4)-1;
+    if(mouse_y>(HEIGHT*4)-1)mouse_y=(HEIGHT*4)-1;
+    cell_x=(uint8_t)(mouse_x/4);
+    cell_y=(uint8_t)(mouse_y/4);
+    target=hit_test(cell_x,cell_y);
+    if(active_app<0&&target>=0&&target<4&&selected!=(uint8_t)target){
+        selected=(uint8_t)target;
+        redraw=1;
+    }
+    if(pressed&&!previous_buttons){
+        if(target==-1){
+            active_app=-1;
+            redraw=1;
+        }else if(target==-2){
+            active_app=-1;
+            terminal_reset_input();
+            redraw=1;
+        }else if(target>=0&&target<4){
+            selected=(uint8_t)target;
+            active_app=target;
+            terminal_result=TERM_READY;
+            terminal_output[0]='\\0';
+            terminal_reset_input();
+            redraw=1;
+        }
+    }
+    previous_buttons=pressed;
+    if(redraw)gui_draw();
+    else cursor_draw();
 }
