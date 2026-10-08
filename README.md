@@ -23,7 +23,7 @@ make run
 
 `make program` demonstrates program creation without requiring a cross-compiler: it uses the small Python-based TinyLang compiler to create `build/hello.com`.
 
-The current milestone boots into the lightweight GUI shell. Use **W/S** to navigate and **Enter** to select an application. The GUI uses the existing VGA text buffer at `0xB8000`, keeping memory and code overhead small.
+The current milestone boots into the lightweight GUI shell. Use **W/S** or the arrow keys to navigate, **Enter** to select an application, **Tab** to cycle applications while a window is open, and **Esc** to close the active window. These shortcuts are handled by the existing PS/2 keyboard path and VGA text-mode GUI.
 
 ## Browser demo
 
@@ -66,12 +66,14 @@ The language supports a deliberately small set of 32-bit x86 operations (`mov`, 
 
 ## Development checklist
 
-This is the planned feature schedule for the upcoming development cycles. Dates use the project's current weekly planning windows.
+The schedule has been reset on **October 8, 2026** to recover the development time lost to repository-write access issues. Keep this schedule as the live planning source; the dates are targets, not evidence of completion. Do not mark a milestone complete just because its window has passed. Verify the implementation and tests first, then move to the next scheduled window. All work must continue to prioritize the actual repository state and the 32-bit i386/protected-mode target.
 
-- [ ] **September 13–20 — Command line:** make the CCP/terminal genuinely useful with practical commands, stronger parsing, filesystem interaction, program launching, system information, and a smoother CLI workflow.
-- [ ] **September 21–28 — Window system & desktop:** build a traditional user-friendly window system and desktop environment on top of the existing AsterOS GUI foundation.
-- [ ] **September 29–October 6 — IDE:** create an integrated development environment and supporting developer tools for writing, building, and running AsterOS programs.
-- [ ] **October 7–14 — Networking:** implement networking capabilities, starting with a sensible hardware-independent foundation and progressing toward usable network features.
-- [ ] **October 15–29 — Windows 98-like subsystem:** build a substantial Windows-98-inspired compatibility/user-environment subsystem, with two development windows reserved because of its larger scope.
+- [ ] **October 8–18 — Command line and input foundations:** make the current terminal and keyboard workflow more reliable, including Escape/Tab mappings already expected by the GUI; improve command parsing and make clear which terminal/files/program views are real services versus current shell presentation.
+- [ ] **October 19–November 1 — Window system and desktop:** build on the current VGA desktop with consistent focus, open/close, taskbar, mouse, and keyboard behavior. Keep the GUI layered above the kernel and avoid introducing a larger graphics stack without a demonstrated need.
+- [ ] **November 2–15 — IDE and developer tooling:** connect TinyLang compilation, useful diagnostics, examples, and a clear edit/build/run workflow. Do not call native/self-hosting support complete until the compiler actually runs as an AsterOS program.
+- [ ] **November 16–29 — Networking foundation:** trace the existing v86 NIC selector into a practical guest-side plan, establish hardware-independent network interfaces where they fit the current code, and progress toward testable network features without claiming that selecting an emulated NIC provides a working network stack.
+- [ ] **November 30–December 13 — Windows-98-inspired subsystem, phase I:** design and implement the first substantial compatibility/user-environment layer on top of the desktop and existing service direction, prioritizing usable shell and application conventions.
+- [ ] **December 14–27 — Windows-98-inspired subsystem, phase II:** integrate real program/filesystem paths where available, round out user-facing utilities, and add cross-subsystem validation. Keep the work incremental rather than building a disconnected mock subsystem.
+- [ ] **December 28–31 — Integration and stabilization:** review remaining milestone gaps, run i386 builds/tests/ISO/QEMU smoke tests, resolve regressions, refresh project status, and publish a verified release.
 
-The checklist should be updated as milestones are completed, while individual changes should continue to follow the repository roadmap and the requirement that AsterOS itself—not just its build infrastructure—gets more capable.
+The active window always takes priority. If source inspection uncovers a real dependency, a more efficient implementation method, or updated GitHub Actions requirements, adjust the future schedule and add a concise engineering note when useful. Continue to improve the OS itself rather than allowing CI maintenance or documentation-only work to displace the planned feature work.

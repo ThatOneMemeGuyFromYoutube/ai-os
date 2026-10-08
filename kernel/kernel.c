@@ -39,6 +39,8 @@ static uint8_t keyboard_poll(char *key) {
         return 0;
     }
     switch(scancode) {
+        case 0x01:*key=27;return 1; /* Escape */
+        case 0x0F:*key='\t';return 1; /* Tab */
         case 0x1C:*key='\r';return 1; case 0x0E:*key='\b';return 1; case 0x39:*key=' ';return 1;
         case 0x10:*key='q';return 1; case 0x11:*key='w';return 1; case 0x12:*key='e';return 1; case 0x13:*key='r';return 1;
         case 0x14:*key='t';return 1; case 0x15:*key='y';return 1; case 0x16:*key='u';return 1; case 0x17:*key='i';return 1;
