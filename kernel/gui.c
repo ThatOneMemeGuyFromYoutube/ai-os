@@ -304,8 +304,8 @@ void gui_handle_mouse(int8_t dx,int8_t dy,uint8_t buttons){
     uint8_t pressed=(uint8_t)(buttons&1);
     static uint8_t previous_buttons;
     cursor_clear();
-    mouse_x+=(int16_t)dx;
-    mouse_y-=(int16_t)dy;
+    mouse_x+=(int16_t)dx*(int16_t)cursor_speed;
+    mouse_y-=(int16_t)dy*(int16_t)cursor_speed;
     if(mouse_x<0)mouse_x=0;
     if(mouse_y<0)mouse_y=0;
     if(mouse_x>(WIDTH*4)-1)mouse_x=(WIDTH*4)-1;
