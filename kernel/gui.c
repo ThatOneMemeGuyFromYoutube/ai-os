@@ -253,7 +253,8 @@ static void draw_selected_app(void){
         if(active_app==0)draw_terminal();
         else if(active_app==1)draw_files();
         else if(active_app==2)draw_programs();
-        else draw_about();
+        else if(active_app==3)draw_about();
+        else draw_cursor_settings();
     }
 }
 void gui_draw(void){cursor_clear();fill(0,0,WIDTH,HEIGHT,' ',ATTR_NORMAL);fill(0,0,WIDTH,1,' ',ATTR_TITLE);text(2,0,"AsterOS",ATTR_TITLE);text(68,0,"Desktop",ATTR_TITLE);border(1,2,18,19);text(3,3,"Applications",ATTR_PANEL);for(uint8_t i=0;i<5;i++)text(3,(uint8_t)(5+i*2),items[i],i==selected?ATTR_SELECT:ATTR_PANEL);draw_desktop_surface();border(20,2,59,19);text(22,3,"Welcome to AsterOS",ATTR_NORMAL);draw_selected_app();draw_taskbar();cursor_draw();}
