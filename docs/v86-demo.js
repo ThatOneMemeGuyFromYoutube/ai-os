@@ -227,10 +227,11 @@
     });
   }
 
-  screen.addEventListener("click", function () {
-    // Use the same capture path as the toolbar button. v86 listens for mouse
-    // down/up events at window level, so hit-testing the emulator canvas itself
-    // is unnecessary; CSS makes the backing canvas transparent to hit-testing.
+  screen.addEventListener("pointerdown", function (event) {
+    // Capture on the press gesture, before the browser synthesizes click.
+    // Keep this event's target on v86's framebuffer canvas so v86's
+    // window-level mouse handlers route the press into the guest.
+    if (event.button !== 0) return;
     screen.focus();
     captureMouse();
   });

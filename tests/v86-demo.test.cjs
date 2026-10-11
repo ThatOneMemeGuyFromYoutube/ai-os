@@ -11,21 +11,27 @@ const demoSource = fs.readFileSync(path.join(root, "docs", "v86-demo.js"), "utf8
 const demoCss = fs.readFileSync(path.join(root, "docs", "v86-demo.css"), "utf8");
 
 class ElementStub {
-  constructor(id) {
+  constructor(id, parentNode = null, isCanvas = false) {
     this.id = id;
+    this.parentNode = parentNode;
     this.listeners = Object.create(null);
     this.disabled = false;
     this.textContent = "";
     this.value = id === "network_device" ? "ne2k" : "";
     this.clientWidth = 480;
     this.style = {};
-    this.canvas = { width: 720, height: 400 };
+    this.width = isCanvas ? 720 : undefined;
+    this.height = isCanvas ? 400 : undefined;
+    this.canvas = isCanvas ? null : new ElementStub("canvas", this, true);
   }
   addEventListener(type, callback) {
     (this.listeners[type] ||= []).push(callback);
   }
   dispatch(type, event = {}) {
-    for (const callback of this.listeners[type] || []) callback(event);
+    const dispatchedEvent = { ...event, type, target: event.target || this };
+    for (let current = this; current; current = current.parentNode) {
+      for (const callback of current.listeners[type] || []) callback(dispatchedEvent);
+    }
   }
   focus() {}
   querySelector(selector) { return selector === "canvas" ? this.canvas : null; }
@@ -155,18 +161,25 @@ test("canvas presentation stays within the demo viewport without distorting aspe
   assert.match(demoCss, /\.screen\s*>\s*canvas\s*\{[^}]*height:\s*auto\s*!important/s);
   assert.match(demoCss, /\.screen:fullscreen\s*\{[^}]*width:\s*100vw/s);
   assert.match(demoCss, /image-rendering:\s*pixelated/);
-  assert.match(demoCss, /\.screen\s*>\s*canvas\s*\{[^}]*pointer-events:\s*none/s,
-    "backing canvas must not intercept pointer targets; v86 receives mouse events at window level");
+  assert.match(demoCss, /\.screen\s*>\s*canvas\s*\{[^}]*pointer-events:\s*auto/s,
+    "the VM framebuffer canvas must be the actual pointer target");
+  assert.match(demoCss, /\.screen:focus-visible\s*\{[^}]*box-shadow:\s*inset 0 0 0 2px #89a8ff/s,
+    "keep the browser focus highlight as a useful signal");
 });
 
 
-test("screen click and Capture mouse use the same v86 pointer-lock path", async () => {
+test("pointerdown on the VM canvas starts capture before click synthesis", async () => {
   const { elements, instances, documentStub } = createDemo();
   const emulator = instances[0];
   emulator.emit("emulator-ready");
 
-  elements.screen_container.dispatch("click");
+  const targets = [];
+  elements.screen_container.addEventListener("pointerdown", (event) => targets.push(event.target));
+  elements.screen_container.canvas.dispatch("pointerdown", { button: 0 });
   await tick();
+
+  assert.equal(targets[0], elements.screen_container.canvas,
+    "the original canvas target must bubble to the emulator container");
   assert.deepEqual(emulator.calls, [["mouse_set_enabled", true], "lock_mouse"]);
   assert.equal(documentStub.pointerLockElement, documentStub.body);
   assert.equal(elements.mouse.textContent, "Release mouse");
@@ -175,6 +188,19 @@ test("screen click and Capture mouse use the same v86 pointer-lock path", async 
   elements.mouse.dispatch("click");
   assert.equal(documentStub.pointerLockElement, null);
   assert.equal(elements.mouse.textContent, "Capture mouse");
+});
+
+test("the VM canvas receives pointer events and right-click does not steal the pointer", async () => {
+  const { elements, instances, documentStub } = createDemo();
+  instances[0].emit("emulator-ready");
+  const targets = [];
+  elements.screen_container.addEventListener("pointerdown", (event) => targets.push(event.target));
+
+  elements.screen_container.canvas.dispatch("pointerdown", { button: 2 });
+
+  assert.equal(targets[0], elements.screen_container.canvas);
+  assert.equal(documentStub.pointerLockElement, null);
+  assert.deepEqual(instances[0].calls, []);
 });
 
 test("toolbar Capture mouse enables guest input before acquiring pointer lock", async () => {
