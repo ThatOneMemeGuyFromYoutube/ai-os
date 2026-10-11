@@ -53,12 +53,31 @@
     else setStatus(running ? runningMessage() + " · mouse released" : "AsterOS paused");
   }
 
-  function captureMouse() {
-    if (!emulator || !emulatorReady || failed || mouseLocked) return;
+  function isPointerLocked() {
+    // v86's lock_mouse() currently requests pointer lock on document.body,
+    // not on the screen container. Accept the actual API target.
+    return Boolean(document.pointerLockElement);
+  }
+
+  async function captureMouse() {
+    if (!emulator || !emulatorReady || failed || transitioning) return;
+    if (isPointerLocked()) {
+      setMouseState(true);
+      return;
+    }
     try {
-      emulator.lock_mouse();
       screen.focus();
-      setStatus("Requesting mouse capture · press Esc to release");
+      // Match v86's own Lock mouse button: make sure emulator input has not
+      // been disabled before requesting pointer lock.
+      if (typeof emulator.mouse_set_enabled === "function") {
+        emulator.mouse_set_enabled(true);
+      }
+      // lock_mouse() is asynchronous in current v86. Await it so rejected
+      // browser pointer-lock requests are visible instead of becoming unhandled.
+      await emulator.lock_mouse();
+      if (!isPointerLocked()) {
+        setStatus("Requesting mouse capture · press Esc to release");
+      }
     } catch (error) {
       setStatus("Unable to capture mouse: " + error.message);
       console.error(error);
@@ -199,8 +218,8 @@
 
   if (mouseButton) {
     mouseButton.addEventListener("click", function () {
-      if (!emulator) return;
-      if (mouseLocked) {
+      if (!emulator || !emulatorReady || transitioning) return;
+      if (mouseLocked || isPointerLocked()) {
         if (document.exitPointerLock) document.exitPointerLock();
       } else {
         captureMouse();
@@ -209,12 +228,15 @@
   }
 
   screen.addEventListener("click", function () {
+    // Use the same capture path as the toolbar button. v86 listens for mouse
+    // down/up events at window level, so hit-testing the emulator canvas itself
+    // is unnecessary; CSS makes the backing canvas transparent to hit-testing.
     screen.focus();
     captureMouse();
   });
 
   document.addEventListener("pointerlockchange", function () {
-    setMouseState(document.pointerLockElement === screen);
+    setMouseState(isPointerLocked());
   });
 
   screen.addEventListener("contextmenu", function (event) { event.preventDefault(); });

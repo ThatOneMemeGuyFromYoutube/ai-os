@@ -39,6 +39,7 @@ function createDemo({ api = "modern" } = {}) {
   const documentListeners = Object.create(null);
   const documentStub = {
     pointerLockElement: null,
+    body: new ElementStub("body"),
     getElementById: (id) => elements[id] || null,
     addEventListener(type, callback) {
       (documentListeners[type] ||= []).push(callback);
@@ -65,7 +66,12 @@ function createDemo({ api = "modern" } = {}) {
     async stop() { this.calls.push("stop"); this.emit("emulator-stopped"); }
     async run() { this.calls.push("run"); this.emit("emulator-started"); }
     async destroy() { this.calls.push("destroy"); }
-    lock_mouse() { this.calls.push("lock_mouse"); }
+    async lock_mouse() {
+      this.calls.push("lock_mouse");
+      documentStub.pointerLockElement = documentStub.body; // current v86 locks body
+      for (const callback of documentListeners.pointerlockchange || []) callback();
+    }
+    mouse_set_enabled(enabled) { this.calls.push(["mouse_set_enabled", enabled]); }
     screen_go_fullscreen() { this.calls.push("fullscreen"); }
   }
   const windowStub = {};
@@ -149,4 +155,36 @@ test("canvas presentation stays within the demo viewport without distorting aspe
   assert.match(demoCss, /\.screen\s*>\s*canvas\s*\{[^}]*height:\s*auto\s*!important/s);
   assert.match(demoCss, /\.screen:fullscreen\s*\{[^}]*width:\s*100vw/s);
   assert.match(demoCss, /image-rendering:\s*pixelated/);
+  assert.match(demoCss, /\.screen\s*>\s*canvas\s*\{[^}]*pointer-events:\s*none/s,
+    "backing canvas must not intercept pointer targets; v86 receives mouse events at window level");
+});
+
+
+test("screen click and Capture mouse use the same v86 pointer-lock path", async () => {
+  const { elements, instances, documentStub } = createDemo();
+  const emulator = instances[0];
+  emulator.emit("emulator-ready");
+
+  elements.screen_container.dispatch("click");
+  await tick();
+  assert.deepEqual(emulator.calls, [["mouse_set_enabled", true], "lock_mouse"]);
+  assert.equal(documentStub.pointerLockElement, documentStub.body);
+  assert.equal(elements.mouse.textContent, "Release mouse");
+
+  // v86 locks document.body, not #screen_container; UI must still recognize it.
+  elements.mouse.dispatch("click");
+  assert.equal(documentStub.pointerLockElement, null);
+  assert.equal(elements.mouse.textContent, "Capture mouse");
+});
+
+test("toolbar Capture mouse enables guest input before acquiring pointer lock", async () => {
+  const { elements, instances, documentStub } = createDemo();
+  const emulator = instances[0];
+  emulator.emit("emulator-ready");
+
+  elements.mouse.dispatch("click");
+  await tick();
+  assert.deepEqual(emulator.calls, [["mouse_set_enabled", true], "lock_mouse"]);
+  assert.equal(documentStub.pointerLockElement, documentStub.body);
+  assert.equal(elements.mouse.textContent, "Release mouse");
 });
