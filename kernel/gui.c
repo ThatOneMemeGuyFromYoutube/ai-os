@@ -123,9 +123,9 @@ static void draw_terminal_result(void){
             text(22,13,"!! repeats the previous command.",ATTR_NORMAL);
             text(22,14,"history shows the previous command.",ATTR_NORMAL);
             text(22,15,"history clear forgets the previous command.",ATTR_NORMAL);
-            text(22,16,"pwd shows the current filesystem path.",ATTR_NORMAL);
-            text(22,17,"uname shows the kernel architecture.",ATTR_NORMAL);
-            text(22,18,"menu/exit returns to the application launcher.",ATTR_NORMAL);
+            text(22,16,"pwd returns a placeholder path (no filesystem yet).",ATTR_NORMAL);
+            text(22,17,"apps/ls lists built-in apps, not disk files.",ATTR_NORMAL);
+            text(22,18,"uname reports i386; menu/exit returns to launcher.",ATTR_NORMAL);
             break;
         case TERM_APPS:
             text(22,9,"Terminal Files Programs About Settings",ATTR_NORMAL);
@@ -162,9 +162,10 @@ static void draw_terminal(void){
     text(22,8,"aster> ",ATTR_STATUS);
     text_n(29,8,terminal_buffer,ATTR_NORMAL,TERM_INPUT_MAX);
     draw_terminal_result();
+    text(22,19,"Demo shell; no real filesystem/process services.",ATTR_STATUS);
 }
-static void draw_files(void){text(22,5,"Files",ATTR_STATUS);text(22,7,"NAME                 TYPE",ATTR_NORMAL);text(22,8,"README.MD             text",ATTR_NORMAL);text(22,9,"KERNEL.BIN            system",ATTR_NORMAL);text(22,10,"PROGRAMS/             directory",ATTR_NORMAL);text(22,12,"Read-only filesystem view",ATTR_NORMAL);text(22,13,"Press Q, X or Esc to close this window.",ATTR_NORMAL);}
-static void draw_programs(void){text(22,5,"Programs",ATTR_STATUS);text(22,7,"BUILT-IN PROGRAMS",ATTR_NORMAL);text(22,8,"Terminal   interactive command view",ATTR_NORMAL);text(22,9,"Files      read-only filesystem view",ATTR_NORMAL);text(22,10,"Programs   application inventory",ATTR_NORMAL);text(22,11,"About      OS/runtime information",ATTR_NORMAL);text(22,13,"Press Q, X or Esc to close this window.",ATTR_NORMAL);}
+static void draw_files(void){text(22,5,"Files",ATTR_STATUS);text(22,7,"NAME                 TYPE",ATTR_NORMAL);text(22,8,"README.MD             text",ATTR_NORMAL);text(22,9,"KERNEL.BIN            system",ATTR_NORMAL);text(22,10,"PROGRAMS/             directory",ATTR_NORMAL);text(22,12,"Presentation only; no filesystem service",ATTR_NORMAL);text(22,13,"Press Q, X or Esc to close this window.",ATTR_NORMAL);}
+static void draw_programs(void){text(22,5,"Programs",ATTR_STATUS);text(22,7,"BUILT-IN GUI APPLICATIONS",ATTR_NORMAL);text(22,8,"Terminal   interactive command view",ATTR_NORMAL);text(22,9,"Files      presentation-only listing",ATTR_NORMAL);text(22,10,"Programs   application inventory",ATTR_NORMAL);text(22,11,"About      OS/runtime information",ATTR_NORMAL);text(22,13,"Press Q, X or Esc to close this window.",ATTR_NORMAL);text(22,14,"No transient process loader yet.",ATTR_NORMAL);}
 static void draw_about(void){text(22,5,"About AsterOS",ATTR_STATUS);text(22,7,"32-bit x86 experimental operating system",ATTR_NORMAL);text(22,8,"GUI shell over the CCP/BDOS direction",ATTR_NORMAL);text(22,10,"Enter opens the selected app.",ATTR_NORMAL);text(22,11,"Arrow keys or W/S navigate.",ATTR_NORMAL);text(22,12,"1-5 or T/F/P/A/C launches apps directly.",ATTR_NORMAL);text(22,13,"Q, X or Esc closes the active window.",ATTR_NORMAL);}
 static void draw_cursor_settings(void){
     text(22,5,"Cursor settings",ATTR_STATUS);
