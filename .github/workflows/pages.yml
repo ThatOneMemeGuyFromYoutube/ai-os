@@ -32,6 +32,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Validate browser demo API and regression tests
+        run: |
+          node --check docs/v86-demo.js
+          node --test tests/v86-demo.test.cjs
+
       - name: Install AsterOS build tools
         run: |
           sudo apt-get update

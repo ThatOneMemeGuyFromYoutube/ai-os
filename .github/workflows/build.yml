@@ -29,6 +29,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Validate browser demo API and regression tests
+        run: |
+          node --check docs/v86-demo.js
+          node --test tests/v86-demo.test.cjs
+
       - name: Install cross compiler, GRUB, ISO tools, and QEMU
         run: |
           sudo apt-get update
