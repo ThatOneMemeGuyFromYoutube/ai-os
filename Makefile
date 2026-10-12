@@ -29,11 +29,20 @@ build/boot.o: boot/boot.S | build
 build/kernel.o: kernel/kernel.c kernel/gui.h kernel/keyboard.h | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
-build/gui.o: kernel/gui.c kernel/gui.h | build
+build/gui.o: kernel/gui.c kernel/gui.h kernel/terminal.h | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
 build/keyboard.o: kernel/keyboard.c kernel/keyboard.h | build
 	$(CC) $(CFLAGS) -c $< -o $@
+
+build/terminal.o: kernel/terminal.c kernel/terminal.h | build
+	$(CC) $(CFLAGS) -c $< -o $@
+
+build/test-terminal: kernel/terminal.c kernel/terminal.h tests/test_terminal.c | build
+	$(HOSTCC) $(HOSTCFLAGS) -Ikernel kernel/terminal.c tests/test_terminal.c -o $@
+
+check-terminal: build/test-terminal
+	./build/test-terminal
 
 build/test-keyboard: kernel/keyboard.c kernel/keyboard.h tests/test_keyboard.c | build
 	$(HOSTCC) $(HOSTCFLAGS) -Ikernel kernel/keyboard.c tests/test_keyboard.c -o $@
@@ -41,8 +50,8 @@ build/test-keyboard: kernel/keyboard.c kernel/keyboard.h tests/test_keyboard.c |
 check-keyboard: build/test-keyboard
 	./build/test-keyboard
 
-build/kernel.bin: build/boot.o build/kernel.o build/gui.o build/keyboard.o linker.ld
-	$(LD) $(LDFLAGS) -o $@ build/boot.o build/kernel.o build/gui.o build/keyboard.o
+build/kernel.bin: build/boot.o build/kernel.o build/gui.o build/keyboard.o build/terminal.o linker.ld
+	$(LD) $(LDFLAGS) -o $@ build/boot.o build/kernel.o build/gui.o build/keyboard.o build/terminal.o
 
 build/hello.com: toolchain/tinylang.py toolchain/examples/hello.tl | build
 	$(PYTHON) toolchain/tinylang.py toolchain/examples/hello.tl $@
@@ -76,7 +85,7 @@ check-iso: iso
 	@command -v $(QEMU) >/dev/null || (echo "error: missing QEMU binary $(QEMU)" >&2; exit 1)
 	@timeout $(QEMU_TIMEOUT)s $(QEMU) -cdrom build/ai-os.iso -display none -serial stdio -no-reboot -no-shutdown || test $$? -eq 124
 
-check: check-toolchain check-keyboard
+check: check-toolchain check-keyboard check-terminal
 	PYTHONPATH=toolchain $(PYTHON) toolchain/test_tinylang.py
 	$(MAKE) check-artifacts
 
@@ -94,4 +103,4 @@ run-iso: build/ai-os.iso
 clean:
 	rm -rf build
 
-.PHONY: all check check-artifacts check-iso check-keyboard check-toolchain clean iso package-release program run run-iso test
+.PHONY: all check check-artifacts check-iso check-keyboard check-terminal check-toolchain clean iso package-release program run run-iso test

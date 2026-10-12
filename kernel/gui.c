@@ -1,4 +1,5 @@
 #include "gui.h"
+#include "terminal.h"
 #define VGA ((volatile uint16_t*)0xB8000)
 #define WIDTH 80
 #define HEIGHT 25
@@ -37,6 +38,7 @@ static const char *cursor_color_names[] = {"White", "Yellow", "Cyan", "Red", "Ma
 static char terminal_buffer[TERM_INPUT_MAX + 1];
 static char terminal_output[TERM_INPUT_MAX + 1];
 static char terminal_last[TERM_INPUT_MAX + 1];
+static char terminal_history[TERM_INPUT_MAX + 1];
 static const char *items[] = {"Terminal", "Files", "Programs", "About", "Settings"};
 
 enum { TERM_READY = 0, TERM_HELP, TERM_APPS, TERM_INFO, TERM_VER, TERM_ECHO, TERM_PWD, TERM_HISTORY, TERM_UNAME, TERM_UNKNOWN };
@@ -69,48 +71,57 @@ static void fill(uint8_t x,uint8_t y,uint8_t w,uint8_t h,char c,uint8_t a){for(u
 static void text(uint8_t x,uint8_t y,const char*s,uint8_t a){while(*s&&x<WIDTH)cell(x++,y,*s++,a);}
 static void text_n(uint8_t x,uint8_t y,const char*s,uint8_t a,uint8_t n){while(*s&&n--&&x<WIDTH)cell(x++,y,*s++,a);}
 static void border(uint8_t x,uint8_t y,uint8_t w,uint8_t h){for(uint8_t i=0;i<w;i++){char edge=(i==0||i==w-1)?'+':'-';cell((uint8_t)(x+i),y,edge,ATTR_PANEL);cell((uint8_t)(x+i),(uint8_t)(y+h-1),edge,ATTR_PANEL);}for(uint8_t i=1;i+1<h;i++){cell(x,(uint8_t)(y+i),'|',ATTR_PANEL);cell((uint8_t)(x+w-1),(uint8_t)(y+i),'|',ATTR_PANEL);}}
-static uint8_t text_equals(const char *a,const char *b){while(*a&&*b){if(*a++!=*b++)return 0;}return (uint8_t)(*a==*b);}
-static uint8_t starts_with(const char *text_value,const char *prefix){while(*prefix){if(*text_value++!=*prefix++)return 0;}return 1;}
 static void copy_text(char *destination,const char *source){uint8_t i=0;while(source[i]&&i<TERM_INPUT_MAX){destination[i]=source[i];i++;}destination[i]='\0';}
-static void trim_leading_spaces(char **value){while(**value==' ')(*value)++;}
+static void trim_leading_spaces(char **value){while(**value==' '||**value=='\t')(*value)++;}
 static void terminal_reset_input(void){terminal_length=0;terminal_buffer[0]='\0';}
 static void terminal_execute(void){
     char *command=terminal_buffer;
+    const char *arguments;
+    asteros_command_t parsed;
     terminal_output[0]='\0';
+    terminal_history[0]='\0';
     trim_leading_spaces(&command);
-    if(text_equals(command,"!!")&&terminal_last[0]){
-        copy_text(terminal_buffer,terminal_last);
-        command=terminal_buffer;
-        trim_leading_spaces(&command);
+    parsed=terminal_parse_command(command,&arguments);
+    if(parsed==ASTEROS_COMMAND_REPEAT){
+        if(terminal_last[0]){
+            copy_text(terminal_buffer,terminal_last);
+            command=terminal_buffer;
+            parsed=terminal_parse_command(command,&arguments);
+        }else parsed=ASTEROS_COMMAND_UNKNOWN;
     }
-    if(text_equals(command,"history clear")){
+    if(parsed==ASTEROS_COMMAND_HISTORY_CLEAR){
         terminal_last[0]='\0';
+        terminal_history[0]='\0';
+        terminal_result=TERM_HISTORY;
+        terminal_reset_input();
+        return;
+    }
+    if(parsed==ASTEROS_COMMAND_HISTORY){
+        copy_text(terminal_history,terminal_last);
         terminal_result=TERM_HISTORY;
         terminal_reset_input();
         return;
     }
     if(*command)copy_text(terminal_last,command);
-    if(text_equals(command,"help")) terminal_result=TERM_HELP;
-    else if(text_equals(command,"clear")||text_equals(command,"cls")) terminal_result=TERM_READY;
-    else if(text_equals(command,"apps")||text_equals(command,"ls")) terminal_result=TERM_APPS;
-    else if(text_equals(command,"info")||text_equals(command,"about")) terminal_result=TERM_INFO;
-    else if(text_equals(command,"ver")) terminal_result=TERM_VER;
-    else if(text_equals(command,"uname")) terminal_result=TERM_UNAME;
-    else if(text_equals(command,"pwd")) terminal_result=TERM_PWD;
-    else if(text_equals(command,"history")) terminal_result=TERM_HISTORY;
-    else if(text_equals(command,"echo")) terminal_result=TERM_ECHO;
-    else if(starts_with(command,"echo ")) {
-        command += 5;
-        trim_leading_spaces(&command);
-        copy_text(terminal_output,command);
-        terminal_result=TERM_ECHO;
+    switch(parsed){
+        case ASTEROS_COMMAND_HELP: terminal_result=TERM_HELP; break;
+        case ASTEROS_COMMAND_CLEAR: terminal_result=TERM_READY; break;
+        case ASTEROS_COMMAND_APPS: terminal_result=TERM_APPS; break;
+        case ASTEROS_COMMAND_INFO: terminal_result=TERM_INFO; break;
+        case ASTEROS_COMMAND_VERSION: terminal_result=TERM_VER; break;
+        case ASTEROS_COMMAND_UNAME: terminal_result=TERM_UNAME; break;
+        case ASTEROS_COMMAND_PWD: terminal_result=TERM_PWD; break;
+        case ASTEROS_COMMAND_ECHO:
+            copy_text(terminal_output,arguments);
+            terminal_result=TERM_ECHO;
+            break;
+        case ASTEROS_COMMAND_MENU:
+            active_app=-1;
+            terminal_result=TERM_READY;
+            break;
+        case ASTEROS_COMMAND_EMPTY: terminal_result=TERM_READY; break;
+        default: terminal_result=TERM_UNKNOWN; break;
     }
-    else if(text_equals(command,"menu")||text_equals(command,"exit")) {
-        active_app=-1;
-        terminal_result=TERM_READY;
-    }
-    else if(*command) terminal_result=TERM_UNKNOWN;
-    else terminal_result=TERM_READY;
     terminal_reset_input();
 }
 static void draw_terminal_result(void){
@@ -118,7 +129,7 @@ static void draw_terminal_result(void){
         case TERM_HELP:
             text(22,9,"help clear/cls apps/ls info/about ver uname pwd",ATTR_NORMAL);
             text(22,10,"echo history/history clear menu/exit",ATTR_NORMAL);
-            text(22,11,"Commands ignore leading spaces.",ATTR_NORMAL);
+            text(22,11,"Commands are case-insensitive; extra args rejected.",ATTR_NORMAL);
             text(22,12,"echo accepts repeated spaces before text.",ATTR_NORMAL);
             text(22,13,"!! repeats the previous command.",ATTR_NORMAL);
             text(22,14,"history shows the previous command.",ATTR_NORMAL);
@@ -147,7 +158,7 @@ static void draw_terminal_result(void){
             text(22,9,"/",ATTR_NORMAL);
             break;
         case TERM_HISTORY:
-            if(terminal_last[0]){text(22,9,"last: ",ATTR_STATUS);text_n(28,9,terminal_last,ATTR_NORMAL,TERM_INPUT_MAX-6);}else{text(22,9,"No previous command.",ATTR_NORMAL);}
+            if(terminal_history[0]){text(22,9,"last: ",ATTR_STATUS);text_n(28,9,terminal_history,ATTR_NORMAL,TERM_INPUT_MAX-6);}else{text(22,9,"No previous command.",ATTR_NORMAL);}
             break;
         case TERM_UNKNOWN:
             text(22,9,"Unknown command. Type help.",ATTR_NORMAL);
@@ -259,7 +270,7 @@ static void draw_selected_app(void){
     }
 }
 void gui_draw(void){cursor_clear();fill(0,0,WIDTH,HEIGHT,' ',ATTR_NORMAL);fill(0,0,WIDTH,1,' ',ATTR_TITLE);text(2,0,"AsterOS",ATTR_TITLE);text(68,0,"Desktop",ATTR_TITLE);border(1,2,18,19);text(3,3,"Applications",ATTR_PANEL);for(uint8_t i=0;i<5;i++)text(3,(uint8_t)(5+i*2),items[i],i==selected?ATTR_SELECT:ATTR_PANEL);draw_desktop_surface();border(20,2,59,19);text(22,3,"Welcome to AsterOS",ATTR_NORMAL);draw_selected_app();draw_taskbar();cursor_draw();}
-void gui_init(void){selected=0;active_app=-1;mouse_x=WIDTH*2;mouse_y=HEIGHT*2;cursor_active=0;cursor_visible=1;cursor_speed=1;cursor_shape=0;cursor_color=0;terminal_result=TERM_READY;terminal_output[0]='\0';terminal_last[0]='\0';terminal_reset_input();gui_draw();}
+void gui_init(void){selected=0;active_app=-1;mouse_x=WIDTH*2;mouse_y=HEIGHT*2;cursor_active=0;cursor_visible=1;cursor_speed=1;cursor_shape=0;cursor_color=0;terminal_result=TERM_READY;terminal_output[0]='\0';terminal_last[0]='\0';terminal_history[0]='\0';terminal_reset_input();gui_draw();}
 void gui_handle_key(char key){
     if(active_app<0){
         if((uint8_t)key==KEY_UP||key=='w'||key=='W'){if(selected==0)selected=4;else--selected;gui_draw();}
