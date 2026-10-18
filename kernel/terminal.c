@@ -82,3 +82,44 @@ asteros_command_t terminal_parse_command(const char *line, const char **argument
 
     return ASTEROS_COMMAND_UNKNOWN;
 }
+/* The GUI currently retains one command. Keep this state logic independent
+   from VGA rendering so it can be tested on the host. */
+void terminal_history_clear(asteros_terminal_history_t *history) {
+    if (!history) return;
+    history->last_command[0] = '\0';
+}
+
+const char *terminal_history_last(const asteros_terminal_history_t *history) {
+    static const char empty[] = "";
+    return history ? history->last_command : empty;
+}
+
+void terminal_history_record(asteros_terminal_history_t *history, const char *line) {
+    size_t length = 0;
+
+    if (!history || !line || !*line) return;
+    while (length < ASTEROS_TERMINAL_LINE_MAX && line[length]) {
+        history->last_command[length] = line[length];
+        length++;
+    }
+    history->last_command[length] = '\0';
+}
+
+int terminal_history_repeat(const asteros_terminal_history_t *history,
+                            char *line, size_t capacity) {
+    const char *last = terminal_history_last(history);
+    size_t length = 0;
+    size_t index;
+
+    if (!line || capacity == 0 || !*last) return 0;
+
+    /* The backing field is bounded; reject malformed state rather than
+       reading beyond it or partially overwriting the caller's input. */
+    while (length <= ASTEROS_TERMINAL_LINE_MAX && last[length]) length++;
+    if (length == 0 || length > ASTEROS_TERMINAL_LINE_MAX || length >= capacity)
+        return 0;
+
+    for (index = 0; index < length; index++) line[index] = last[index];
+    line[length] = '\0';
+    return 1;
+}
