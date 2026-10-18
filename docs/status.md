@@ -1,5 +1,14 @@
 # Status
 
+
+## 2026-10-17 — Terminal history integration and branch compatibility
+
+Implemented the history API previously declared in `kernel/terminal.h` and switched the VGA GUI shell to use the same state object instead of maintaining separate history buffers. The input limit now reuses `ASTEROS_TERMINAL_LINE_MAX`, keeping the GUI and API buffer contracts aligned. Empty-history `!!` no longer overwrites the last-command slot. Host regression tests cover no-history repeat, successful repeat, an undersized destination that must remain unchanged, truncation to the UI limit, and clearing.
+
+The integration passed the repository's PR workflows: host keyboard/terminal and TinyLang tests, i386 cross-toolchain checks, kernel and ISO builds, and the QEMU ISO smoke test. The active October 8–18 command/input checklist is complete; the next scheduled window is October 19–November 1 for window-system and desktop behavior.
+
+Branch audit found no other ahead-only implementation that could be safely merged as-is: the remaining keyboard branch uses the older `keyboard_decode`/`keyboard_reset` ABI, while current `main` uses `keyboard_decode_scancode`/`keyboard_reset_state`; the old GUI branch contributes an obsolete build workflow, not a missing desktop feature. Those snapshots were not merged over newer code.
+
 ## 2026-10-12 — Terminal command parsing
 
 The terminal now uses a standalone command parser instead of matching raw input strings inside the VGA renderer. Command names are case-insensitive, trailing whitespace is tolerated, unsupported arguments are rejected explicitly, `echo` preserves spacing within its text, and `!!` is parsed as a distinct repeat request. The `history` view snapshots the previous command before rendering, fixing the earlier self-reporting bug; `history clear` clears that snapshot. Host regression tests cover aliases, whitespace, argument handling, history commands, and unknown input.
