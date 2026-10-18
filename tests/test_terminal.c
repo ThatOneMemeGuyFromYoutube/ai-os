@@ -12,6 +12,38 @@ static void expect_command(const char *line, asteros_command_t expected,
     assert(strcmp(arguments, expected_arguments) == 0);
 }
 
+static void test_history_state(void) {
+    asteros_terminal_history_t history;
+    char buffer[ASTEROS_TERMINAL_LINE_MAX + 1u] = "unchanged";
+    char short_buffer[4] = "old";
+    char long_line[ASTEROS_TERMINAL_LINE_MAX + 16u];
+    size_t index;
+
+    terminal_history_clear(&history);
+    assert(strcmp(terminal_history_last(&history), "") == 0);
+    assert(!terminal_history_repeat(&history, buffer, sizeof buffer));
+    assert(strcmp(buffer, "unchanged") == 0);
+
+    terminal_history_record(&history, "echo hello");
+    assert(strcmp(terminal_history_last(&history), "echo hello") == 0);
+    assert(terminal_history_repeat(&history, buffer, sizeof buffer));
+    assert(strcmp(buffer, "echo hello") == 0);
+
+    /* Too-small destinations fail atomically; the input remains untouched. */
+    assert(!terminal_history_repeat(&history, short_buffer, sizeof short_buffer));
+    assert(strcmp(short_buffer, "old") == 0);
+
+    for (index = 0; index + 1u < sizeof long_line; index++)
+        long_line[index] = (char)('a' + (index % 26u));
+    long_line[sizeof long_line - 1u] = '\0';
+    terminal_history_record(&history, long_line);
+    assert(strlen(terminal_history_last(&history)) == ASTEROS_TERMINAL_LINE_MAX);
+    assert(terminal_history_last(&history)[ASTEROS_TERMINAL_LINE_MAX] == '\0');
+
+    terminal_history_clear(&history);
+    assert(strcmp(terminal_history_last(&history), "") == 0);
+}
+
 int main(void) {
     expect_command("", ASTEROS_COMMAND_EMPTY, "");
     expect_command(" \t  ", ASTEROS_COMMAND_EMPTY, "");
@@ -50,38 +82,6 @@ int main(void) {
     assert(terminal_parse_command("echo text", 0) == ASTEROS_COMMAND_ECHO);
     assert(terminal_parse_command(0, 0) == ASTEROS_COMMAND_EMPTY);
 
-
-static void test_history_state(void) {
-    asteros_terminal_history_t history;
-    char buffer[ASTEROS_TERMINAL_LINE_MAX + 1u] = "unchanged";
-    char short_buffer[4] = "old";
-    char long_line[ASTEROS_TERMINAL_LINE_MAX + 16u];
-    size_t index;
-
-    terminal_history_clear(&history);
-    assert(strcmp(terminal_history_last(&history), "") == 0);
-    assert(!terminal_history_repeat(&history, buffer, sizeof buffer));
-    assert(strcmp(buffer, "unchanged") == 0);
-
-    terminal_history_record(&history, "echo hello");
-    assert(strcmp(terminal_history_last(&history), "echo hello") == 0);
-    assert(terminal_history_repeat(&history, buffer, sizeof buffer));
-    assert(strcmp(buffer, "echo hello") == 0);
-
-    /* Too-small destinations fail atomically; the input remains untouched. */
-    assert(!terminal_history_repeat(&history, short_buffer, sizeof short_buffer));
-    assert(strcmp(short_buffer, "old") == 0);
-
-    for (index = 0; index + 1u < sizeof long_line; index++)
-        long_line[index] = (char)('a' + (index % 26u));
-    long_line[sizeof long_line - 1u] = '\0';
-    terminal_history_record(&history, long_line);
-    assert(strlen(terminal_history_last(&history)) == ASTEROS_TERMINAL_LINE_MAX);
-    assert(terminal_history_last(&history)[ASTEROS_TERMINAL_LINE_MAX] == '\0');
-
-    terminal_history_clear(&history);
-    assert(strcmp(terminal_history_last(&history), "") == 0);
-}
 
     test_history_state();
     puts("terminal: tests passed");
