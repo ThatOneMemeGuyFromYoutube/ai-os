@@ -14,7 +14,7 @@
 #define ATTR_TASK_ACTIVE 0x71
 #define TERM_X 22
 #define TERM_W 54
-#define TERM_INPUT_MAX (TERM_W - 8)
+#define TERM_INPUT_MAX ASTEROS_TERMINAL_LINE_MAX
 #define KEY_UP 0x80
 #define KEY_DOWN 0x81
 #define KEY_TAB 0x09
@@ -37,8 +37,8 @@ static const uint8_t cursor_attributes[] = {0x0F, 0x0E, 0x0B, 0x0C, 0x0D};
 static const char *cursor_color_names[] = {"White", "Yellow", "Cyan", "Red", "Magenta"};
 static char terminal_buffer[TERM_INPUT_MAX + 1];
 static char terminal_output[TERM_INPUT_MAX + 1];
-static char terminal_last[TERM_INPUT_MAX + 1];
-static char terminal_history[TERM_INPUT_MAX + 1];
+static asteros_terminal_history_t terminal_history_state;
+static char terminal_history_output[TERM_INPUT_MAX + 1];
 static const char *items[] = {"Terminal", "Files", "Programs", "About", "Settings"};
 
 enum { TERM_READY = 0, TERM_HELP, TERM_APPS, TERM_INFO, TERM_VER, TERM_ECHO, TERM_PWD, TERM_HISTORY, TERM_UNAME, TERM_UNKNOWN };
@@ -78,31 +78,46 @@ static void terminal_execute(void){
     char *command=terminal_buffer;
     const char *arguments;
     asteros_command_t parsed;
+    uint8_t repeat_requested=0;
+    uint8_t repeat_succeeded=0;
+
     terminal_output[0]='\0';
-    terminal_history[0]='\0';
+    terminal_history_output[0]='\0';
     trim_leading_spaces(&command);
     parsed=terminal_parse_command(command,&arguments);
+
     if(parsed==ASTEROS_COMMAND_REPEAT){
-        if(terminal_last[0]){
-            copy_text(terminal_buffer,terminal_last);
+        repeat_requested=1;
+        if(terminal_history_repeat(&terminal_history_state,terminal_buffer,
+                                  sizeof terminal_buffer)){
             command=terminal_buffer;
             parsed=terminal_parse_command(command,&arguments);
-        }else parsed=ASTEROS_COMMAND_UNKNOWN;
+            repeat_succeeded=1;
+        }else{
+            /* Keep the previous command on an empty or undersized history. */
+            parsed=ASTEROS_COMMAND_UNKNOWN;
+        }
     }
+
     if(parsed==ASTEROS_COMMAND_HISTORY_CLEAR){
-        terminal_last[0]='\0';
-        terminal_history[0]='\0';
+        terminal_history_clear(&terminal_history_state);
+        terminal_history_output[0]='\0';
         terminal_result=TERM_HISTORY;
         terminal_reset_input();
         return;
     }
     if(parsed==ASTEROS_COMMAND_HISTORY){
-        copy_text(terminal_history,terminal_last);
+        copy_text(terminal_history_output,
+                  terminal_history_last(&terminal_history_state));
         terminal_result=TERM_HISTORY;
         terminal_reset_input();
         return;
     }
-    if(*command)copy_text(terminal_last,command);
+
+    /* A failed !! must never become the command that the next !! repeats. */
+    if(*command&&(!repeat_requested||repeat_succeeded))
+        terminal_history_record(&terminal_history_state,command);
+
     switch(parsed){
         case ASTEROS_COMMAND_HELP: terminal_result=TERM_HELP; break;
         case ASTEROS_COMMAND_CLEAR: terminal_result=TERM_READY; break;
@@ -158,7 +173,7 @@ static void draw_terminal_result(void){
             text(22,9,"/",ATTR_NORMAL);
             break;
         case TERM_HISTORY:
-            if(terminal_history[0]){text(22,9,"last: ",ATTR_STATUS);text_n(28,9,terminal_history,ATTR_NORMAL,TERM_INPUT_MAX-6);}else{text(22,9,"No previous command.",ATTR_NORMAL);}
+            if(terminal_history_output[0]){text(22,9,"last: ",ATTR_STATUS);text_n(28,9,terminal_history_output,ATTR_NORMAL,TERM_INPUT_MAX-6);}else{text(22,9,"No previous command.",ATTR_NORMAL);}
             break;
         case TERM_UNKNOWN:
             text(22,9,"Unknown command. Type help.",ATTR_NORMAL);
@@ -270,7 +285,7 @@ static void draw_selected_app(void){
     }
 }
 void gui_draw(void){cursor_clear();fill(0,0,WIDTH,HEIGHT,' ',ATTR_NORMAL);fill(0,0,WIDTH,1,' ',ATTR_TITLE);text(2,0,"AsterOS",ATTR_TITLE);text(68,0,"Desktop",ATTR_TITLE);border(1,2,18,19);text(3,3,"Applications",ATTR_PANEL);for(uint8_t i=0;i<5;i++)text(3,(uint8_t)(5+i*2),items[i],i==selected?ATTR_SELECT:ATTR_PANEL);draw_desktop_surface();border(20,2,59,19);text(22,3,"Welcome to AsterOS",ATTR_NORMAL);draw_selected_app();draw_taskbar();cursor_draw();}
-void gui_init(void){selected=0;active_app=-1;mouse_x=WIDTH*2;mouse_y=HEIGHT*2;cursor_active=0;cursor_visible=1;cursor_speed=1;cursor_shape=0;cursor_color=0;terminal_result=TERM_READY;terminal_output[0]='\0';terminal_last[0]='\0';terminal_history[0]='\0';terminal_reset_input();gui_draw();}
+void gui_init(void){selected=0;active_app=-1;mouse_x=WIDTH*2;mouse_y=HEIGHT*2;cursor_active=0;cursor_visible=1;cursor_speed=1;cursor_shape=0;cursor_color=0;terminal_result=TERM_READY;terminal_output[0]='\0';terminal_history_clear(&terminal_history_state);terminal_history_output[0]='\0';terminal_reset_input();gui_draw();}
 void gui_handle_key(char key){
     if(active_app<0){
         if((uint8_t)key==KEY_UP||key=='w'||key=='W'){if(selected==0)selected=4;else--selected;gui_draw();}
