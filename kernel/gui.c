@@ -1,5 +1,6 @@
 #include "gui.h"
 #include "terminal.h"
+#include "desktop_input.h"
 #define VGA ((volatile uint16_t*)0xB8000)
 #define WIDTH 80
 #define HEIGHT 25
@@ -223,34 +224,6 @@ static void draw_desktop_surface(void){
     text(23,17,"AsterOS desktop",ATTR_TITLE);
     text(23,18,"VGA text-mode workspace",ATTR_NORMAL);
 }
-static int8_t hit_test(uint8_t x,uint8_t y){
-    if(y==23){
-        if(x>=1&&x<=9)return -1;
-        if(x>=12&&x<=19)return 0;
-        if(x>=22&&x<=27)return 1;
-        if(x>=29&&x<=37)return 2;
-        if(x>=40&&x<=44)return 3;
-        if(x>=47&&x<=54)return 4;
-    }
-    if(active_app>=0&&y==4&&x>=72&&x<=76)return -2;
-    if(active_app==4&&x>=22&&x<=66){
-        if(y>=7&&y<=8)return -4;
-        if(y>=9&&y<=10)return -5;
-        if(y>=11&&y<=12)return -6;
-        if(y>=13&&y<=14)return -7;
-    }
-    if(active_app<0&&x>=2&&x<=17){
-        if(y>=5&&y<=6)return 0;
-        if(y>=7&&y<=8)return 1;
-        if(y>=9&&y<=10)return 2;
-        if(y>=11&&y<=12)return 3;
-    }
-    if(x>=23&&x<=30&&y>=7&&y<=9)return 0;
-    if(x>=33&&x<=40&&y>=7&&y<=9)return 1;
-    if(x>=43&&x<=50&&y>=7&&y<=9)return 2;
-    if(x>=53&&x<=60&&y>=7&&y<=9)return 1;
-    return -3;
-}
 static void draw_taskbar(void){
     fill(0,23,WIDTH,2, ' ', ATTR_TASK);
     text(1,23,"[ START ]",ATTR_TASK_ACTIVE);
@@ -340,23 +313,23 @@ void gui_handle_mouse(int8_t dx,int8_t dy,uint8_t buttons){
     if(mouse_y>(HEIGHT*4)-1)mouse_y=(HEIGHT*4)-1;
     cell_x=(uint8_t)(mouse_x/4);
     cell_y=(uint8_t)(mouse_y/4);
-    target=hit_test(cell_x,cell_y);
+    target=asteros_desktop_hit_test(active_app,cell_x,cell_y);
     if(active_app<0&&target>=0&&target<5&&selected!=(uint8_t)target){
         selected=(uint8_t)target;
         redraw=1;
     }
     if(pressed&&!previous_buttons){
-        if(target==-1){
+        if(target==ASTEROS_HIT_START){
             active_app=-1;
             redraw=1;
-        }else if(target==-2){
+        }else if(target==ASTEROS_HIT_CLOSE){
             active_app=-1;
             terminal_reset_input();
             redraw=1;
-        }else if(target==-4){cursor_setting_change(0);redraw=1;
-        }else if(target==-5){cursor_setting_change(1);redraw=1;
-        }else if(target==-6){cursor_setting_change(2);redraw=1;
-        }else if(target==-7){cursor_setting_change(3);redraw=1;
+        }else if(target==ASTEROS_HIT_SETTING_VISIBLE){cursor_setting_change(0);redraw=1;
+        }else if(target==ASTEROS_HIT_SETTING_SPEED){cursor_setting_change(1);redraw=1;
+        }else if(target==ASTEROS_HIT_SETTING_SHAPE){cursor_setting_change(2);redraw=1;
+        }else if(target==ASTEROS_HIT_SETTING_COLOR){cursor_setting_change(3);redraw=1;
         }else if(target>=0&&target<5){
             selected=(uint8_t)target;
             active_app=target;
