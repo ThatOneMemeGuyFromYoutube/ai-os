@@ -3,6 +3,8 @@
 static uint8_t extended_prefix;
 static uint8_t left_shift;
 static uint8_t right_shift;
+static uint8_t left_ctrl;
+static uint8_t right_ctrl;
 static uint8_t caps_lock;
 static uint8_t caps_down;
 
@@ -46,6 +48,8 @@ void keyboard_reset_state(void) {
     extended_prefix = 0;
     left_shift = 0;
     right_shift = 0;
+    left_ctrl = 0;
+    right_ctrl = 0;
     caps_lock = 0;
     caps_down = 0;
 }
@@ -67,22 +71,36 @@ uint8_t keyboard_decode_scancode(uint8_t scancode, char *key) {
     if (scancode & 0x80) {
         if (extended_prefix) {
             extended_prefix = 0;
+            if (code == 0x1D) right_ctrl = 0;
             return 0;
         }
         if (code == 0x2A) left_shift = 0;
         else if (code == 0x36) right_shift = 0;
+        else if (code == 0x1D) left_ctrl = 0;
         else if (code == 0x3A) caps_down = 0;
         return 0;
     }
     if (extended_prefix) {
         extended_prefix = 0;
+        if (code == 0x1D) { right_ctrl = 1; return 0; }
         if (!key) return 0;
         if (code == 0x48) { *key = (char)ASTEROS_KEY_UP; return 1; }
         if (code == 0x50) { *key = (char)ASTEROS_KEY_DOWN; return 1; }
         return 0;
     }
-    if (code == 0x2A) { left_shift = 1; return 0; }
-    if (code == 0x36) { right_shift = 1; return 0; }
+    if (code == 0x1D) { left_ctrl = 1; return 0; }
+    if (code == 0x2A) {
+        if (!left_shift && key) *key = (char)((left_ctrl || right_ctrl) ? ASTEROS_KEY_HOVER_RIGHT_CLICK : ASTEROS_KEY_HOVER_LEFT_CLICK);
+        else return 0;
+        left_shift = 1;
+        return 1;
+    }
+    if (code == 0x36) {
+        if (!right_shift && key) *key = (char)((left_ctrl || right_ctrl) ? ASTEROS_KEY_HOVER_RIGHT_CLICK : ASTEROS_KEY_HOVER_LEFT_CLICK);
+        else return 0;
+        right_shift = 1;
+        return 1;
+    }
     if (code == 0x3A) {
         if (!caps_down) caps_lock = (uint8_t)!caps_lock;
         caps_down = 1;
