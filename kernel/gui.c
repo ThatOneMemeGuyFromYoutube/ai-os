@@ -265,7 +265,7 @@ void gui_draw(void){cursor_clear();fill(0,0,WIDTH,HEIGHT,' ',ATTR_NORMAL);fill(0
 void gui_init(void){selected=0;keyboard_click_enabled=1;active_app=-1;mouse_x=WIDTH*2;mouse_y=HEIGHT*2;cursor_active=0;cursor_visible=1;cursor_speed=1;cursor_shape=0;cursor_color=0;terminal_result=TERM_READY;terminal_output[0]='\0';terminal_history_clear(&terminal_history_state);terminal_history_output[0]='\0';terminal_reset_input();gui_draw();}
 void gui_handle_key(char key){
     if((uint8_t)key==ASTEROS_KEY_HOVER_LEFT_CLICK){
-        if(keyboard_click_enabled){gui_handle_mouse(0,0,1);gui_handle_mouse(0,0,0);}
+        if(keyboard_click_enabled){gui_handle_mouse(0,0,0);gui_handle_mouse(0,0,1);gui_handle_mouse(0,0,0);}
         return;
     }
     if((uint8_t)key==ASTEROS_KEY_HOVER_RIGHT_CLICK){return;}
