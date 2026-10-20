@@ -6,6 +6,16 @@ static void expect_hit(int8_t active_app, uint8_t x, uint8_t y, int8_t expected)
     assert(asteros_desktop_hit_test(active_app, x, y) == expected);
 }
 
+static void test_alternate_mouse_activation(void) {
+    assert(asteros_mouse_activation_edge(0, 1) == 1); /* left */
+    assert(asteros_mouse_activation_edge(0, 2) == 2); /* right */
+    assert(asteros_mouse_activation_edge(0, 4) == 4); /* middle */
+    assert(asteros_mouse_activation_edge(1, 3) == 2); /* second button */
+    assert(asteros_mouse_activation_edge(2, 2) == 0); /* held */
+    assert(asteros_mouse_activation_edge(2, 0) == 0); /* release */
+    assert(asteros_mouse_activation_edge(0, 8) == 0); /* unrelated bit */
+}
+
 static void test_taskbar_has_priority(void) {
     const int8_t active_apps[] = {-1, ASTEROS_APP_TERMINAL, ASTEROS_APP_SETTINGS};
     size_t i;
@@ -63,6 +73,7 @@ static void test_settings_rows_are_scoped_and_complete(void) {
 }
 
 int main(void) {
+    test_alternate_mouse_activation();
     test_taskbar_has_priority();
     test_launcher_and_desktop_icons();
     test_foreground_window_blocks_background();
