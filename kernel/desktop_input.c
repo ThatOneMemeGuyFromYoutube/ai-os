@@ -1,5 +1,11 @@
 #include "desktop_input.h"
 
+uint8_t asteros_mouse_activation_edge(uint8_t previous_buttons, uint8_t buttons) {
+    const uint8_t activation_buttons = 0x07;
+    return (uint8_t)((buttons & activation_buttons) &
+                     (uint8_t)~(previous_buttons & activation_buttons));
+}
+
 int8_t asteros_desktop_hit_test(int8_t active_app, uint8_t x, uint8_t y) {
     /* The taskbar is always in front of the desktop and active window. */
     if (y == 23) {
