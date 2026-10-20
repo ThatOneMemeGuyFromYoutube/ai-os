@@ -23,7 +23,7 @@ make run
 
 `make program` demonstrates program creation without requiring a cross-compiler: it uses the small Python-based TinyLang compiler to create `build/hello.com`.
 
-The current milestone boots into the lightweight GUI shell. Use **W/S** or the arrow keys to navigate, **Enter** to select an application, **Tab** to cycle applications while a window is open, and **Esc** to close the active window. Open **Settings** from the launcher or taskbar (or press **C**) to customize pointer visibility (**V**), movement speed (**S**, cycles 1×–3×), shape (**C**), and color (**K**). Click a setting row or use its keyboard shortcut; changes apply immediately and reset on reboot.
+The current milestone boots into the lightweight GUI shell. Use **W/S** or the arrow keys to navigate, **Enter** to select an application, **Tab** to cycle applications while a window is open, and **Esc** to close the active window. Open **Settings** from the launcher or taskbar (or press **C**) to customize pointer visibility (**V**), movement speed (**S**, cycles 1×–3×), shape (**C**), and color (**K**). Click a setting row or use its keyboard shortcut; changes apply immediately and reset on reboot. If a mouse's left or right button is unreliable, **left, right, and middle clicks all activate controls**. You can also navigate with **W/S** or the arrow keys and press **Enter** to open the selected application; Settings supports **V/S/C/K** keyboard shortcuts.
 
 ## Browser demo
 
