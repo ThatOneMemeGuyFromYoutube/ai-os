@@ -4,7 +4,12 @@
 #include <stdint.h>
 
 /* Non-ASCII navigation values passed through gui_handle_key(). */
-enum { ASTEROS_KEY_UP = 0x80, ASTEROS_KEY_DOWN = 0x81 };
+enum {
+    ASTEROS_KEY_UP = 0x80,
+    ASTEROS_KEY_DOWN = 0x81,
+    ASTEROS_KEY_HOVER_LEFT_CLICK = 0x82,
+    ASTEROS_KEY_HOVER_RIGHT_CLICK = 0x83
+};
 
 /* Decode one byte from the PS/2 Set 1 scancode stream.
    Returns 1 when a printable/control/navigation key is produced. */
