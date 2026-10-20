@@ -28,6 +28,7 @@ int main(void) {
     expect_key(0x30, 'b');
 
     expect_key(0x2A, (char)ASTEROS_KEY_HOVER_LEFT_CLICK); /* Left Shift down. */
+    expect_ignored(0x2A); /* Key repeat must not activate again while held. */
     expect_key(0x1E, 'A');
     expect_key(0x02, '!');
     expect_key(0x1A, '{');
