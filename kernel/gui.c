@@ -32,6 +32,7 @@ static uint8_t cursor_visible;
 static uint8_t cursor_speed;
 static uint8_t cursor_shape;
 static uint8_t cursor_color;
+static uint8_t keyboard_click_enabled;
 static const char cursor_glyphs[] = {'*', '+', 'X', '>'};
 static const char *cursor_shape_names[] = {"Star", "Plus", "Cross", "Arrow"};
 static const uint8_t cursor_attributes[] = {0x0F, 0x0E, 0x0B, 0x0C, 0x0D};
