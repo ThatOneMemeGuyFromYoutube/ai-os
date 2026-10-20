@@ -208,8 +208,10 @@ static void draw_cursor_settings(void){
     text(42,11,cursor_shape_names[cursor_shape],ATTR_STATUS);
     text(22,13,"Cursor color [K]:",ATTR_NORMAL);
     text(40,13,cursor_color_names[cursor_color],ATTR_STATUS);
-    text(22,16,"Click a setting row or press its shortcut.",ATTR_NORMAL);
-    text(22,17,"Changes apply immediately; reboot resets defaults.",ATTR_NORMAL);
+    text(22,15,"Keyboard hover click [B]:",ATTR_NORMAL);
+    text(47,15,keyboard_click_enabled?"On":"Off",keyboard_click_enabled?ATTR_STATUS:ATTR_PANEL);
+    text(22,17,"Shift activates the hovered item.",ATTR_NORMAL);
+    text(22,18,"Ctrl+Shift is reserved for right-click.",ATTR_NORMAL);
 }
 static void draw_desktop_surface(void){
     fill(19,2,61,21,' ',ATTR_DESKTOP);
