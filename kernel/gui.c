@@ -196,7 +196,7 @@ static void draw_files(void){text(22,5,"Files",ATTR_STATUS);text(22,7,"NAME     
 static void draw_programs(void){text(22,5,"Programs",ATTR_STATUS);text(22,7,"BUILT-IN GUI APPLICATIONS",ATTR_NORMAL);text(22,8,"Terminal   interactive command view",ATTR_NORMAL);text(22,9,"Files      presentation-only listing",ATTR_NORMAL);text(22,10,"Programs   application inventory",ATTR_NORMAL);text(22,11,"About      OS/runtime information",ATTR_NORMAL);text(22,13,"Press Q, X or Esc to close this window.",ATTR_NORMAL);text(22,14,"No transient process loader yet.",ATTR_NORMAL);}
 static void draw_about(void){text(22,5,"About AsterOS",ATTR_STATUS);text(22,7,"32-bit x86 experimental operating system",ATTR_NORMAL);text(22,8,"GUI shell over the CCP/BDOS direction",ATTR_NORMAL);text(22,10,"Enter opens the selected app.",ATTR_NORMAL);text(22,11,"Arrow keys or W/S navigate.",ATTR_NORMAL);text(22,12,"1-5 or T/F/P/A/C launches apps directly.",ATTR_NORMAL);text(22,13,"Q, X or Esc closes the active window.",ATTR_NORMAL);}
 static void draw_cursor_settings(void){
-    text(22,5,"Cursor settings",ATTR_STATUS);
+    text(22,5,"Accessibility and cursor settings",ATTR_STATUS);
     text(22,7,"Pointer visible [V]:",ATTR_NORMAL);
     text(43,7,cursor_visible?"On":"Off",cursor_visible?ATTR_STATUS:ATTR_PANEL);
     text(22,9,"Pointer speed [S]:",ATTR_NORMAL);
