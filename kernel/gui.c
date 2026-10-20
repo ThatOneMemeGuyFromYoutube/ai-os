@@ -1,6 +1,7 @@
 #include "gui.h"
 #include "terminal.h"
 #include "desktop_input.h"
+#include "keyboard.h"
 #define VGA ((volatile uint16_t*)0xB8000)
 #define WIDTH 80
 #define HEIGHT 25
