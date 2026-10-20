@@ -27,7 +27,7 @@ int main(void) {
     expect_ignored(0x9E); /* Key release is never text. */
     expect_key(0x30, 'b');
 
-    expect_ignored(0x2A); /* Left Shift down. */
+    expect_key(0x2A, (char)ASTEROS_KEY_HOVER_LEFT_CLICK); /* Left Shift down. */
     expect_key(0x1E, 'A');
     expect_key(0x02, '!');
     expect_key(0x1A, '{');
@@ -36,8 +36,8 @@ int main(void) {
     expect_key(0x1E, 'a');
     expect_key(0x02, '1');
 
-    expect_ignored(0x2A);
-    expect_ignored(0x36); /* Both Shift keys may be held at once. */
+    expect_key(0x2A, (char)ASTEROS_KEY_HOVER_LEFT_CLICK);
+    expect_key(0x36, (char)ASTEROS_KEY_HOVER_LEFT_CLICK); /* Both Shift keys may be held at once. */
     expect_ignored(0xAA); /* Releasing left Shift must preserve right Shift. */
     expect_key(0x1E, 'A');
     expect_ignored(0xB6);
@@ -47,7 +47,7 @@ int main(void) {
     expect_ignored(0x3A); /* A repeated make must not toggle it twice. */
     expect_key(0x1E, 'A');
     expect_ignored(0xBA);
-    expect_ignored(0x2A);
+    expect_key(0x2A, (char)ASTEROS_KEY_HOVER_LEFT_CLICK);
     expect_key(0x1E, 'a'); /* Shift XOR Caps Lock. */
     expect_ignored(0xAA);
     expect_ignored(0x3A); /* Caps Lock off. */
@@ -69,6 +69,13 @@ int main(void) {
     expect_ignored(0xE0);
     expect_ignored(0x4B); /* Left arrow is not part of the GUI key ABI yet. */
     expect_key(0x1E, 'a'); /* Ignored extended keys cannot poison input. */
+
+    expect_ignored(0xE0);
+    expect_ignored(0x1D); /* Right Ctrl down. */
+    expect_key(0x2A, (char)ASTEROS_KEY_HOVER_RIGHT_CLICK);
+    expect_ignored(0xAA);
+    expect_ignored(0xE0);
+    expect_ignored(0x9D); /* Right Ctrl up. */
 
     expect_ignored(0xE1); /* Pause/Break prefix. */
     expect_ignored(0x1D);
