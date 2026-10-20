@@ -302,7 +302,7 @@ void gui_handle_mouse(int8_t dx,int8_t dy,uint8_t buttons){
     uint8_t cell_y;
     int8_t target;
     uint8_t redraw=0;
-    uint8_t pressed=(uint8_t)(buttons&1);
+    uint8_t pressed=(uint8_t)(buttons&0x07);
     static uint8_t previous_buttons;
     cursor_clear();
     mouse_x+=(int16_t)dx*(int16_t)cursor_speed;
@@ -318,7 +318,7 @@ void gui_handle_mouse(int8_t dx,int8_t dy,uint8_t buttons){
         selected=(uint8_t)target;
         redraw=1;
     }
-    if(pressed&&!previous_buttons){
+    if(asteros_mouse_activation_edge(previous_buttons,pressed)){
         if(target==ASTEROS_HIT_START){
             active_app=-1;
             redraw=1;
