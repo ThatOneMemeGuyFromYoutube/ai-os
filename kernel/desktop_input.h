@@ -26,4 +26,7 @@ enum {
    take precedence over desktop icons behind them. */
 int8_t asteros_desktop_hit_test(int8_t active_app, uint8_t x, uint8_t y);
 
+/* Left, right, and middle presses can activate controls. */
+uint8_t asteros_mouse_activation_edge(uint8_t previous_buttons, uint8_t buttons);
+
 #endif
