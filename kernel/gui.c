@@ -340,11 +340,12 @@ void gui_handle_mouse(int8_t dx,int8_t dy,uint8_t buttons){
         }else if(target==ASTEROS_HIT_SETTING_SPEED){cursor_setting_change(1);redraw=1;
         }else if(target==ASTEROS_HIT_SETTING_SHAPE){cursor_setting_change(2);redraw=1;
         }else if(target==ASTEROS_HIT_SETTING_COLOR){cursor_setting_change(3);redraw=1;
+        }else if(target==ASTEROS_HIT_SETTING_KEYBOARD_CLICK){keyboard_click_enabled=(uint8_t)!keyboard_click_enabled;redraw=1;
         }else if(target>=0&&target<5){
             selected=(uint8_t)target;
             active_app=target;
             terminal_result=TERM_READY;
-            terminal_output[0]='\\0';
+            terminal_output[0]='\0';
             terminal_reset_input();
             redraw=1;
         }

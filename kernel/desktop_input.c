@@ -25,6 +25,7 @@ int8_t asteros_desktop_hit_test(int8_t active_app, uint8_t x, uint8_t y) {
             if (y >= 9 && y <= 10) return ASTEROS_HIT_SETTING_SPEED;
             if (y >= 11 && y <= 12) return ASTEROS_HIT_SETTING_SHAPE;
             if (y >= 13 && y <= 14) return ASTEROS_HIT_SETTING_COLOR;
+            if (y == 15) return ASTEROS_HIT_SETTING_KEYBOARD_CLICK;
         }
         /* Do not activate desktop icons through the foreground window. */
         return ASTEROS_HIT_NONE;
