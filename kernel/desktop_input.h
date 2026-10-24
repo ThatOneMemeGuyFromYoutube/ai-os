@@ -18,7 +18,8 @@ enum {
     ASTEROS_HIT_SETTING_VISIBLE = -4,
     ASTEROS_HIT_SETTING_SPEED = -5,
     ASTEROS_HIT_SETTING_SHAPE = -6,
-    ASTEROS_HIT_SETTING_COLOR = -7
+    ASTEROS_HIT_SETTING_COLOR = -7,
+    ASTEROS_HIT_SETTING_KEYBOARD_CLICK = -8
 };
 
 /* Translate VGA text-cell coordinates into desktop controls or app IDs.
