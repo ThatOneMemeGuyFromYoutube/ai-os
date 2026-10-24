@@ -335,6 +335,7 @@ void gui_handle_mouse(int8_t dx,int8_t dy,uint8_t buttons){
     int8_t target;
     uint8_t redraw=0;
     uint8_t pressed=(uint8_t)(buttons&0x07);
+    uint8_t context_was_open=context_menu_open;
     static uint8_t previous_buttons;
     uint8_t right_edge;
     cursor_clear();
@@ -375,7 +376,7 @@ void gui_handle_mouse(int8_t dx,int8_t dy,uint8_t buttons){
         selected=(uint8_t)target;
         redraw=1;
     }
-    if(!right_edge&&!context_menu_open&&asteros_mouse_activation_edge(previous_buttons,pressed)){
+    if(!right_edge&&!context_was_open&&!context_menu_open&&asteros_mouse_activation_edge(previous_buttons,pressed)){
         if(target==ASTEROS_HIT_START){
             active_app=-1;
             redraw=1;
