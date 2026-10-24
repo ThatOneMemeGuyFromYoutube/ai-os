@@ -284,9 +284,9 @@ void gui_handle_key(char key){
         context_menu_open=1;
         context_menu_x=(uint8_t)(mouse_x/4);
         context_menu_y=(uint8_t)(mouse_y/4);
+        context_menu_target=asteros_desktop_hit_test(active_app,context_menu_x,context_menu_y);
         if(context_menu_x>WIDTH-16)context_menu_x=WIDTH-16;
         if(context_menu_y>HEIGHT-5)context_menu_y=HEIGHT-5;
-        context_menu_target=asteros_desktop_hit_test(active_app,context_menu_x,context_menu_y);
         gui_draw();
         return;
     }
