@@ -12,6 +12,15 @@ enum {
 };
 
 enum {
+    ASTEROS_CONTEXT_MENU_WIDTH = 16,
+    ASTEROS_CONTEXT_MENU_HEIGHT = 5,
+    ASTEROS_CONTEXT_MENU_NONE = 0,
+    ASTEROS_CONTEXT_MENU_OPEN = 1,
+    ASTEROS_CONTEXT_MENU_SETTINGS = 2,
+    ASTEROS_CONTEXT_MENU_CLOSE = 3
+};
+
+enum {
     ASTEROS_HIT_START = -1,
     ASTEROS_HIT_CLOSE = -2,
     ASTEROS_HIT_NONE = -3,
@@ -26,6 +35,14 @@ enum {
    Taskbar controls stay available while a window is open. Window contents
    take precedence over desktop icons behind them. */
 int8_t asteros_desktop_hit_test(int8_t active_app, uint8_t x, uint8_t y);
+
+/* Place a 16x5 context menu wholly inside the 80x25 text screen. */
+void asteros_context_menu_place(uint8_t pointer_x, uint8_t pointer_y,
+                                uint8_t *menu_x, uint8_t *menu_y);
+
+/* Return OPEN, SETTINGS, CLOSE, or NONE. Border cells are not actionable. */
+int8_t asteros_context_menu_hit_test(uint8_t menu_x, uint8_t menu_y,
+                                     uint8_t x, uint8_t y);
 
 /* Left, right, and middle presses can activate controls. */
 uint8_t asteros_mouse_activation_edge(uint8_t previous_buttons, uint8_t buttons);
