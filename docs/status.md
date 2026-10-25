@@ -1,6 +1,12 @@
 # Status
 
 
+## 2026-10-25 — Context-menu boundary handling
+
+The desktop context menu now uses host-testable placement and hit-test helpers in `kernel/desktop_input.c`. The menu stays inside the 80x25 VGA text grid, and clicks on its border or outside it dismiss the menu without accidentally selecting an item. Regression tests cover the three action rows, all borders, outside clicks, and bottom-right placement. Source review also caught and fixed an over-escaped NUL literal in the Open action's terminal reset.
+
+This advances the active October 19–November 1 desktop milestone but does not complete it; focus, window lifecycle, and other desktop behavior remain. CI run 40226928274 passed host tests, i386 kernel and ISO builds, and the QEMU ISO smoke test for the code change. Local checkout is unavailable in this environment because github.com DNS resolution fails.
+
 ## 2026-10-17 — Terminal history integration and branch compatibility
 
 Implemented the history API previously declared in `kernel/terminal.h` and switched the VGA GUI shell to use the same state object instead of maintaining separate history buffers. The input limit now reuses `ASTEROS_TERMINAL_LINE_MAX`, keeping the GUI and API buffer contracts aligned. Empty-history `!!` no longer overwrites the last-command slot. Host regression tests cover no-history repeat, successful repeat, an undersized destination that must remain unchanged, truncation to the UI limit, and clearing.

@@ -76,12 +76,52 @@ static void test_settings_rows_are_scoped_and_complete(void) {
     expect_hit(ASTEROS_APP_SETTINGS, 73, 4, ASTEROS_HIT_CLOSE);
 }
 
+static void test_context_menu_placement(void) {
+    uint8_t x = 0, y = 0;
+
+    asteros_context_menu_place(10, 7, &x, &y);
+    assert(x == 10 && y == 7);
+
+    asteros_context_menu_place(79, 24, &x, &y);
+    assert(x == 64 && y == 20);
+    assert(x + ASTEROS_CONTEXT_MENU_WIDTH == 80);
+    assert(y + ASTEROS_CONTEXT_MENU_HEIGHT == 25);
+
+    asteros_context_menu_place(64, 20, &x, &y);
+    assert(x == 64 && y == 20);
+    asteros_context_menu_place(0, 0, 0, &y);
+    asteros_context_menu_place(0, 0, &x, 0);
+}
+
+static void test_context_menu_hit_testing(void) {
+    const uint8_t left = 10, top = 5;
+
+    assert(asteros_context_menu_hit_test(left, top, 12, 6) == ASTEROS_CONTEXT_MENU_OPEN);
+    assert(asteros_context_menu_hit_test(left, top, 11, 7) == ASTEROS_CONTEXT_MENU_SETTINGS);
+    assert(asteros_context_menu_hit_test(left, top, 24, 8) == ASTEROS_CONTEXT_MENU_CLOSE);
+
+    /* No action is triggered by the border or a cell outside the menu. */
+    assert(asteros_context_menu_hit_test(left, top, 10, 6) == ASTEROS_CONTEXT_MENU_NONE);
+    assert(asteros_context_menu_hit_test(left, top, 25, 6) == ASTEROS_CONTEXT_MENU_NONE);
+    assert(asteros_context_menu_hit_test(left, top, 12, 5) == ASTEROS_CONTEXT_MENU_NONE);
+    assert(asteros_context_menu_hit_test(left, top, 12, 9) == ASTEROS_CONTEXT_MENU_NONE);
+    assert(asteros_context_menu_hit_test(left, top, 9, 6) == ASTEROS_CONTEXT_MENU_NONE);
+    assert(asteros_context_menu_hit_test(left, top, 26, 6) == ASTEROS_CONTEXT_MENU_NONE);
+    assert(asteros_context_menu_hit_test(left, top, 12, 10) == ASTEROS_CONTEXT_MENU_NONE);
+
+    /* A bottom-right menu remains selectable at the screen edge. */
+    assert(asteros_context_menu_hit_test(64, 20, 66, 21) == ASTEROS_CONTEXT_MENU_OPEN);
+    assert(asteros_context_menu_hit_test(64, 20, 66, 23) == ASTEROS_CONTEXT_MENU_CLOSE);
+}
+
 int main(void) {
     test_alternate_mouse_activation();
     test_taskbar_has_priority();
     test_launcher_and_desktop_icons();
     test_foreground_window_blocks_background();
     test_settings_rows_are_scoped_and_complete();
+    test_context_menu_placement();
+    test_context_menu_hit_testing();
     puts("desktop input: tests passed");
     return 0;
 }

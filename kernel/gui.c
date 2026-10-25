@@ -234,8 +234,8 @@ static void draw_desktop_surface(void){
 }
 static void draw_context_menu(void){
     if(!context_menu_open)return;
-    fill(context_menu_x,context_menu_y,16,5,' ',ATTR_PANEL);
-    border(context_menu_x,context_menu_y,16,5);
+    fill(context_menu_x,context_menu_y,ASTEROS_CONTEXT_MENU_WIDTH,ASTEROS_CONTEXT_MENU_HEIGHT,' ',ATTR_PANEL);
+    border(context_menu_x,context_menu_y,ASTEROS_CONTEXT_MENU_WIDTH,ASTEROS_CONTEXT_MENU_HEIGHT);
     text((uint8_t)(context_menu_x+2),(uint8_t)(context_menu_y+1),"Open",ATTR_PANEL);
     text((uint8_t)(context_menu_x+2),(uint8_t)(context_menu_y+2),"Settings",ATTR_PANEL);
     text((uint8_t)(context_menu_x+2),(uint8_t)(context_menu_y+3),active_app>=0?"Close window":"Show desktop",ATTR_PANEL);
@@ -285,8 +285,8 @@ void gui_handle_key(char key){
         context_menu_x=(uint8_t)(mouse_x/4);
         context_menu_y=(uint8_t)(mouse_y/4);
         context_menu_target=asteros_desktop_hit_test(active_app,context_menu_x,context_menu_y);
-        if(context_menu_x>WIDTH-16)context_menu_x=WIDTH-16;
-        if(context_menu_y>HEIGHT-5)context_menu_y=HEIGHT-5;
+        asteros_context_menu_place(context_menu_x,context_menu_y,
+                                   &context_menu_x,&context_menu_y);
         gui_draw();
         return;
     }
@@ -351,26 +351,34 @@ void gui_handle_mouse(int8_t dx,int8_t dy,uint8_t buttons){
     right_edge=(uint8_t)((pressed&2u)&&!(previous_buttons&2u));
     if(right_edge){
         context_menu_open=1;
-        context_menu_x=cell_x;
-        context_menu_y=cell_y;
-        if(context_menu_x>WIDTH-16)context_menu_x=WIDTH-16;
-        if(context_menu_y>HEIGHT-5)context_menu_y=HEIGHT-5;
+        asteros_context_menu_place(cell_x,cell_y,
+                                   &context_menu_x,&context_menu_y);
         context_menu_target=target;
         redraw=1;
     }else if(context_menu_open&&asteros_mouse_activation_edge(previous_buttons,pressed)){
-        if(cell_x>=context_menu_x&&cell_x<context_menu_x+16&&cell_y>context_menu_y&&cell_y<context_menu_y+4){
-            uint8_t choice=(uint8_t)(cell_y-context_menu_y);
-            if(choice==1){
-                if(context_menu_target>=0&&context_menu_target<5){selected=(uint8_t)context_menu_target;active_app=context_menu_target;terminal_result=TERM_READY;terminal_output[0]='\\0';terminal_reset_input();}
-            }else if(choice==2){selected=ASTEROS_APP_SETTINGS;active_app=ASTEROS_APP_SETTINGS;}
-            else if(choice==3){active_app=-1;terminal_reset_input();}
-            context_menu_open=0;
-            redraw=1;
-        }else{
-            context_menu_open=0;
-            /* A click outside the menu dismisses it without activating through it. */
-            redraw=1;
+        int8_t choice=asteros_context_menu_hit_test(context_menu_x,context_menu_y,
+                                                    cell_x,cell_y);
+        if(choice==ASTEROS_CONTEXT_MENU_OPEN){
+            if(context_menu_target>=0&&context_menu_target<5){
+                selected=(uint8_t)context_menu_target;
+                active_app=context_menu_target;
+                terminal_result=TERM_READY;
+                terminal_output[0]='\0';
+                terminal_reset_input();
+            }
+        }else if(choice==ASTEROS_CONTEXT_MENU_SETTINGS){
+            selected=ASTEROS_APP_SETTINGS;
+            active_app=ASTEROS_APP_SETTINGS;
+            terminal_result=TERM_READY;
+            terminal_output[0]='\0';
+            terminal_reset_input();
+        }else if(choice==ASTEROS_CONTEXT_MENU_CLOSE){
+            active_app=-1;
+            terminal_reset_input();
         }
+        /* Clicking the border or elsewhere only dismisses the menu. */
+        context_menu_open=0;
+        redraw=1;
     }
     if(active_app<0&&target>=0&&target<5&&selected!=(uint8_t)target){
         selected=(uint8_t)target;
