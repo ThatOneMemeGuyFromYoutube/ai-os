@@ -48,3 +48,24 @@ int8_t asteros_desktop_hit_test(int8_t active_app, uint8_t x, uint8_t y) {
 
     return ASTEROS_HIT_NONE;
 }
+
+void asteros_context_menu_place(uint8_t pointer_x, uint8_t pointer_y,
+                                uint8_t *menu_x, uint8_t *menu_y) {
+    if (!menu_x || !menu_y) return;
+
+    *menu_x = pointer_x;
+    *menu_y = pointer_y;
+    if (*menu_x > 80u - ASTEROS_CONTEXT_MENU_WIDTH)
+        *menu_x = 80u - ASTEROS_CONTEXT_MENU_WIDTH;
+    if (*menu_y > 25u - ASTEROS_CONTEXT_MENU_HEIGHT)
+        *menu_y = 25u - ASTEROS_CONTEXT_MENU_HEIGHT;
+}
+
+int8_t asteros_context_menu_hit_test(uint8_t menu_x, uint8_t menu_y,
+                                     uint8_t x, uint8_t y) {
+    if (x <= menu_x || x >= menu_x + ASTEROS_CONTEXT_MENU_WIDTH - 1u ||
+        y <= menu_y || y >= menu_y + ASTEROS_CONTEXT_MENU_HEIGHT - 1u)
+        return ASTEROS_CONTEXT_MENU_NONE;
+
+    return (int8_t)(y - menu_y);
+}
