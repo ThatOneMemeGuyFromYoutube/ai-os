@@ -363,14 +363,14 @@ void gui_handle_mouse(int8_t dx,int8_t dy,uint8_t buttons){
                 selected=(uint8_t)context_menu_target;
                 active_app=context_menu_target;
                 terminal_result=TERM_READY;
-                terminal_output[0]='\\0';
+                terminal_output[0]='\0';
                 terminal_reset_input();
             }
         }else if(choice==ASTEROS_CONTEXT_MENU_SETTINGS){
             selected=ASTEROS_APP_SETTINGS;
             active_app=ASTEROS_APP_SETTINGS;
             terminal_result=TERM_READY;
-            terminal_output[0]='\\0';
+            terminal_output[0]='\0';
             terminal_reset_input();
         }else if(choice==ASTEROS_CONTEXT_MENU_CLOSE){
             active_app=-1;
