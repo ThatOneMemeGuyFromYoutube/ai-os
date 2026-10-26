@@ -1,6 +1,11 @@
 # Status
 
 
+## 2026-10-26 — Context-menu keyboard navigation
+
+The active October 19–November 1 desktop milestone remains open. The context menu now has a visible selected row and supports Up/Down (or W/S) navigation with wraparound plus Enter/Space activation; Escape still dismisses it. Keyboard and mouse activation share the same action handler so menu behavior stays consistent. Host-testable row navigation coverage was added to `tests/test_desktop_input.c`. Validation is pending CI on the feature branch; do not publish a release until host tests, i386 build, ISO build, and QEMU smoke test pass.
+
+
 ## 2026-10-25 — Context-menu boundary handling
 
 The desktop context menu now uses host-testable placement and hit-test helpers in `kernel/desktop_input.c`. The menu stays inside the 80x25 VGA text grid, and clicks on its border or outside it dismiss the menu without accidentally selecting an item. Regression tests cover the three action rows, all borders, outside clicks, and bottom-right placement. Source review also caught and fixed an over-escaped NUL literal in the Open action's terminal reset.
