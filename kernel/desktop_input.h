@@ -44,6 +44,9 @@ void asteros_context_menu_place(uint8_t pointer_x, uint8_t pointer_y,
 int8_t asteros_context_menu_hit_test(uint8_t menu_x, uint8_t menu_y,
                                      uint8_t x, uint8_t y);
 
+/* Move through the three actionable menu rows, wrapping at either end. */
+uint8_t asteros_context_menu_move_selection(uint8_t selection, int8_t delta);
+
 /* Left, right, and middle presses can activate controls. */
 uint8_t asteros_mouse_activation_edge(uint8_t previous_buttons, uint8_t buttons);
 
