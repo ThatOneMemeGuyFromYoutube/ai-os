@@ -258,14 +258,14 @@ static void context_menu_execute(int8_t choice){
             selected=(uint8_t)context_menu_target;
             active_app=context_menu_target;
             terminal_result=TERM_READY;
-            terminal_output[0]='\\0';
+            terminal_output[0]='\0';
             terminal_reset_input();
         }
     }else if(choice==ASTEROS_CONTEXT_MENU_SETTINGS){
         selected=ASTEROS_APP_SETTINGS;
         active_app=ASTEROS_APP_SETTINGS;
         terminal_result=TERM_READY;
-        terminal_output[0]='\\0';
+        terminal_output[0]='\0';
         terminal_reset_input();
     }else if(choice==ASTEROS_CONTEXT_MENU_CLOSE){
         active_app=-1;
@@ -340,7 +340,7 @@ void gui_handle_key(char key){
             gui_draw();
             return;
         }
-        if(key=='\\r'||key=='\\n'||key==' '){
+        if(key=='\r'||key=='\n'||key==' '){
             context_menu_execute(context_menu_selection);
             gui_draw();
             return;
