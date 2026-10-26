@@ -69,3 +69,19 @@ int8_t asteros_context_menu_hit_test(uint8_t menu_x, uint8_t menu_y,
 
     return (int8_t)(y - menu_y);
 }
+
+uint8_t asteros_context_menu_move_selection(uint8_t selection, int8_t delta) {
+    if (selection < ASTEROS_CONTEXT_MENU_OPEN ||
+        selection > ASTEROS_CONTEXT_MENU_CLOSE)
+        selection = ASTEROS_CONTEXT_MENU_OPEN;
+
+    if (delta < 0) {
+        return selection == ASTEROS_CONTEXT_MENU_OPEN
+            ? ASTEROS_CONTEXT_MENU_CLOSE : (uint8_t)(selection - 1u);
+    }
+    if (delta > 0) {
+        return selection == ASTEROS_CONTEXT_MENU_CLOSE
+            ? ASTEROS_CONTEXT_MENU_OPEN : (uint8_t)(selection + 1u);
+    }
+    return selection;
+}
