@@ -3,7 +3,7 @@
 
 ## 2026-10-26 — Context-menu keyboard navigation
 
-The active October 19–November 1 desktop milestone remains open. The context menu now has a visible selected row and supports Up/Down (or W/S) navigation with wraparound plus Enter/Space activation; Escape still dismisses it. Keyboard and mouse activation share the same action handler so menu behavior stays consistent. Host-testable row navigation coverage was added to `tests/test_desktop_input.c`. Validation is pending CI on the feature branch; do not publish a release until host tests, i386 build, ISO build, and QEMU smoke test pass.
+The active October 19–November 1 desktop milestone remains open. The context menu now has a visible selected row and supports Up/Down (or W/S) navigation with wraparound plus Enter/Space activation; Escape still dismisses it. Keyboard and mouse activation share the same action handler so menu behavior stays consistent. Host-testable row navigation coverage was added to `tests/test_desktop_input.c`. CI run [40384985686](https://github.com/ThatOneMemeGuyFromYoutube/ai-os/actions/runs/40384985686) passed on commit `83e2b41`: host regression tests, TinyLang checks, i386 cross-toolchain/kernel build, bootable ISO build, and QEMU ISO smoke test all succeeded. The PR-specific build/release workflow runs are still in progress; publish a new release only after the merge-triggered main build succeeds.
 
 
 ## 2026-10-25 — Context-menu boundary handling
