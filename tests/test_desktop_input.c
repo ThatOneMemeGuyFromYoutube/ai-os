@@ -93,6 +93,29 @@ static void test_context_menu_placement(void) {
     asteros_context_menu_place(0, 0, &x, 0);
 }
 
+static void test_context_menu_keyboard_selection(void) {
+    uint8_t selection = ASTEROS_CONTEXT_MENU_OPEN;
+
+    assert(selection == ASTEROS_CONTEXT_MENU_OPEN);
+    selection = asteros_context_menu_move_selection(selection, -1);
+    assert(selection == ASTEROS_CONTEXT_MENU_CLOSE);
+    selection = asteros_context_menu_move_selection(selection, 1);
+    assert(selection == ASTEROS_CONTEXT_MENU_OPEN);
+
+    selection = asteros_context_menu_move_selection(ASTEROS_CONTEXT_MENU_OPEN, 1);
+    assert(selection == ASTEROS_CONTEXT_MENU_SETTINGS);
+    selection = asteros_context_menu_move_selection(selection, 1);
+    assert(selection == ASTEROS_CONTEXT_MENU_CLOSE);
+    selection = asteros_context_menu_move_selection(selection, 1);
+    assert(selection == ASTEROS_CONTEXT_MENU_OPEN);
+
+    /* Zero movement preserves a valid row; invalid state recovers to Open. */
+    assert(asteros_context_menu_move_selection(ASTEROS_CONTEXT_MENU_SETTINGS, 0) ==
+           ASTEROS_CONTEXT_MENU_SETTINGS);
+    assert(asteros_context_menu_move_selection(0, 1) == ASTEROS_CONTEXT_MENU_SETTINGS);
+    assert(asteros_context_menu_move_selection(99, -1) == ASTEROS_CONTEXT_MENU_CLOSE);
+}
+
 static void test_context_menu_hit_testing(void) {
     const uint8_t left = 10, top = 5;
 
@@ -122,6 +145,7 @@ int main(void) {
     test_settings_rows_are_scoped_and_complete();
     test_context_menu_placement();
     test_context_menu_hit_testing();
+    test_context_menu_keyboard_selection();
     puts("desktop input: tests passed");
     return 0;
 }
