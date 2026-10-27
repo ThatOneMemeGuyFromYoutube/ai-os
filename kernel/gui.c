@@ -252,21 +252,21 @@ static void draw_context_menu(void){
                  active_app>=0?"Close window":"Show desktop",attribute);
     }
 }
-static void context_menu_execute(int8_t choice){
-    if(choice==ASTEROS_CONTEXT_MENU_OPEN){
-        if(context_menu_target>=0&&context_menu_target<5){
-            selected=(uint8_t)context_menu_target;
-            active_app=context_menu_target;
-            terminal_result=TERM_READY;
-            terminal_output[0]='\0';
-            terminal_reset_input();
-        }
-    }else if(choice==ASTEROS_CONTEXT_MENU_SETTINGS){
-        selected=ASTEROS_APP_SETTINGS;
-        active_app=ASTEROS_APP_SETTINGS;
+static void activate_app(uint8_t app){
+    if(app>ASTEROS_APP_SETTINGS)return;
+    if(asteros_app_focus_changed(active_app,(int8_t)app)){
         terminal_result=TERM_READY;
         terminal_output[0]='\0';
-        terminal_reset_input();
+    }
+    selected=app;
+    active_app=(int8_t)app;
+}
+static void context_menu_execute(int8_t choice){
+    if(choice==ASTEROS_CONTEXT_MENU_OPEN){
+        if(context_menu_target>=0&&context_menu_target<5)
+            activate_app((uint8_t)context_menu_target);
+    }else if(choice==ASTEROS_CONTEXT_MENU_SETTINGS){
+        activate_app(ASTEROS_APP_SETTINGS);
     }else if(choice==ASTEROS_CONTEXT_MENU_CLOSE){
         active_app=-1;
         terminal_reset_input();
@@ -318,7 +318,9 @@ void gui_handle_key(char key){
         context_menu_selection=ASTEROS_CONTEXT_MENU_OPEN;
         context_menu_x=(uint8_t)(mouse_x/4);
         context_menu_y=(uint8_t)(mouse_y/4);
-        context_menu_target=asteros_desktop_hit_test(active_app,context_menu_x,context_menu_y);
+        context_menu_target=asteros_context_menu_resolve_target(
+            active_app,context_menu_x,context_menu_y,
+            asteros_desktop_hit_test(active_app,context_menu_x,context_menu_y));
         asteros_context_menu_place(context_menu_x,context_menu_y,
                                    &context_menu_x,&context_menu_y);
         gui_draw();
@@ -351,19 +353,19 @@ void gui_handle_key(char key){
     if(active_app<0){
         if((uint8_t)key==KEY_UP||key=='w'||key=='W'){if(selected==0)selected=4;else--selected;gui_draw();}
         else if((uint8_t)key==KEY_DOWN||key=='s'||key=='S'){selected=(uint8_t)((selected+1)%5);gui_draw();}
-        else if(key>='1'&&key<='5'){selected=(uint8_t)(key-'1');active_app=(int8_t)selected;terminal_result=TERM_READY;terminal_output[0]='\0';terminal_reset_input();gui_draw();}
+        else if(key>='1'&&key<='5'){selected=(uint8_t)(key-'1');activate_app(selected);gui_draw();}
         else if(key=='t'||key=='T'||key=='f'||key=='F'||key=='p'||key=='P'||key=='a'||key=='A'||key=='c'||key=='C'){
             if(key=='t'||key=='T')selected=0;
             else if(key=='f'||key=='F')selected=1;
             else if(key=='p'||key=='P')selected=2;
             else if(key=='a'||key=='A')selected=3;
             else selected=4;
-            active_app=(int8_t)selected;terminal_result=TERM_READY;terminal_output[0]='\0';terminal_reset_input();gui_draw();
+            activate_app(selected);gui_draw();
         }
-        else if(key=='\r'||key=='\n'){active_app=(int8_t)selected;terminal_result=TERM_READY;terminal_output[0]='\0';terminal_reset_input();gui_draw();}
+        else if(key=='\r'||key=='\n'){activate_app(selected);gui_draw();}
         return;
     }
-    if(key==KEY_TAB){selected=(uint8_t)((selected+1)%5);active_app=(int8_t)selected;terminal_result=TERM_READY;terminal_output[0]='\0';terminal_reset_input();gui_draw();return;}
+    if(key==KEY_TAB){selected=(uint8_t)((selected+1)%5);activate_app(selected);gui_draw();return;}
     if(key=='q'||key=='Q'||key=='x'||key=='X'||key==27){active_app=-1;terminal_reset_input();gui_draw();return;}
     if(active_app==4){
         if(key=='v'||key=='V')cursor_setting_change(0);
@@ -410,7 +412,7 @@ void gui_handle_mouse(int8_t dx,int8_t dy,uint8_t buttons){
         context_menu_selection=ASTEROS_CONTEXT_MENU_OPEN;
         asteros_context_menu_place(cell_x,cell_y,
                                    &context_menu_x,&context_menu_y);
-        context_menu_target=target;
+        context_menu_target=asteros_context_menu_resolve_target(active_app,cell_x,cell_y,target);
         redraw=1;
     }else if(context_menu_open&&asteros_mouse_activation_edge(previous_buttons,pressed)){
         int8_t choice=asteros_context_menu_hit_test(context_menu_x,context_menu_y,
@@ -440,11 +442,7 @@ void gui_handle_mouse(int8_t dx,int8_t dy,uint8_t buttons){
         }else if(target==ASTEROS_HIT_SETTING_COLOR){cursor_setting_change(3);redraw=1;
         }else if(target==ASTEROS_HIT_SETTING_KEYBOARD_CLICK){keyboard_click_enabled=(uint8_t)!keyboard_click_enabled;redraw=1;
         }else if(target>=0&&target<5){
-            selected=(uint8_t)target;
-            active_app=target;
-            terminal_result=TERM_READY;
-            terminal_output[0]='\0';
-            terminal_reset_input();
+            activate_app((uint8_t)target);
             redraw=1;
         }
     }
