@@ -76,6 +76,39 @@ static void test_settings_rows_are_scoped_and_complete(void) {
     expect_hit(ASTEROS_APP_SETTINGS, 73, 4, ASTEROS_HIT_CLOSE);
 }
 
+static void test_context_menu_targets_foreground_window(void) {
+    /* Ordinary hit testing blocks clicks through a window, but a context
+       menu opened over that window must still offer a useful Open action. */
+    assert(asteros_context_menu_resolve_target(
+        ASTEROS_APP_TERMINAL, 30, 8, ASTEROS_HIT_NONE) == ASTEROS_APP_TERMINAL);
+    assert(asteros_context_menu_resolve_target(
+        ASTEROS_APP_SETTINGS, 30, 7, ASTEROS_HIT_SETTING_VISIBLE) ==
+        ASTEROS_APP_SETTINGS);
+    assert(asteros_context_menu_resolve_target(
+        ASTEROS_APP_TERMINAL, 73, 4, ASTEROS_HIT_CLOSE) ==
+        ASTEROS_APP_TERMINAL);
+
+    /* Outside the window, preserve the ordinary hit-test result. */
+    assert(asteros_context_menu_resolve_target(
+        ASTEROS_APP_TERMINAL, 10, 10, ASTEROS_HIT_NONE) == ASTEROS_HIT_NONE);
+    assert(asteros_context_menu_resolve_target(
+        ASTEROS_APP_TERMINAL, 22, 23, ASTEROS_APP_FILES) == ASTEROS_APP_FILES);
+    assert(asteros_context_menu_resolve_target(
+        -1, 25, 8, ASTEROS_APP_TERMINAL) == ASTEROS_APP_TERMINAL);
+    assert(asteros_context_menu_resolve_target(
+        -1, 10, 10, ASTEROS_HIT_NONE) == ASTEROS_HIT_NONE);
+}
+
+static void test_app_focus_change_detection(void) {
+    assert(asteros_app_focus_changed(-1, ASTEROS_APP_TERMINAL) == 1);
+    assert(asteros_app_focus_changed(ASTEROS_APP_TERMINAL,
+                                     ASTEROS_APP_TERMINAL) == 0);
+    assert(asteros_app_focus_changed(ASTEROS_APP_TERMINAL,
+                                     ASTEROS_APP_FILES) == 1);
+    assert(asteros_app_focus_changed(-1, -1) == 0);
+    assert(asteros_app_focus_changed(ASTEROS_APP_TERMINAL, 99) == 0);
+}
+
 static void test_context_menu_placement(void) {
     uint8_t x = 0, y = 0;
 
@@ -143,6 +176,8 @@ int main(void) {
     test_launcher_and_desktop_icons();
     test_foreground_window_blocks_background();
     test_settings_rows_are_scoped_and_complete();
+    test_context_menu_targets_foreground_window();
+    test_app_focus_change_detection();
     test_context_menu_placement();
     test_context_menu_hit_testing();
     test_context_menu_keyboard_selection();
