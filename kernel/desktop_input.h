@@ -36,6 +36,15 @@ enum {
    take precedence over desktop icons behind them. */
 int8_t asteros_desktop_hit_test(int8_t active_app, uint8_t x, uint8_t y);
 
+/* Resolve the object beneath a context-menu request. A click inside the
+   foreground window targets that window even where ordinary activation hit
+   testing intentionally blocks its contents. */
+int8_t asteros_context_menu_resolve_target(int8_t active_app, uint8_t x,
+                                           uint8_t y, int8_t hit_target);
+
+/* Return nonzero only when a valid application request changes focus. */
+uint8_t asteros_app_focus_changed(int8_t active_app, int8_t requested_app);
+
 /* Place a 16x5 context menu wholly inside the 80x25 text screen. */
 void asteros_context_menu_place(uint8_t pointer_x, uint8_t pointer_y,
                                 uint8_t *menu_x, uint8_t *menu_y);

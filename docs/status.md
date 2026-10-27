@@ -1,5 +1,10 @@
 # Status
 
+## 2026-10-27 — Context-menu window targeting and focus preservation
+
+The active October 19–November 1 desktop milestone remains open. Context-menu Open now resolves clicks inside the foreground window to that application, rather than returning no target because normal hit testing correctly blocks click-through. App activation is centralized so clicking an already active taskbar item or reopening the same app does not clear its terminal output or unfinished input. Switching between apps with Tab, the taskbar, or context actions preserves the terminal draft; explicit window close still discards it. Added host regression tests for foreground-window context targets and focus-change detection. The existing Node 24-forced CI workflows remain current; validation and release are pending for this change.
+
+
 
 ## 2026-10-26 — Context-menu keyboard navigation
 

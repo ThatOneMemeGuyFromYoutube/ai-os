@@ -49,6 +49,23 @@ int8_t asteros_desktop_hit_test(int8_t active_app, uint8_t x, uint8_t y) {
     return ASTEROS_HIT_NONE;
 }
 
+int8_t asteros_context_menu_resolve_target(int8_t active_app, uint8_t x,
+                                           uint8_t y, int8_t hit_target) {
+    /* gui_draw() places the active window at (20,2) with size 59x19.
+       Its interior and title bar belong to the foreground app for context
+       actions, even though normal hit testing blocks clicks through it. */
+    if (active_app >= ASTEROS_APP_TERMINAL && active_app <= ASTEROS_APP_SETTINGS &&
+        x >= 20u && x <= 78u && y >= 2u && y <= 20u)
+        return active_app;
+    return hit_target;
+}
+
+uint8_t asteros_app_focus_changed(int8_t active_app, int8_t requested_app) {
+    return (uint8_t)(requested_app >= ASTEROS_APP_TERMINAL &&
+                     requested_app <= ASTEROS_APP_SETTINGS &&
+                     active_app != requested_app);
+}
+
 void asteros_context_menu_place(uint8_t pointer_x, uint8_t pointer_y,
                                 uint8_t *menu_x, uint8_t *menu_y) {
     if (!menu_x || !menu_y) return;
