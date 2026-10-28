@@ -66,6 +66,23 @@ uint8_t asteros_app_focus_changed(int8_t active_app, int8_t requested_app) {
                      active_app != requested_app);
 }
 
+uint8_t asteros_app_activation_resets_output(int8_t active_app,
+                                             int8_t requested_app,
+                                             int8_t minimized_app) {
+    uint8_t restoring_minimized =
+        (uint8_t)(active_app < 0 && requested_app == minimized_app);
+    return (uint8_t)(asteros_app_focus_changed(active_app, requested_app) &&
+                     !restoring_minimized);
+}
+
+uint8_t asteros_taskbar_should_minimize(int8_t active_app, int8_t requested_app,
+                                        uint8_t y) {
+    return (uint8_t)(y == 23u &&
+                     active_app >= ASTEROS_APP_TERMINAL &&
+                     active_app <= ASTEROS_APP_SETTINGS &&
+                     requested_app == active_app);
+}
+
 void asteros_context_menu_place(uint8_t pointer_x, uint8_t pointer_y,
                                 uint8_t *menu_x, uint8_t *menu_y) {
     if (!menu_x || !menu_y) return;
