@@ -127,6 +127,25 @@ static void test_taskbar_minimize_decision(void) {
         99, 99, 23) == 0);
 }
 
+static void test_minimized_app_restore_preserves_output(void) {
+    /* Restoring the same minimized app should keep its previous output. */
+    assert(asteros_app_activation_resets_output(
+        -1, ASTEROS_APP_TERMINAL, ASTEROS_APP_TERMINAL) == 0);
+
+    /* Choosing a different app from the desktop starts its fresh view. */
+    assert(asteros_app_activation_resets_output(
+        -1, ASTEROS_APP_FILES, ASTEROS_APP_TERMINAL) == 1);
+
+    /* Switching between apps resets the view; selecting the current app does not. */
+    assert(asteros_app_activation_resets_output(
+        ASTEROS_APP_TERMINAL, ASTEROS_APP_FILES, ASTEROS_APP_TERMINAL) == 1);
+    assert(asteros_app_activation_resets_output(
+        ASTEROS_APP_TERMINAL, ASTEROS_APP_TERMINAL, -1) == 0);
+
+    /* Invalid requests never trigger an output reset. */
+    assert(asteros_app_activation_resets_output(-1, 99, -1) == 0);
+}
+
 static void test_context_menu_placement(void) {
     uint8_t x = 0, y = 0;
 
@@ -197,6 +216,7 @@ int main(void) {
     test_context_menu_targets_foreground_window();
     test_app_focus_change_detection();
     test_taskbar_minimize_decision();
+    test_minimized_app_restore_preserves_output();
     test_context_menu_placement();
     test_context_menu_hit_testing();
     test_context_menu_keyboard_selection();
