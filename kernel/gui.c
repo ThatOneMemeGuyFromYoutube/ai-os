@@ -255,10 +255,8 @@ static void draw_context_menu(void){
     }
 }
 static void activate_app(uint8_t app){
-    uint8_t restoring_minimized;
     if(app>ASTEROS_APP_SETTINGS)return;
-    restoring_minimized=(uint8_t)(active_app<0&&minimized_app==(int8_t)app);
-    if(asteros_app_focus_changed(active_app,(int8_t)app)&&!restoring_minimized){
+    if(asteros_app_activation_resets_output(active_app,(int8_t)app,minimized_app)){
         terminal_result=TERM_READY;
         terminal_output[0]='\0';
     }
