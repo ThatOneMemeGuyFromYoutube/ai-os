@@ -1,5 +1,9 @@
 # Status
 
+## 2026-10-29 — Preserve terminal state across desktop focus changes
+
+The active October 19–November 1 desktop milestone remains open. Switching away from Terminal no longer clears its last result/output, and restoring it after minimizing or using another application returns to the same terminal view and unfinished draft. Explicitly closing Terminal clears its draft and visible result; closing a different app no longer discards the terminal draft. Removed the single `minimized_app` marker because it incorrectly coupled terminal state preservation to the last minimized app. Added a host-testable close policy regression test. Build/ISO/QEMU validation and release are pending.
+
 ## 2026-10-28 — Taskbar minimize and restore
 
 The active October 19–November 1 desktop milestone remains open. Clicking the active app's taskbar button now minimizes the single foreground view to the desktop; selecting that app again restores its previous terminal output and unfinished input. Clicking Start also returns to the desktop while retaining the minimized-app marker. Explicit close still discards the terminal draft and clears the marker. Added host-testable helpers for taskbar minimize decisions and activation output-reset policy, with regression coverage for restore versus app-switch behavior. The current CI workflows already force JavaScript actions to Node 24. Validation and release are pending for this change.
