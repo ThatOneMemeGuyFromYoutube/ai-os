@@ -45,10 +45,8 @@ int8_t asteros_context_menu_resolve_target(int8_t active_app, uint8_t x,
 /* Return nonzero only when a valid application request changes focus. */
 uint8_t asteros_app_focus_changed(int8_t active_app, int8_t requested_app);
 
-/* A minimized app restores its previous output; other focus changes reset it. */
-uint8_t asteros_app_activation_resets_output(int8_t active_app,
-                                             int8_t requested_app,
-                                             int8_t minimized_app);
+/* Closing Terminal discards its draft and view; closing another app does not. */
+uint8_t asteros_app_close_discards_terminal_state(int8_t active_app);
 
 /* Return nonzero when clicking the active app's taskbar button should minimize it.
    The single foreground window is toggled only by its own taskbar button. */
