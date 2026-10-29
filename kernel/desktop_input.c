@@ -60,12 +60,6 @@ int8_t asteros_context_menu_resolve_target(int8_t active_app, uint8_t x,
     return hit_target;
 }
 
-uint8_t asteros_app_focus_changed(int8_t active_app, int8_t requested_app) {
-    return (uint8_t)(requested_app >= ASTEROS_APP_TERMINAL &&
-                     requested_app <= ASTEROS_APP_SETTINGS &&
-                     active_app != requested_app);
-}
-
 uint8_t asteros_app_close_discards_terminal_state(int8_t active_app) {
     return (uint8_t)(active_app == ASTEROS_APP_TERMINAL);
 }
