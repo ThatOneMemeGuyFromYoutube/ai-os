@@ -42,9 +42,6 @@ int8_t asteros_desktop_hit_test(int8_t active_app, uint8_t x, uint8_t y);
 int8_t asteros_context_menu_resolve_target(int8_t active_app, uint8_t x,
                                            uint8_t y, int8_t hit_target);
 
-/* Return nonzero only when a valid application request changes focus. */
-uint8_t asteros_app_focus_changed(int8_t active_app, int8_t requested_app);
-
 /* Closing Terminal discards its draft and view; closing another app does not. */
 uint8_t asteros_app_close_discards_terminal_state(int8_t active_app);
 
