@@ -2,7 +2,11 @@
 
 ## 2026-10-30 — Bound PS/2 mouse initialization waits
 
-The active October 19–November 1 desktop milestone remains open. The polling kernel previously waited forever for PS/2 controller input/output status and accepted any response byte after enabling the mouse, so absent or unresponsive auxiliary hardware could hang boot. Added a bounded, host-testable status-wait helper, require the mouse's 0xFA streaming-mode acknowledgement, and continue the keyboard-driven desktop if initialization fails. Auxiliary bytes are still drained but ignored unless initialization succeeds. Added wait-success, masked-status, exact-timeout, null-reader, and zero-attempt regression tests. The Makefile now runs those tests and links the helper into the i386 kernel. CI build/ISO/QEMU validation is pending.
+The active October 19–November 1 desktop milestone remains open. The polling kernel previously waited forever for PS/2 controller input/output status and accepted any response byte after enabling the mouse, so absent or unresponsive auxiliary hardware could hang boot. Added a bounded, host-testable status-wait helper, require the mouse's 0xFA streaming-mode acknowledgement, and continue the keyboard-driven desktop if initialization fails. Auxiliary bytes are still drained but ignored unless initialization succeeds. Added wait-success, masked-status, exact-timeout, null-reader, and zero-attempt regression tests. The Makefile now runs those tests and links the helper into the i386 kernel.
+
+PR #18 merged as `52fbb0228eadc9601a19c1aea440a2a5339d699a`. Host tests, existing keyboard/terminal/desktop/TinyLang checks, i386 toolchain and kernel checks, ISO generation, QEMU boot smoke test, and build artifact upload passed in both PR workflows. Tag v0.1.62 resolves to the source containing this change; the available GitHub integration does not expose a separate release-asset inventory, and no interactive no-mouse QEMU test was performed.
+
+The CI logs also exposed a non-fatal Node 20 runtime warning from `actions/upload-artifact@v5` despite `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true`. Follow-up workflow maintenance upgrades artifact upload to v7, Pages actions to their Node 24-native major versions, and `softprops/action-gh-release` to v3. Keep the Node 24 force enabled; do not use the insecure Node 20 fallback.
 
 ## 2026-10-29 — Preserve terminal state across desktop focus changes
 
