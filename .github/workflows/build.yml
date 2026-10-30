@@ -70,7 +70,7 @@ jobs:
           tar -C build -czf ai-os-${GITHUB_SHA}.tar.gz kernel.bin hello.com ai-os.iso SHA256SUMS
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: ai-os-${{ github.sha }}
           path: |
