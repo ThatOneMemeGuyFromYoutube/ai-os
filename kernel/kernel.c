@@ -1,27 +1,48 @@
 #include <stdint.h>
 #include "gui.h"
 #include "keyboard.h"
+#include "ps2_wait.h"
 enum { SVC_CONSOLE = 1, SVC_FILES = 2, SVC_PROCESS = 3 };
+#define PS2_WAIT_ATTEMPTS 100000u
 static uint8_t inb(uint16_t port) { uint8_t value; __asm__ volatile ("inb %1, %0" : "=a"(value) : "Nd"(port)); return value; }
 static void outb(uint16_t port,uint8_t value) { __asm__ volatile ("outb %0, %1" : : "a"(value), "Nd"(port)); }
-static void wait_controller(void) { while(inb(0x64)&2){} }
-static void mouse_write(uint8_t value) { wait_controller(); outb(0x64,0xD4); wait_controller(); outb(0x60,value); }
-static void mouse_init(void) {
+static uint8_t controller_status(void *context) {
+    (void)context;
+    return inb(0x64);
+}
+static uint8_t wait_controller_input_empty(void) {
+    return asteros_ps2_wait_status(controller_status, 0, 0x02, 0x00,
+                                    PS2_WAIT_ATTEMPTS);
+}
+static uint8_t wait_output_full(void) {
+    return asteros_ps2_wait_status(controller_status, 0, 0x01, 0x01,
+                                    PS2_WAIT_ATTEMPTS);
+}
+static uint8_t mouse_write(uint8_t value) {
+    if (!wait_controller_input_empty()) return 0;
+    outb(0x64,0xD4);
+    if (!wait_controller_input_empty()) return 0;
+    outb(0x60,value);
+    return 1;
+}
+static uint8_t mouse_init(void) {
     uint8_t command;
-    wait_controller();
+
+    /* A missing or stuck auxiliary controller must not prevent keyboard boot. */
+    if (!wait_controller_input_empty()) return 0;
     outb(0x64,0xA8);
-    wait_controller();
+    if (!wait_controller_input_empty()) return 0;
     outb(0x64,0x20);
-    while(!(inb(0x64)&1)){}
+    if (!wait_output_full()) return 0;
     command=inb(0x60);
     command=(uint8_t)(command|0x02);
-    wait_controller();
+    if (!wait_controller_input_empty()) return 0;
     outb(0x64,0x60);
-    wait_controller();
+    if (!wait_controller_input_empty()) return 0;
     outb(0x60,command);
-    mouse_write(0xF4);
-    while(!(inb(0x64)&1)){}
-    (void)inb(0x60);
+    if (!mouse_write(0xF4)) return 0;
+    if (!wait_output_full()) return 0;
+    return (uint8_t)(inb(0x60)==0xFA);
 }
 static uint8_t keyboard_poll(char *key) {
     uint8_t status = inb(0x64);
@@ -53,11 +74,15 @@ void kmain(void){
     char key;
     int8_t dx,dy;
     uint8_t buttons;
+    uint8_t mouse_available;
     gui_init();
-    mouse_init();
+    mouse_available=mouse_init();
     keyboard_reset_state();
     for(;;){
-        if(mouse_poll(&dx,&dy,&buttons))gui_handle_mouse(dx,dy,buttons);
+        /* Keep draining auxiliary bytes after a failed init, but only deliver
+           pointer events when the device acknowledged streaming mode. */
+        if(mouse_poll(&dx,&dy,&buttons)&&mouse_available)
+            gui_handle_mouse(dx,dy,buttons);
         if(keyboard_poll(&key))gui_handle_key(key);
     }
 }
