@@ -1,5 +1,9 @@
 # Status
 
+## 2026-10-30 — Bound PS/2 mouse initialization waits
+
+The active October 19–November 1 desktop milestone remains open. The polling kernel previously waited forever for PS/2 controller input/output status and accepted any response byte after enabling the mouse, so absent or unresponsive auxiliary hardware could hang boot. Added a bounded, host-testable status-wait helper, require the mouse's 0xFA streaming-mode acknowledgement, and continue the keyboard-driven desktop if initialization fails. Auxiliary bytes are still drained but ignored unless initialization succeeds. Added wait-success, masked-status, exact-timeout, null-reader, and zero-attempt regression tests. The Makefile now runs those tests and links the helper into the i386 kernel. CI build/ISO/QEMU validation is pending.
+
 ## 2026-10-29 — Preserve terminal state across desktop focus changes
 
 The active October 19–November 1 desktop milestone remains open. Switching away from Terminal no longer clears its last result/output, and restoring it after minimizing or using another application returns to the same terminal view and unfinished draft. Explicitly closing Terminal clears its draft and visible result; closing a different app no longer discards the terminal draft. Removed the single `minimized_app` marker because it incorrectly coupled terminal state preservation to the last minimized app. Added a host-testable close policy regression test. Build/ISO/QEMU validation and release are pending.
