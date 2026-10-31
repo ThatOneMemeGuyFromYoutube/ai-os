@@ -257,7 +257,7 @@ static void draw_context_menu(void){
             text((uint8_t)(context_menu_x+2),(uint8_t)(context_menu_y+row),"Settings",attribute);
         else
             text((uint8_t)(context_menu_x+2),(uint8_t)(context_menu_y+row),
-                 active_app>=0?"Close window":"Show desktop",attribute);
+                 asteros_context_menu_close_targets_active_window(active_app,context_menu_target)?"Close window":"Show desktop",attribute);
     }
 }
 static void activate_app(uint8_t app){
@@ -274,8 +274,14 @@ static void context_menu_execute(int8_t choice){
     }else if(choice==ASTEROS_CONTEXT_MENU_SETTINGS){
         activate_app(ASTEROS_APP_SETTINGS);
     }else if(choice==ASTEROS_CONTEXT_MENU_CLOSE){
-        if(active_app>=0)close_active_app();
-        /* Show desktop is not a close operation: keep any minimized draft. */
+        if(asteros_context_menu_close_targets_active_window(active_app,
+                                                            context_menu_target)){
+            close_active_app();
+        }else{
+            /* A desktop or inactive-taskbar target returns to the desktop;
+               it must not silently close a different foreground application. */
+            active_app=-1;
+        }
     }
     context_menu_open=0;
 }

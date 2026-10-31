@@ -117,6 +117,23 @@ static void test_taskbar_minimize_decision(void) {
         99, 99, 23) == 0);
 }
 
+static void test_context_menu_close_action_matches_target(void) {
+    assert(asteros_context_menu_close_targets_active_window(
+        ASTEROS_APP_TERMINAL, ASTEROS_APP_TERMINAL) == 1);
+    assert(asteros_context_menu_close_targets_active_window(
+        ASTEROS_APP_SETTINGS, ASTEROS_APP_SETTINGS) == 1);
+
+    /* A menu aimed at another taskbar app or the desktop must not close the
+       unrelated foreground window; its action is Show desktop instead. */
+    assert(asteros_context_menu_close_targets_active_window(
+        ASTEROS_APP_TERMINAL, ASTEROS_APP_FILES) == 0);
+    assert(asteros_context_menu_close_targets_active_window(
+        ASTEROS_APP_TERMINAL, ASTEROS_HIT_NONE) == 0);
+    assert(asteros_context_menu_close_targets_active_window(
+        -1, ASTEROS_APP_TERMINAL) == 0);
+    assert(asteros_context_menu_close_targets_active_window(99, 99) == 0);
+}
+
 static void test_close_only_discards_terminal_state_for_terminal(void) {
     assert(asteros_app_close_discards_terminal_state(ASTEROS_APP_TERMINAL) == 1);
     assert(asteros_app_close_discards_terminal_state(ASTEROS_APP_FILES) == 0);
@@ -196,6 +213,7 @@ int main(void) {
     test_settings_rows_are_scoped_and_complete();
     test_context_menu_targets_foreground_window();
     test_taskbar_minimize_decision();
+    test_context_menu_close_action_matches_target();
     test_close_only_discards_terminal_state_for_terminal();
     test_context_menu_placement();
     test_context_menu_hit_testing();

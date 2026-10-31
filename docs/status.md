@@ -1,5 +1,9 @@
 # Status
 
+## 2026-10-31 — Context-menu close action follows its target
+
+The active October 19–November 1 desktop milestone remains open. The context menu previously labeled its final action based only on whether any app was active, and always closed that active app. Right-clicking a different taskbar app or a desktop area could therefore show “Close window” and close an unrelated foreground app. The menu now shows “Close window” only when the context target is the foreground app; otherwise it shows “Show desktop”, which preserves terminal draft/output state. Added host regression coverage for matching, mismatched, desktop, and invalid targets. Final PR workflows passed host regression tests, TinyLang checks, i386 toolchain/kernel and ISO builds, QEMU ISO boot smoke test, and browser demo tests on commit `96fe2547db19a057f457ea9c5135b30eeb80d614`.
+
 ## 2026-10-30 — Bound PS/2 mouse initialization waits
 
 The active October 19–November 1 desktop milestone remains open. The polling kernel previously waited forever for PS/2 controller input/output status and accepted any response byte after enabling the mouse, so absent or unresponsive auxiliary hardware could hang boot. Added a bounded, host-testable status-wait helper, require the mouse's 0xFA streaming-mode acknowledgement, and continue the keyboard-driven desktop if initialization fails. Auxiliary bytes are still drained but ignored unless initialization succeeds. Added wait-success, masked-status, exact-timeout, null-reader, and zero-attempt regression tests. The Makefile now runs those tests and links the helper into the i386 kernel.

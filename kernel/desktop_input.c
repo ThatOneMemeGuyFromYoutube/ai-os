@@ -72,6 +72,13 @@ uint8_t asteros_taskbar_should_minimize(int8_t active_app, int8_t requested_app,
                      requested_app == active_app);
 }
 
+uint8_t asteros_context_menu_close_targets_active_window(int8_t active_app,
+                                                                      int8_t context_target) {
+    return (uint8_t)(active_app >= ASTEROS_APP_TERMINAL &&
+                     active_app <= ASTEROS_APP_SETTINGS &&
+                     context_target == active_app);
+}
+
 void asteros_context_menu_place(uint8_t pointer_x, uint8_t pointer_y,
                                 uint8_t *menu_x, uint8_t *menu_y) {
     if (!menu_x || !menu_y) return;
