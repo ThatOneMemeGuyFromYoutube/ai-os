@@ -50,6 +50,11 @@ uint8_t asteros_app_close_discards_terminal_state(int8_t active_app);
 uint8_t asteros_taskbar_should_minimize(int8_t active_app, int8_t requested_app,
                                         uint8_t y);
 
+/* A context-menu Close action closes only the window it targets.
+   Desktop or another taskbar target means Show desktop instead. */
+uint8_t asteros_context_menu_close_targets_active_window(int8_t active_app,
+                                                          int8_t context_target);
+
 /* Place a 16x5 context menu wholly inside the 80x25 text screen. */
 void asteros_context_menu_place(uint8_t pointer_x, uint8_t pointer_y,
                                 uint8_t *menu_x, uint8_t *menu_y);
