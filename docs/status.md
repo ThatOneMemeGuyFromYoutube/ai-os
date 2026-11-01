@@ -1,8 +1,14 @@
 # Status
 
-## 2026-11-01 — Alt+F4 closes the foreground window
+## 2026-11-01 — Desktop milestone completed; Alt+F4 close shortcut
 
-The desktop now recognizes Alt+F4 from either left or right Alt in the PS/2 Set 1 decoder and routes it through the existing explicit-close path. The shortcut dismisses an open context menu, closes the active application using the same terminal-state policy as Esc/Q/X, and is harmless on the desktop with no active window. Added host regression coverage for left/right Alt press and release, F4 without Alt, and modifier reset. The change advances the active October 19–November 1 desktop milestone; validation is pending.
+The desktop now recognizes Alt+F4 from either left or right Alt in the PS/2 Set 1 decoder and routes it through the existing explicit-close path. The shortcut dismisses an open context menu, closes the active application using the same terminal-state policy as Esc/Q/X, and is harmless on the desktop with no active window. Host regression tests cover both Alt keys, release handling, F4 without Alt, and modifier reset.
+
+The October 19–November 1 desktop milestone is complete: the VGA shell now has consistent single-window focus switching, keyboard and mouse open/close paths, taskbar minimize/restore, target-aware context menus, persistent terminal state across app switches, and bounded PS/2 mouse initialization with keyboard-only fallback. The GUI remains layered above the i386 kernel; no larger graphics stack was introduced.
+
+PR #21 merged as `19d8b48d8ff4df40569116ae6dbd2499877979a2`. Pull-request workflows passed `make check`, i386 kernel/ISO builds, QEMU ISO boot smoke testing, and browser demo regression tests. Main-branch workflows [41345552266](https://github.com/ThatOneMemeGuyFromYoutube/ai-os/actions/runs/41345552266), [41345552221](https://github.com/ThatOneMemeGuyFromYoutube/ai-os/actions/runs/41345552221), and [41345552248](https://github.com/ThatOneMemeGuyFromYoutube/ai-os/actions/runs/41345552248) all passed; the Pages deployment succeeded. Release v0.1.65 was published with the bootable ISO, build archive, and SHA-256 checksums.
+
+The QEMU check is an automated boot smoke test, not an interactive Alt+F4 demonstration. A local interactive emulator session was unavailable because this environment could not resolve github.com. The next scheduled development window is November 2–15 for IDE and developer tooling; connect TinyLang diagnostics and a practical edit/build/run workflow without claiming native/self-hosting support.
 
 ## 2026-10-31 — Context-menu close action follows its target
 
