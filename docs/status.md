@@ -1,5 +1,9 @@
 # Status
 
+## 2026-11-01 — Alt+F4 closes the foreground window
+
+The desktop now recognizes Alt+F4 from either left or right Alt in the PS/2 Set 1 decoder and routes it through the existing explicit-close path. The shortcut dismisses an open context menu, closes the active application using the same terminal-state policy as Esc/Q/X, and is harmless on the desktop with no active window. Added host regression coverage for left/right Alt press and release, F4 without Alt, and modifier reset. The change advances the active October 19–November 1 desktop milestone; validation is pending.
+
 ## 2026-10-31 — Context-menu close action follows its target
 
 The active October 19–November 1 desktop milestone remains open. The context menu previously labeled its final action based only on whether any app was active, and always closed that active app. Right-clicking a different taskbar app or a desktop area could therefore show “Close window” and close an unrelated foreground app. The menu now shows “Close window” only when the context target is the foreground app; otherwise it shows “Show desktop”, which preserves terminal draft/output state. Added host regression coverage for matching, mismatched, desktop, and invalid targets. Final PR workflows passed host regression tests, TinyLang checks, i386 toolchain/kernel and ISO builds, QEMU ISO boot smoke test, and browser demo tests on commit `96fe2547db19a057f457ea9c5135b30eeb80d614`.
