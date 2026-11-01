@@ -5,6 +5,8 @@ static uint8_t left_shift;
 static uint8_t right_shift;
 static uint8_t left_ctrl;
 static uint8_t right_ctrl;
+static uint8_t left_alt;
+static uint8_t right_alt;
 static uint8_t caps_lock;
 static uint8_t caps_down;
 
@@ -50,6 +52,8 @@ void keyboard_reset_state(void) {
     right_shift = 0;
     left_ctrl = 0;
     right_ctrl = 0;
+    left_alt = 0;
+    right_alt = 0;
     caps_lock = 0;
     caps_down = 0;
 }
@@ -72,23 +76,32 @@ uint8_t keyboard_decode_scancode(uint8_t scancode, char *key) {
         if (extended_prefix) {
             extended_prefix = 0;
             if (code == 0x1D) right_ctrl = 0;
+            else if (code == 0x38) right_alt = 0;
             return 0;
         }
         if (code == 0x2A) left_shift = 0;
         else if (code == 0x36) right_shift = 0;
         else if (code == 0x1D) left_ctrl = 0;
+        else if (code == 0x38) left_alt = 0;
         else if (code == 0x3A) caps_down = 0;
         return 0;
     }
     if (extended_prefix) {
         extended_prefix = 0;
         if (code == 0x1D) { right_ctrl = 1; return 0; }
+        if (code == 0x38) { right_alt = 1; return 0; }
         if (!key) return 0;
         if (code == 0x48) { *key = (char)ASTEROS_KEY_UP; return 1; }
         if (code == 0x50) { *key = (char)ASTEROS_KEY_DOWN; return 1; }
         return 0;
     }
     if (code == 0x1D) { left_ctrl = 1; return 0; }
+    if (code == 0x38) { left_alt = 1; return 0; }
+    if (code == 0x3E && (left_alt || right_alt)) {
+        if (!key) return 0;
+        *key = (char)ASTEROS_KEY_CLOSE_APP;
+        return 1;
+    }
     if (code == 0x2A) {
         if (!left_shift && key) *key = (char)((left_ctrl || right_ctrl) ? ASTEROS_KEY_HOVER_RIGHT_CLICK : ASTEROS_KEY_HOVER_LEFT_CLICK);
         else return 0;

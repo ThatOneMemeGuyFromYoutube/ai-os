@@ -206,9 +206,9 @@ static void draw_terminal(void){
     draw_terminal_result();
     text(22,19,"Demo shell; no real filesystem/process services.",ATTR_STATUS);
 }
-static void draw_files(void){text(22,5,"Files",ATTR_STATUS);text(22,7,"NAME                 TYPE",ATTR_NORMAL);text(22,8,"README.MD             text",ATTR_NORMAL);text(22,9,"KERNEL.BIN            system",ATTR_NORMAL);text(22,10,"PROGRAMS/             directory",ATTR_NORMAL);text(22,12,"Presentation only; no filesystem service",ATTR_NORMAL);text(22,13,"Press Q, X or Esc to close this window.",ATTR_NORMAL);}
-static void draw_programs(void){text(22,5,"Programs",ATTR_STATUS);text(22,7,"BUILT-IN GUI APPLICATIONS",ATTR_NORMAL);text(22,8,"Terminal   interactive command view",ATTR_NORMAL);text(22,9,"Files      presentation-only listing",ATTR_NORMAL);text(22,10,"Programs   application inventory",ATTR_NORMAL);text(22,11,"About      OS/runtime information",ATTR_NORMAL);text(22,13,"Press Q, X or Esc to close this window.",ATTR_NORMAL);text(22,14,"No transient process loader yet.",ATTR_NORMAL);}
-static void draw_about(void){text(22,5,"About AsterOS",ATTR_STATUS);text(22,7,"32-bit x86 experimental operating system",ATTR_NORMAL);text(22,8,"GUI shell over the CCP/BDOS direction",ATTR_NORMAL);text(22,10,"Enter opens the selected app.",ATTR_NORMAL);text(22,11,"Arrow keys or W/S navigate.",ATTR_NORMAL);text(22,12,"1-5 or T/F/P/A/C launches apps directly.",ATTR_NORMAL);text(22,13,"Q, X or Esc closes the active window.",ATTR_NORMAL);}
+static void draw_files(void){text(22,5,"Files",ATTR_STATUS);text(22,7,"NAME                 TYPE",ATTR_NORMAL);text(22,8,"README.MD             text",ATTR_NORMAL);text(22,9,"KERNEL.BIN            system",ATTR_NORMAL);text(22,10,"PROGRAMS/             directory",ATTR_NORMAL);text(22,12,"Presentation only; no filesystem service",ATTR_NORMAL);text(22,13,"Q, X, Esc or Alt+F4 closes this window.",ATTR_NORMAL);}
+static void draw_programs(void){text(22,5,"Programs",ATTR_STATUS);text(22,7,"BUILT-IN GUI APPLICATIONS",ATTR_NORMAL);text(22,8,"Terminal   interactive command view",ATTR_NORMAL);text(22,9,"Files      presentation-only listing",ATTR_NORMAL);text(22,10,"Programs   application inventory",ATTR_NORMAL);text(22,11,"About      OS/runtime information",ATTR_NORMAL);text(22,13,"Q, X, Esc or Alt+F4 closes this window.",ATTR_NORMAL);text(22,14,"No transient process loader yet.",ATTR_NORMAL);}
+static void draw_about(void){text(22,5,"About AsterOS",ATTR_STATUS);text(22,7,"32-bit x86 experimental operating system",ATTR_NORMAL);text(22,8,"GUI shell over the CCP/BDOS direction",ATTR_NORMAL);text(22,10,"Enter opens the selected app.",ATTR_NORMAL);text(22,11,"Arrow keys or W/S navigate.",ATTR_NORMAL);text(22,12,"1-5 or T/F/P/A/C launches apps directly.",ATTR_NORMAL);text(22,13,"Q, X, Esc or Alt+F4 closes this window.",ATTR_NORMAL);}
 static void draw_cursor_settings(void){
     text(22,5,"Accessibility and cursor settings",ATTR_STATUS);
     text(22,7,"Pointer visible [V]:",ATTR_NORMAL);
@@ -321,6 +321,12 @@ static void draw_selected_app(void){
 void gui_draw(void){cursor_clear();fill(0,0,WIDTH,HEIGHT,' ',ATTR_NORMAL);fill(0,0,WIDTH,1,' ',ATTR_TITLE);text(2,0,"AsterOS",ATTR_TITLE);text(68,0,"Desktop",ATTR_TITLE);border(1,2,18,19);text(3,3,"Applications",ATTR_PANEL);for(uint8_t i=0;i<5;i++)text(3,(uint8_t)(5+i*2),items[i],i==selected?ATTR_SELECT:ATTR_PANEL);draw_desktop_surface();border(20,2,59,19);text(22,3,"Welcome to AsterOS",ATTR_NORMAL);draw_selected_app();draw_taskbar();draw_context_menu();cursor_draw();}
 void gui_init(void){selected=0;keyboard_click_enabled=1;context_menu_open=0;context_menu_selection=ASTEROS_CONTEXT_MENU_OPEN;context_menu_target=ASTEROS_HIT_NONE;active_app=-1;mouse_x=WIDTH*2;mouse_y=HEIGHT*2;cursor_active=0;cursor_visible=1;cursor_speed=1;cursor_shape=0;cursor_color=0;terminal_result=TERM_READY;terminal_output[0]='\0';terminal_history_clear(&terminal_history_state);terminal_history_output[0]='\0';terminal_reset_input();gui_draw();}
 void gui_handle_key(char key){
+    if((uint8_t)key==ASTEROS_KEY_CLOSE_APP){
+        context_menu_open=0;
+        if(active_app>=0)close_active_app();
+        gui_draw();
+        return;
+    }
     if((uint8_t)key==ASTEROS_KEY_HOVER_LEFT_CLICK){
         if(keyboard_click_enabled){gui_handle_mouse(0,0,0);gui_handle_mouse(0,0,1);gui_handle_mouse(0,0,0);}
         return;
