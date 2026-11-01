@@ -78,6 +78,24 @@ int main(void) {
     expect_ignored(0xE0);
     expect_ignored(0x9D); /* Right Ctrl up. */
 
+    /* Alt+F4 closes the foreground window with either Alt key. */
+    expect_ignored(0x3E); /* F4 alone is not a desktop shortcut. */
+    expect_ignored(0x38); /* Left Alt down. */
+    expect_key(0x3E, (char)ASTEROS_KEY_CLOSE_APP);
+    expect_ignored(0xB8); /* Left Alt up. */
+    expect_ignored(0x3E);
+
+    expect_ignored(0xE0);
+    expect_ignored(0x38); /* Right Alt down. */
+    expect_key(0x3E, (char)ASTEROS_KEY_CLOSE_APP);
+    expect_ignored(0xE0);
+    expect_ignored(0xB8); /* Right Alt up. */
+    expect_ignored(0x3E);
+
+    expect_ignored(0x38);
+    keyboard_reset_state(); /* Reset must clear a held modifier. */
+    expect_ignored(0x3E);
+
     expect_ignored(0xE1); /* Pause/Break prefix. */
     expect_ignored(0x1D);
     expect_ignored(0x45);
