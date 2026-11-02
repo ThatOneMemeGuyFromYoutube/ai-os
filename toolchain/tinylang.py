@@ -15,7 +15,8 @@ Supported statements:
     db 0x90, 0x90
     exit
 
-Numbers may be decimal or hexadecimal (0x...). Comments start with '#' or ';'.
+Labels may stand alone or precede an instruction on the same line. Numbers may
+be decimal or hexadecimal (0x...). Comments start with '#' or ';'.
 """
 
 from __future__ import annotations
@@ -76,21 +77,28 @@ def parse_db(args: str, line_no: int, out: bytearray) -> None:
 def compile_source(source: str) -> bytes:
     out = bytearray()
     labels: dict[str, int] = {}
-    fixups: list[tuple[int, str, int]] = []
+    # Keep each reference's source line so second-pass diagnostics can point
+    # back to the statement that introduced the unresolved jump.
+    fixups: list[tuple[int, str, int, int]] = []
 
     for line_no, raw_line in enumerate(source.splitlines(), start=1):
         line = re.split(r"[#;]", raw_line, maxsplit=1)[0].strip()
         if not line:
             continue
 
-        if line.endswith(":"):
-            label = line[:-1].strip()
+        # The style guide permits "label: instruction" as well as a label on
+        # its own line. Record the address before assembling the instruction.
+        if ":" in line:
+            label, _, remainder = line.partition(":")
+            label = label.strip()
             if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", label):
                 raise ValueError(f"line {line_no}: invalid label {label!r}")
             if label in labels:
                 raise ValueError(f"line {line_no}: duplicate label {label!r}")
             labels[label] = LOAD_OFFSET + len(out)
-            continue
+            line = remainder.strip()
+            if not line:
+                continue
 
         if line == "exit":
             # CLI-friendly termination primitive for the current minimal kernel:
@@ -130,7 +138,8 @@ def compile_source(source: str) -> bytes:
         if match:
             # E9 rel32, relative to the next instruction.
             out.append(0xE9)
-            fixups.append((len(out), match.group(1), LOAD_OFFSET + len(out) + 4))
+            fixups.append((len(out), match.group(1),
+                           LOAD_OFFSET + len(out) + 4, line_no))
             out.extend(b"\x00\x00\x00\x00")
             continue
 
@@ -141,12 +150,12 @@ def compile_source(source: str) -> bytes:
 
         raise ValueError(f"line {line_no}: unknown statement: {line!r}")
 
-    for patch_at, label, next_ip in fixups:
+    for patch_at, label, next_ip, line_no in fixups:
         if label not in labels:
-            raise ValueError(f"unknown label: {label!r}")
+            raise ValueError(f"line {line_no}: unknown label: {label!r}")
         relative = labels[label] - next_ip
         if not -(1 << 31) <= relative < (1 << 31):
-            raise ValueError(f"jump to {label!r} is out of range")
+            raise ValueError(f"line {line_no}: jump to {label!r} is out of range")
         out[patch_at : patch_at + 4] = struct.pack("<i", relative)
 
     return bytes(out)
