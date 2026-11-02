@@ -16,7 +16,16 @@ That creates `build/hello.com`, a flat 32-bit x86 program image. You can also co
 python3 toolchain/tinylang.py my_program.tl build/my_program.com
 ```
 
-A TinyLang program can use `mov`, `add`, `sub`, `int`, `jmp`, labels, `db`, and `exit`. Comments begin with `#`. See `examples/hello.tl` for the smallest example.
+A TinyLang program can use `mov`, `add`, `sub`, `int`, `jmp`, labels, `db`, and `exit`. Comments begin with `#` or `;`. Labels may be on their own line or share a line with an instruction:
+
+```text
+start: mov eax, 1
+       jmp done
+       db 0x90
+done:  exit
+```
+
+Undefined jump targets and duplicate labels are reported with the source line number. See `examples/hello.tl` for the smallest example.
 
 ## Why this exists
 
