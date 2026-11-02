@@ -1,5 +1,9 @@
 # Status
 
+## 2026-11-02 — TinyLang inline labels and source-line diagnostics
+
+The active November 2–15 IDE/developer-tooling milestone prioritizes useful compiler diagnostics and a practical TinyLang workflow. The style guide already allowed labels to share a line with an instruction, but the compiler only recognized a label when the colon ended the entire statement. TinyLang now records a label before compiling any same-line instruction, preserving the existing flat-image address and relative-jump fixup model. Second-pass undefined-label and out-of-range jump errors now include the originating source line. Regression tests cover inline forward labels and exact relative-jump bytes, undefined labels on the first and later lines, and duplicate labels on the second line. The toolchain README documents the supported syntax and diagnostics. The host test suite and i386 build/ISO/QEMU CI are pending for this branch; no release should be published until those workflows pass.
+
 ## 2026-11-01 — Desktop milestone completed; Alt+F4 close shortcut
 
 The desktop now recognizes Alt+F4 from either left or right Alt in the PS/2 Set 1 decoder and routes it through the existing explicit-close path. The shortcut dismisses an open context menu, closes the active application using the same terminal-state policy as Esc/Q/X, and is harmless on the desktop with no active window. Host regression tests cover both Alt keys, release handling, F4 without Alt, and modifier reset.
