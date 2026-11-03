@@ -45,7 +45,7 @@ MOV_RE = re.compile(r"^mov\s+(eax|ecx|edx|ebx|esp|ebp|esi|edi)\s*,\s*(.+)$")
 ADD_RE = re.compile(r"^add\s+eax\s*,\s*(.+)$")
 SUB_RE = re.compile(r"^sub\s+eax\s*,\s*(.+)$")
 INT_RE = re.compile(r"^int\s+(.+)$")
-DB_RE = re.compile(r"^db\s+(.+)$")
+DB_RE = re.compile(r"^db(?:\s+(.*))?$")
 
 
 def parse_number(token: str, line_no: int) -> int:
@@ -64,9 +64,15 @@ def emit_u32(out: bytearray, value: int) -> None:
 
 
 def parse_db(args: str, line_no: int, out: bytearray) -> None:
-    values = [part.strip() for part in args.split(",") if part.strip()]
-    if not values:
+    if not args.strip():
         raise ValueError(f"line {line_no}: db needs at least one byte")
+
+    # Do not silently discard empty list items: a typo such as "db 1,,2"
+    # changes the emitted image while appearing to compile successfully.
+    values = [part.strip() for part in args.split(",")]
+    if any(not value for value in values):
+        raise ValueError(f"line {line_no}: db contains an empty byte operand")
+
     for token in values:
         value = parse_number(token, line_no)
         if value > 0xFF:
@@ -145,7 +151,7 @@ def compile_source(source: str) -> bytes:
 
         match = DB_RE.match(line)
         if match:
-            parse_db(match.group(1), line_no, out)
+            parse_db(match.group(1) or "", line_no, out)
             continue
 
         raise ValueError(f"line {line_no}: unknown statement: {line!r}")
