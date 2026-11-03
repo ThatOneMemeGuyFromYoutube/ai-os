@@ -43,6 +43,15 @@ def main() -> None:
     assert inline_labels[10:15] == bytes([0xE9, 1, 0, 0, 0])
     assert inline_labels[15:] == b"\x90\xF4"
 
+    # Empty db operands must not be silently filtered out, because that
+    # would emit a different program than the source appears to describe.
+    assert compile_source("db 0x00, 0x7F, 0xFF") == bytes([0x00, 0x7F, 0xFF])
+    expect_error("db", "line 1", "db needs at least one byte")
+    expect_error("db 1,,2", "line 1", "empty byte operand")
+    expect_error("db 1,", "line 1", "empty byte operand")
+    expect_error("db ,1", "line 1", "empty byte operand")
+    expect_error("mov eax, 1\n db 0x10, ,0x20", "line 2", "empty byte operand")
+
     expect_error("jmp missing", "line 1", "unknown label")
     expect_error("start: mov eax, 1\n  jmp missing", "line 2", "unknown label")
     expect_error("same: exit\nsame: exit", "line 2", "duplicate label")

@@ -25,7 +25,7 @@ start: mov eax, 1
 done:  exit
 ```
 
-Undefined jump targets and duplicate labels are reported with the source line number. See `examples/hello.tl` for the smallest example.
+Undefined jump targets, duplicate labels, empty `db` statements, and missing byte-list items (for example, `db 1,,2` or a trailing comma) are reported with the source line number instead of silently changing the emitted image. See `examples/hello.tl` for the smallest example.
 
 ## Why this exists
 
