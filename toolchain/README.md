@@ -25,7 +25,9 @@ start: mov eax, 1
 done:  exit
 ```
 
-Undefined jump targets, duplicate labels, empty `db` statements, and missing byte-list items (for example, `db 1,,2` or a trailing comma) are reported with the source line number instead of silently changing the emitted image. See `examples/hello.tl` for the smallest example.
+Numeric operands are unsigned decimal or `0x`-prefixed hexadecimal. Leading zeroes remain decimal, so `mov eax, 0008` means eight; binary prefixes, underscores, and signed values are rejected rather than inheriting Python's host-language syntax. Values must fit in 32 bits, while `db` bytes and `int` vectors have their narrower instruction-specific limits.
+
+Undefined jump targets, duplicate labels, empty `db` statements, malformed numeric operands, and missing byte-list items (for example, `db 1,,2` or a trailing comma) are reported with the source line number instead of silently changing the emitted image. See `examples/hello.tl` for the smallest example.
 
 ## Why this exists
 

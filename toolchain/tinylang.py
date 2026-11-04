@@ -50,12 +50,26 @@ DB_RE = re.compile(r"^db(?:\s+(.*))?$")
 
 def parse_number(token: str, line_no: int) -> int:
     token = token.strip()
-    try:
-        value = int(token, 0)
-    except ValueError as exc:
-        raise ValueError(f"line {line_no}: expected a number, got {token!r}") from exc
-    if not 0 <= value <= 0xFFFFFFFF:
-        raise ValueError(f"line {line_no}: number out of 32-bit range: {value}")
+
+    # TinyLang documents only unsigned decimal and 0x-prefixed hexadecimal.
+    # Parse decimal explicitly so leading zeroes remain decimal ("0008" is 8,
+    # not an invalid Python base-0 literal). Strip leading zeroes before the
+    # width check so even very long zero-padded values are handled safely.
+    if re.fullmatch(r"0[xX][0-9A-Fa-f]+", token):
+        digits = token[2:].lstrip("0") or "0"
+        if len(digits) > 8:
+            raise ValueError(f"line {line_no}: number out of 32-bit range: {token}")
+        value = int(digits, 16)
+    elif re.fullmatch(r"[0-9]+", token):
+        digits = token.lstrip("0") or "0"
+        if len(digits) > 10 or (len(digits) == 10 and digits > "4294967295"):
+            raise ValueError(f"line {line_no}: number out of 32-bit range: {token}")
+        value = int(digits, 10)
+    else:
+        raise ValueError(
+            f"line {line_no}: expected a decimal or hexadecimal number, got {token!r}"
+        )
+
     return value
 
 
