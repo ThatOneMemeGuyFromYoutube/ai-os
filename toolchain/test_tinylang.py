@@ -43,6 +43,29 @@ def main() -> None:
     assert inline_labels[10:15] == bytes([0xE9, 1, 0, 0, 0])
     assert inline_labels[15:] == b"\x90\xF4"
 
+    # Numeric syntax is deliberately decimal or 0x-prefixed hexadecimal.
+    # Leading zeroes do not turn a decimal literal into octal.
+    numeric_literals = compile_source("""
+        mov eax, 0008
+        add eax, 0009
+        sub eax, 0X0A
+        int 000128
+        db 0007, 0Xff
+        exit
+    """)
+    assert numeric_literals == bytes([
+        0xB8, 8, 0, 0, 0,
+        0x05, 9, 0, 0, 0,
+        0x2D, 10, 0, 0, 0,
+        0xCD, 128,
+        7, 0xFF, 0xF4,
+    ])
+    expect_error("mov eax, -1", "line 1", "expected a decimal or hexadecimal number")
+    expect_error("add eax, 0b10", "line 1", "expected a decimal or hexadecimal number")
+    expect_error("sub eax, 1_0", "line 1", "expected a decimal or hexadecimal number")
+    expect_error("mov eax, 4294967296", "line 1", "out of 32-bit range")
+    expect_error("mov eax, 0x100000000", "line 1", "out of 32-bit range")
+
     # Empty db operands must not be silently filtered out, because that
     # would emit a different program than the source appears to describe.
     assert compile_source("db 0x00, 0x7F, 0xFF") == bytes([0x00, 0x7F, 0xFF])
