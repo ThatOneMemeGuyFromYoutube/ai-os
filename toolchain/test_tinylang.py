@@ -79,6 +79,22 @@ def main() -> None:
     expect_error("start: mov eax, 1\n  jmp missing", "line 2", "unknown label")
     expect_error("same: exit\nsame: exit", "line 2", "duplicate label")
 
+    # Recognized instructions should explain their required operand shape
+    # instead of falling through to the generic unknown-statement message.
+    expect_error("mov eax", "line 1", "malformed mov", "mov <register>, <number>")
+    expect_error("mov eax,", "line 1", "malformed mov")
+    expect_error("mov foo, 1", "line 1", "unsupported mov register", "foo")
+    expect_error("mov eax 1", "line 1", "malformed mov")
+    expect_error("add ebx, 1", "line 1", "supports EAX only")
+    expect_error("add eax", "line 1", "malformed add", "add eax, <number>")
+    expect_error("sub eax,", "line 1", "malformed sub")
+    expect_error("int", "line 1", "malformed int", "int <number>")
+    expect_error("jmp", "line 1", "malformed jmp", "jmp <label>")
+    expect_error("jmp 0x100", "line 1", "malformed jmp")
+    expect_error("db, 1", "line 1", "malformed db", "db <byte>")
+    expect_error("exit 1", "line 1", "exit takes no operands")
+    expect_error("mov eax, 1\\nadd ebx, 2", "line 2", "supports EAX only")
+
     print("tinylang: tests passed")
 
 
