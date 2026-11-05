@@ -1,5 +1,9 @@
 # Status
 
+## 2026-11-05 — TinyLang malformed-instruction diagnostics
+
+The active November 2–15 IDE/developer-tooling milestone remains open. TinyLang previously reported a generic unknown-statement error when a recognized instruction had missing operands or an invalid register, making beginner mistakes harder to correct. The compiler now distinguishes malformed `mov`, `add`, `sub`, `int`, `jmp`, `db`, and `exit` statements; it shows each instruction's expected operand form, identifies unsupported `mov` registers, and explains the current EAX-only restriction for `add`/`sub`. Regression tests cover missing operands, missing commas, unsupported registers, extra `exit` operands, and source-line attribution. The host TinyLang suite and example compilation pass locally; full i386 build, ISO/QEMU validation, and release are pending CI.
+
 ## 2026-11-04 — Define TinyLang numeric literal syntax
 
 The active November 2–15 IDE/developer-tooling milestone remains open. TinyLang's documented syntax says decimal or hexadecimal, but `int(token, 0)` rejected zero-padded decimal values such as `0008` and also inherited undocumented Python forms such as binary prefixes and digit separators. Numeric parsing now accepts unsigned decimal and `0x` hexadecimal explicitly; leading zeroes stay decimal, malformed forms receive source-line diagnostics, and 32-bit overflow is checked before conversion so huge operands cannot trigger Python's integer-string digit limit. Regression coverage exercises every immediate-bearing instruction, zero-padded decimal, uppercase hexadecimal, invalid host-language forms, and decimal/hex overflow. The compiler, tests, and style/toolchain documentation are updated; full repository CI, ISO/QEMU validation, and release are pending.
