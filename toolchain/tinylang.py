@@ -96,7 +96,7 @@ def parse_db(args: str, line_no: int, out: bytearray) -> None:
 
 def diagnose_malformed_statement(line: str, line_no: int) -> None:
     """Give a syntax hint when a known instruction fails its full grammar."""
-    match = re.match(r"^([A-Za-z]+)\\b(.*)$", line)
+    match = re.match(r"^([A-Za-z]+)\b(.*)$", line)
     if not match:
         return
 
