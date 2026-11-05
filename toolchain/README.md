@@ -27,7 +27,7 @@ done:  exit
 
 Numeric operands are unsigned decimal or `0x`-prefixed hexadecimal. Leading zeroes remain decimal, so `mov eax, 0008` means eight; binary prefixes, underscores, and signed values are rejected rather than inheriting Python's host-language syntax. Values must fit in 32 bits, while `db` bytes and `int` vectors have their narrower instruction-specific limits.
 
-Undefined jump targets, duplicate labels, empty `db` statements, malformed numeric operands, and missing byte-list items (for example, `db 1,,2` or a trailing comma) are reported with the source line number instead of silently changing the emitted image. See `examples/hello.tl` for the smallest example.
+Undefined jump targets, duplicate labels, empty `db` statements, malformed numeric operands, and missing byte-list items (for example, `db 1,,2` or a trailing comma) are reported with the source line number instead of silently changing the emitted image. See `examples/hello.tl` for the smallest example. Recognized instructions with missing or malformed operands also show their expected form; unsupported `mov` registers are listed explicitly, and `add`/`sub` explain that only EAX is currently supported.
 
 ## Why this exists
 
