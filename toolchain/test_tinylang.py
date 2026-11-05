@@ -93,7 +93,7 @@ def main() -> None:
     expect_error("jmp 0x100", "line 1", "malformed jmp")
     expect_error("db, 1", "line 1", "malformed db", "db <byte>")
     expect_error("exit 1", "line 1", "exit takes no operands")
-    expect_error("mov eax, 1\\nadd ebx, 2", "line 2", "supports EAX only")
+    expect_error("mov eax, 1\nadd ebx, 2", "line 2", "supports EAX only")
 
     print("tinylang: tests passed")
 
