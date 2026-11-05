@@ -29,6 +29,23 @@ db 0, 0x7F, 0xFF
 
 Immediate values must fit in 32 bits; `db` values and interrupt vectors must fit in one byte. Signed values, binary prefixes, and digit separators are not part of the current language.
 
+## Instruction forms
+
+Keep each instruction's operands in the documented order and include the comma
+between a register and an immediate value:
+
+```text
+mov eax, 42
+add eax, 1
+sub eax, 1
+int 0x80
+jmp done
+db 0x90, 0xCC
+exit
+```
+
+`add` and `sub` currently operate on EAX only. `mov` accepts the eight 32-bit general-purpose registers listed by the compiler. `exit` takes no operands. If a known instruction is malformed, TinyLang reports its expected operand form and the source line.
+
 ## Comments
 
 Use `#` or `;` for comments. Inline comments are supported:
