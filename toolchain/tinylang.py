@@ -94,6 +94,60 @@ def parse_db(args: str, line_no: int, out: bytearray) -> None:
         out.append(value)
 
 
+def diagnose_malformed_statement(line: str, line_no: int) -> None:
+    """Give a syntax hint when a known instruction fails its full grammar."""
+    match = re.match(r"^([A-Za-z]+)\\b(.*)$", line)
+    if not match:
+        return
+
+    mnemonic, operands = match.group(1), match.group(2).strip()
+    if mnemonic == "mov":
+        register = re.match(r"^([A-Za-z][A-Za-z0-9]*)", operands)
+        if register and register.group(1) not in REG_IMM:
+            supported = ", ".join(REG_IMM)
+            raise ValueError(
+                f"line {line_no}: unsupported mov register {register.group(1)!r}; "
+                f"supported registers: {supported}"
+            )
+        raise ValueError(
+            f"line {line_no}: malformed mov statement; "
+            "expected 'mov <register>, <number>'"
+        )
+
+    if mnemonic in ("add", "sub"):
+        register = re.match(r"^([A-Za-z][A-Za-z0-9]*)", operands)
+        if register and register.group(1) != "eax":
+            raise ValueError(
+                f"line {line_no}: {mnemonic} currently supports EAX only; "
+                f"expected '{mnemonic} eax, <number>'"
+            )
+        raise ValueError(
+            f"line {line_no}: malformed {mnemonic} statement; "
+            f"expected '{mnemonic} eax, <number>'"
+        )
+
+    if mnemonic == "int":
+        raise ValueError(
+            f"line {line_no}: malformed int statement; expected 'int <number>'"
+        )
+
+    if mnemonic == "jmp":
+        raise ValueError(
+            f"line {line_no}: malformed jmp statement; expected 'jmp <label>'"
+        )
+
+    if mnemonic == "db":
+        raise ValueError(
+            f"line {line_no}: malformed db statement; "
+            "expected 'db <byte>[, <byte> ...]'"
+        )
+
+    if mnemonic == "exit":
+        raise ValueError(
+            f"line {line_no}: exit takes no operands; write 'exit' by itself"
+        )
+
+
 def compile_source(source: str) -> bytes:
     out = bytearray()
     labels: dict[str, int] = {}
@@ -168,6 +222,7 @@ def compile_source(source: str) -> bytes:
             parse_db(match.group(1) or "", line_no, out)
             continue
 
+        diagnose_malformed_statement(line, line_no)
         raise ValueError(f"line {line_no}: unknown statement: {line!r}")
 
     for patch_at, label, next_ip, line_no in fixups:
