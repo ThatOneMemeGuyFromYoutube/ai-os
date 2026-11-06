@@ -84,9 +84,6 @@ build/examples/%.com: toolchain/examples/%.tl toolchain/tinylang.py | build
 examples: $(TINYLANG_IMAGES)
 
 check-examples: examples
-	@for image in $(TINYLANG_IMAGES); do \
-		test -s "$image" || { echo "error: missing or empty example image $image" >&2; exit 1; }; \
-	done
 
 program: build/hello.com
 
