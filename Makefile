@@ -18,6 +18,9 @@ CC_BIN := $(firstword $(CC))
 LD_BIN := $(firstword $(LD))
 AS_BIN := $(firstword $(AS))
 
+TINYLANG_EXAMPLES := $(sort $(wildcard toolchain/examples/*.tl))
+TINYLANG_IMAGES := $(patsubst toolchain/examples/%.tl,build/examples/%.com,$(TINYLANG_EXAMPLES))
+
 all: build/kernel.bin
 
 build:
@@ -74,6 +77,14 @@ build/kernel.bin: build/boot.o build/kernel.o build/gui.o build/keyboard.o build
 build/hello.com: toolchain/tinylang.py toolchain/examples/hello.tl | build
 	$(PYTHON) toolchain/tinylang.py toolchain/examples/hello.tl $@
 
+build/examples/%.com: toolchain/examples/%.tl toolchain/tinylang.py | build
+	mkdir -p $(dir $@)
+	$(PYTHON) toolchain/tinylang.py $< $@
+
+examples: $(TINYLANG_IMAGES)
+
+check-examples: examples
+
 program: build/hello.com
 
 iso: build/ai-os.iso
@@ -103,7 +114,7 @@ check-iso: iso
 	@command -v $(QEMU) >/dev/null || (echo "error: missing QEMU binary $(QEMU)" >&2; exit 1)
 	@timeout $(QEMU_TIMEOUT)s $(QEMU) -cdrom build/ai-os.iso -display none -serial stdio -no-reboot -no-shutdown || test $$? -eq 124
 
-check: check-toolchain check-keyboard check-terminal check-desktop-input check-ps2-wait
+check: check-toolchain check-keyboard check-terminal check-desktop-input check-ps2-wait check-examples
 	PYTHONPATH=toolchain $(PYTHON) toolchain/test_tinylang.py
 	$(MAKE) check-artifacts
 
@@ -121,4 +132,4 @@ run-iso: build/ai-os.iso
 clean:
 	rm -rf build
 
-.PHONY: all check check-artifacts check-iso check-keyboard check-terminal check-desktop-input check-ps2-wait check-toolchain clean iso package-release program run run-iso test
+.PHONY: all check check-artifacts check-iso check-keyboard check-terminal check-desktop-input check-ps2-wait check-toolchain check-examples examples clean iso package-release program run run-iso test

@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Small dependency-free regression tests for TinyLang."""
 
+from pathlib import Path
+
 from tinylang import compile_source
 
 
@@ -13,6 +15,37 @@ def expect_error(source: str, *fragments: str) -> None:
             assert fragment in message, f"expected {fragment!r} in {message!r}"
     else:
         raise AssertionError(f"expected compilation to fail for {source!r}")
+
+
+def test_example_programs() -> None:
+    examples_dir = Path(__file__).with_name("examples")
+    example_paths = sorted(examples_dir.glob("*.tl"))
+    assert len(example_paths) >= 3, "expected the beginner example collection"
+
+    for source_path in example_paths:
+        image = compile_source(source_path.read_text(encoding="utf-8"))
+        assert image, f"{source_path.name} produced an empty image"
+        assert image[-1] == 0xF4, f"{source_path.name} must end with TinyLang exit"
+
+    arithmetic = compile_source(
+        (examples_dir / "arithmetic.tl").read_text(encoding="utf-8")
+    )
+    assert arithmetic == bytes([
+        0xB8, 8, 0, 0, 0,
+        0x05, 16, 0, 0, 0,
+        0x2D, 2, 0, 0, 0,
+        0xF4,
+    ])
+
+    jump_over_data = compile_source(
+        (examples_dir / "jump_over_data.tl").read_text(encoding="utf-8")
+    )
+    assert jump_over_data == bytes([
+        0xE9, 7, 0, 0, 0,
+        0x41, 0x73, 0x74, 0x65, 0x72, 0x4F, 0x53,
+        0xB8, 42, 0, 0, 0,
+        0xF4,
+    ])
 
 
 def main() -> None:
@@ -95,6 +128,7 @@ def main() -> None:
     expect_error("exit 1", "line 1", "exit takes no operands")
     expect_error("mov eax, 1\nadd ebx, 2", "line 2", "supports EAX only")
 
+    test_example_programs()
     print("tinylang: tests passed")
 
 
