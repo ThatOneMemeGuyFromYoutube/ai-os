@@ -2,7 +2,7 @@
 
 The active November 2–15 IDE/developer-tooling milestone remains open. Until now, `make program` built only `hello.tl`, so the repository had no single command to compile and keep a growing beginner example set healthy. Added `make examples` to compile every `toolchain/examples/*.tl` source into `build/examples/*.com`; `make check` now builds and verifies that complete collection. Added arithmetic and jump-over-data examples covering decimal/hex operands, relative forward jumps, inline labels, and byte data. TinyLang regression tests compile every example, require a non-empty image ending in the current `exit` opcode, and assert exact bytes for the two new examples. These remain host-built flat images; the kernel still has no transient-program loader, so this work does not claim in-OS execution.
 
-`make check`/i386 ISO/QEMU CI validation is pending for this change.
+Final PR-head and main-branch validation passed: [PR CI #42290952030](https://github.com/ThatOneMemeGuyFromYoutube/ai-os/actions/runs/42290952030), [PR build/ISO/QEMU #42290951876](https://github.com/ThatOneMemeGuyFromYoutube/ai-os/actions/runs/42290951876), [main CI/ISO/QEMU #42291101979](https://github.com/ThatOneMemeGuyFromYoutube/ai-os/actions/runs/42291101979), [release packaging/publication #42291102236](https://github.com/ThatOneMemeGuyFromYoutube/ai-os/actions/runs/42291102236), and [browser demo deployment #42291102170](https://github.com/ThatOneMemeGuyFromYoutube/ai-os/actions/runs/42291102170) all succeeded.
 # Status
 
 ## 2026-11-05 — TinyLang malformed-instruction diagnostics
