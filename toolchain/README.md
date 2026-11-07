@@ -10,7 +10,15 @@ From the repository root:
 make program
 ```
 
-That creates `build/hello.com`, a flat 32-bit x86 program image. To compile the complete example collection, run `make examples`; the resulting images are written to `build/examples/`. `make check` builds and verifies every example as part of the regression suite. These are host-generated images only: AsterOS does not yet have a transient-program loader. You can also compile your own source:
+That creates `build/hello.com`, a flat 32-bit x86 program image. To compile the complete example collection, run `make examples`; the resulting images are written to `build/examples/`. `make check` builds and verifies every example as part of the regression suite. These are host-generated images only: AsterOS does not yet have a transient-program loader.
+
+For your own source, use the Make target and choose the output path:
+
+```sh
+make compile SOURCE=my_program.tl OUTPUT=build/my_program.com
+```
+
+The destination directory is created automatically. If `OUTPUT` is omitted, Make derives `build/<source-name>.com` from `SOURCE`. The lower-level compiler command remains available when you want to invoke the tool directly:
 
 ```sh
 python3 toolchain/tinylang.py my_program.tl build/my_program.com
