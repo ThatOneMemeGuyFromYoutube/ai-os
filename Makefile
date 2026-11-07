@@ -21,6 +21,10 @@ AS_BIN := $(firstword $(AS))
 TINYLANG_EXAMPLES := $(sort $(wildcard toolchain/examples/*.tl))
 TINYLANG_IMAGES := $(patsubst toolchain/examples/%.tl,build/examples/%.com,$(TINYLANG_EXAMPLES))
 
+# `make compile SOURCE=... [OUTPUT=...]` builds one user-selected source.
+SOURCE ?= toolchain/examples/hello.tl
+OUTPUT ?= build/$(basename $(notdir $(SOURCE))).com
+
 all: build/kernel.bin
 
 build:
@@ -85,7 +89,22 @@ examples: $(TINYLANG_IMAGES)
 
 check-examples: examples
 
+# Exercise both the derived default path and a caller-selected nested output.
+check-compile: build/hello.com build/examples/hello.com build/examples/arithmetic.com
+	$(MAKE) --no-print-directory compile SOURCE=toolchain/examples/hello.tl
+	cmp build/hello.com build/examples/hello.com
+	$(MAKE) --no-print-directory compile SOURCE=toolchain/examples/arithmetic.tl OUTPUT=build/compile-check/arithmetic.com
+	cmp build/compile-check/arithmetic.com build/examples/arithmetic.com
+
 program: build/hello.com
+
+# Compile one source without requiring a hand-written Python command.
+compile: | build
+	@test -n "$(SOURCE)" || { echo "error: set SOURCE to a TinyLang file" >&2; exit 1; }
+	@test -f "$(SOURCE)" || { echo "error: TinyLang source not found: $(SOURCE)" >&2; exit 1; }
+	@test -n "$(OUTPUT)" || { echo "error: set OUTPUT to a .com destination" >&2; exit 1; }
+	@mkdir -p "$(dir $(OUTPUT))"
+	$(PYTHON) toolchain/tinylang.py "$(SOURCE)" "$(OUTPUT)"
 
 iso: build/ai-os.iso
 
@@ -114,7 +133,7 @@ check-iso: iso
 	@command -v $(QEMU) >/dev/null || (echo "error: missing QEMU binary $(QEMU)" >&2; exit 1)
 	@timeout $(QEMU_TIMEOUT)s $(QEMU) -cdrom build/ai-os.iso -display none -serial stdio -no-reboot -no-shutdown || test $$? -eq 124
 
-check: check-toolchain check-keyboard check-terminal check-desktop-input check-ps2-wait check-examples
+check: check-toolchain check-keyboard check-terminal check-desktop-input check-ps2-wait check-examples check-compile
 	PYTHONPATH=toolchain $(PYTHON) toolchain/test_tinylang.py
 	$(MAKE) check-artifacts
 
@@ -132,4 +151,4 @@ run-iso: build/ai-os.iso
 clean:
 	rm -rf build
 
-.PHONY: all check check-artifacts check-iso check-keyboard check-terminal check-desktop-input check-ps2-wait check-toolchain check-examples examples clean iso package-release program run run-iso test
+.PHONY: all check check-artifacts check-iso check-keyboard check-terminal check-desktop-input check-ps2-wait check-toolchain check-examples check-compile examples compile clean iso package-release program run run-iso test

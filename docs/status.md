@@ -1,5 +1,9 @@
 # Status
 
+## 2026-11-07 — Add a one-command TinyLang source build target
+
+The active November 2–15 IDE/developer-tooling milestone remains open. The compiler could already build arbitrary files, but users had to remember its Python invocation; `make program` only built the fixed hello example and `make examples` built the repository collection. Added `make compile SOURCE=... [OUTPUT=...]` so a beginner can build an edited source through the same Make workflow, with an automatically created destination directory and a predictable default output name. Added `check-compile` to `make check`; it verifies both the derived default path and an explicit nested output against the known-good example images byte-for-byte. Root and toolchain documentation now show the workflow. Outputs remain host-generated flat images; no native loader or in-OS execution is claimed. Full CI, i386 ISO/QEMU validation, and release are pending.
+
 ## 2026-11-06 — Build and validate the TinyLang example collection
 
 The active November 2–15 IDE/developer-tooling milestone remains open. Until now, `make program` built only `hello.tl`, so the repository had no single command to compile and keep a growing beginner example set healthy. Added `make examples` to compile every `toolchain/examples/*.tl` source into `build/examples/*.com`; `make check` now builds and verifies that complete collection. Added arithmetic and jump-over-data examples covering decimal/hex operands, relative forward jumps, inline labels, and byte data. TinyLang regression tests compile every example, require a non-empty image ending in the current `exit` opcode, and assert exact bytes for the two new examples. These remain host-built flat images; the kernel still has no transient-program loader, so this work does not claim in-OS execution.
