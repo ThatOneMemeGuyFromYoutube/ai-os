@@ -239,12 +239,26 @@ def compile_source(source: str) -> bytes:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Compile TinyLang to a flat AsterOS .COM-style image.")
     parser.add_argument("source", type=Path, help="TinyLang source file")
-    parser.add_argument("output", type=Path, help="output .com image")
+    parser.add_argument(
+        "output", type=Path, nargs="?", help="output .com image (not used with --check)"
+    )
+    parser.add_argument(
+        "--check", action="store_true",
+        help="validate syntax and labels without writing a program image",
+    )
     args = parser.parse_args()
+
+    if args.check and args.output is not None:
+        parser.error("--check does not accept an output path")
+    if not args.check and args.output is None:
+        parser.error("output is required unless --check is used")
 
     try:
         source = args.source.read_text(encoding="utf-8")
         image = compile_source(source)
+        if args.check:
+            print(f"tinylang: {args.source} is valid ({len(image)} bytes)")
+            return 0
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_bytes(image)
     except (OSError, ValueError) as exc:
