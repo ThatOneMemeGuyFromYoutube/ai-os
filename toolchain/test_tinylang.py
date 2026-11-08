@@ -57,7 +57,7 @@ def test_cli_check_mode() -> None:
     with tempfile.TemporaryDirectory() as temporary:
         directory = Path(temporary)
         valid_source = directory / "valid.tl"
-        valid_source.write_text("mov eax, 42\\nexit\\n", encoding="utf-8")
+        valid_source.write_text("mov eax, 42\nexit\n", encoding="utf-8")
 
         checked = subprocess.run(
             [sys.executable, str(compiler), "--check", str(valid_source)],
@@ -68,7 +68,7 @@ def test_cli_check_mode() -> None:
         assert sorted(path.name for path in directory.iterdir()) == ["valid.tl"]
 
         invalid_source = directory / "invalid.tl"
-        invalid_source.write_text("mov eax, 1\\njmp missing\\n", encoding="utf-8")
+        invalid_source.write_text("mov eax, 1\njmp missing\n", encoding="utf-8")
         rejected = subprocess.run(
             [sys.executable, str(compiler), "--check", str(invalid_source)],
             capture_output=True, text=True, check=False,
@@ -95,6 +95,7 @@ def test_cli_check_mode() -> None:
         assert invalid_usage.returncode == 2
         assert "--check does not accept an output path" in invalid_usage.stderr
         assert not (directory / "ignored.com").exists()
+
 
 def main() -> None:
     image = compile_source("""
