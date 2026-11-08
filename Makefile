@@ -139,7 +139,7 @@ check-iso: iso
 	@command -v $(QEMU) >/dev/null || (echo "error: missing QEMU binary $(QEMU)" >&2; exit 1)
 	@timeout $(QEMU_TIMEOUT)s $(QEMU) -cdrom build/ai-os.iso -display none -serial stdio -no-reboot -no-shutdown || test $$? -eq 124
 
-check: check-toolchain check-keyboard check-terminal check-desktop-input check-ps2-wait check-examples check-compile
+check: check-toolchain check-keyboard check-terminal check-desktop-input check-ps2-wait check-examples check-compile check-source
 	PYTHONPATH=toolchain $(PYTHON) toolchain/test_tinylang.py
 	$(MAKE) check-artifacts
 
