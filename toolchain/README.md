@@ -12,7 +12,16 @@ make program
 
 That creates `build/hello.com`, a flat 32-bit x86 program image. To compile the complete example collection, run `make examples`; the resulting images are written to `build/examples/`. `make check` builds and verifies every example as part of the regression suite. These are host-generated images only: AsterOS does not yet have a transient-program loader.
 
-For your own source, use the Make target and choose the output path:
+For your own source, validate it before building without creating an image:
+
+```sh
+make check-source SOURCE=my_program.tl
+# or: python3 toolchain/tinylang.py --check my_program.tl
+```
+
+A successful check confirms syntax, numeric operands, and label fixups and reports
+the resulting image size. It does not write or replace a `.com` file. Then use
+the Make target and choose the output path:
 
 ```sh
 make compile SOURCE=my_program.tl OUTPUT=build/my_program.com

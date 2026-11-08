@@ -2,6 +2,9 @@
 """Small dependency-free regression tests for TinyLang."""
 
 from pathlib import Path
+import subprocess
+import sys
+import tempfile
 
 from tinylang import compile_source
 
@@ -46,6 +49,52 @@ def test_example_programs() -> None:
         0xB8, 42, 0, 0, 0,
         0xF4,
     ])
+
+
+
+def test_cli_check_mode() -> None:
+    compiler = Path(__file__).with_name("tinylang.py")
+    with tempfile.TemporaryDirectory() as temporary:
+        directory = Path(temporary)
+        valid_source = directory / "valid.tl"
+        valid_source.write_text("mov eax, 42\nexit\n", encoding="utf-8")
+
+        checked = subprocess.run(
+            [sys.executable, str(compiler), "--check", str(valid_source)],
+            capture_output=True, text=True, check=False,
+        )
+        assert checked.returncode == 0, checked.stderr
+        assert "valid.tl is valid (6 bytes)" in checked.stdout
+        assert sorted(path.name for path in directory.iterdir()) == ["valid.tl"]
+
+        invalid_source = directory / "invalid.tl"
+        invalid_source.write_text("mov eax, 1\njmp missing\n", encoding="utf-8")
+        rejected = subprocess.run(
+            [sys.executable, str(compiler), "--check", str(invalid_source)],
+            capture_output=True, text=True, check=False,
+        )
+        assert rejected.returncode == 1
+        assert "line 2: unknown label" in rejected.stderr
+        assert sorted(path.name for path in directory.iterdir()) == [
+            "invalid.tl", "valid.tl"
+        ]
+
+        output = directory / "nested" / "valid.com"
+        built = subprocess.run(
+            [sys.executable, str(compiler), str(valid_source), str(output)],
+            capture_output=True, text=True, check=False,
+        )
+        assert built.returncode == 0, built.stderr
+        assert output.read_bytes() == bytes([0xB8, 42, 0, 0, 0, 0xF4])
+
+        invalid_usage = subprocess.run(
+            [sys.executable, str(compiler), "--check",
+             str(valid_source), str(directory / "ignored.com")],
+            capture_output=True, text=True, check=False,
+        )
+        assert invalid_usage.returncode == 2
+        assert "--check does not accept an output path" in invalid_usage.stderr
+        assert not (directory / "ignored.com").exists()
 
 
 def main() -> None:
@@ -129,6 +178,7 @@ def main() -> None:
     expect_error("mov eax, 1\nadd ebx, 2", "line 2", "supports EAX only")
 
     test_example_programs()
+    test_cli_check_mode()
     print("tinylang: tests passed")
 
 

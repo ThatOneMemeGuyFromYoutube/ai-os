@@ -106,6 +106,12 @@ compile: | build
 	@mkdir -p "$(dir $(OUTPUT))"
 	$(PYTHON) toolchain/tinylang.py "$(SOURCE)" "$(OUTPUT)"
 
+# Validate one edited source without creating or replacing a program image.
+check-source:
+	@test -n "$(SOURCE)" || { echo "error: set SOURCE to a TinyLang file" >&2; exit 1; }
+	@test -f "$(SOURCE)" || { echo "error: TinyLang source not found: $(SOURCE)" >&2; exit 1; }
+	$(PYTHON) toolchain/tinylang.py --check "$(SOURCE)"
+
 iso: build/ai-os.iso
 
 build/ai-os.iso: build/kernel.bin iso/boot/grub/grub.cfg
@@ -133,7 +139,7 @@ check-iso: iso
 	@command -v $(QEMU) >/dev/null || (echo "error: missing QEMU binary $(QEMU)" >&2; exit 1)
 	@timeout $(QEMU_TIMEOUT)s $(QEMU) -cdrom build/ai-os.iso -display none -serial stdio -no-reboot -no-shutdown || test $$? -eq 124
 
-check: check-toolchain check-keyboard check-terminal check-desktop-input check-ps2-wait check-examples check-compile
+check: check-toolchain check-keyboard check-terminal check-desktop-input check-ps2-wait check-examples check-compile check-source
 	PYTHONPATH=toolchain $(PYTHON) toolchain/test_tinylang.py
 	$(MAKE) check-artifacts
 
@@ -151,4 +157,4 @@ run-iso: build/ai-os.iso
 clean:
 	rm -rf build
 
-.PHONY: all check check-artifacts check-iso check-keyboard check-terminal check-desktop-input check-ps2-wait check-toolchain check-examples check-compile examples compile clean iso package-release program run run-iso test
+.PHONY: all check check-artifacts check-iso check-keyboard check-terminal check-desktop-input check-ps2-wait check-toolchain check-examples check-compile examples compile check-source clean iso package-release program run run-iso test
