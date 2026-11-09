@@ -63,3 +63,12 @@ PYTHONPATH=toolchain python3 toolchain/test_tinylang.py
 ```
 
 Then build the 32-bit artifacts with `make check` before publishing a release.
+
+## Symbol maps
+
+When building a program, pass `--map PATH` to the compiler or `MAP=PATH`
+to `make compile`. The generated text file lists labels by load address,
+including both the current 0x100-based address and the offset within the flat
+image. It is useful when checking relative-jump targets; it does not alter the
+program image. Map output is unavailable in `--check` mode because validation
+does not write build artifacts.
