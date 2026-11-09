@@ -148,7 +148,7 @@ def diagnose_malformed_statement(line: str, line_no: int) -> None:
         )
 
 
-def compile_source(source: str) -> bytes:
+def compile_source_with_symbols(source: str) -> tuple[bytes, dict[str, int]]:
     out = bytearray()
     labels: dict[str, int] = {}
     # Keep each reference's source line so second-pass diagnostics can point
@@ -233,7 +233,24 @@ def compile_source(source: str) -> bytes:
             raise ValueError(f"line {line_no}: jump to {label!r} is out of range")
         out[patch_at : patch_at + 4] = struct.pack("<i", relative)
 
-    return bytes(out)
+    return bytes(out), labels
+
+
+def compile_source(source: str) -> bytes:
+    image, _ = compile_source_with_symbols(source)
+    return image
+
+
+def format_symbol_map(labels: dict[str, int]) -> str:
+    """Render deterministic load addresses and image offsets for labels."""
+    lines = [
+        "# TinyLang symbol map",
+        f"# load base: 0x{LOAD_OFFSET:08X}",
+        "# address    offset     symbol",
+    ]
+    for name, address in sorted(labels.items(), key=lambda item: (item[1], item[0])):
+        lines.append(f"0x{address:08X} 0x{address - LOAD_OFFSET:08X} {name}")
+    return "\n".join(lines) + "\n"
 
 
 def main() -> int:
@@ -246,26 +263,43 @@ def main() -> int:
         "--check", action="store_true",
         help="validate syntax and labels without writing a program image",
     )
+    parser.add_argument(
+        "--map", type=Path, metavar="PATH",
+        help="write a deterministic label-address map alongside the program image",
+    )
     args = parser.parse_args()
 
     if args.check and args.output is not None:
         parser.error("--check does not accept an output path")
+    if args.check and args.map is not None:
+        parser.error("--map cannot be used with --check")
     if not args.check and args.output is None:
         parser.error("output is required unless --check is used")
+    if args.map is not None:
+        if args.map.resolve() == args.output.resolve():
+            parser.error("map path must differ from output path")
+        if args.map.resolve() == args.source.resolve():
+            parser.error("map path must differ from source path")
 
     try:
         source = args.source.read_text(encoding="utf-8")
-        image = compile_source(source)
+        image, labels = compile_source_with_symbols(source)
         if args.check:
             print(f"tinylang: {args.source} is valid ({len(image)} bytes)")
             return 0
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_bytes(image)
+        if args.map is not None:
+            args.map.parent.mkdir(parents=True, exist_ok=True)
+            args.map.write_text(format_symbol_map(labels), encoding="utf-8")
     except (OSError, ValueError) as exc:
         print(f"tinylang: {exc}", file=sys.stderr)
         return 1
 
-    print(f"tinylang: wrote {len(image)} bytes to {args.output}")
+    message = f"tinylang: wrote {len(image)} bytes to {args.output}"
+    if args.map is not None:
+        message += f"; symbol map: {args.map}"
+    print(message)
     return 0
 
 

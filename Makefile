@@ -24,6 +24,7 @@ TINYLANG_IMAGES := $(patsubst toolchain/examples/%.tl,build/examples/%.com,$(TIN
 # `make compile SOURCE=... [OUTPUT=...]` builds one user-selected source.
 SOURCE ?= toolchain/examples/hello.tl
 OUTPUT ?= build/$(basename $(notdir $(SOURCE))).com
+MAP ?=
 
 all: build/kernel.bin
 
@@ -90,11 +91,15 @@ examples: $(TINYLANG_IMAGES)
 check-examples: examples
 
 # Exercise both the derived default path and a caller-selected nested output.
-check-compile: build/hello.com build/examples/hello.com build/examples/arithmetic.com
+check-compile: build/hello.com build/examples/hello.com build/examples/arithmetic.com build/examples/jump_over_data.com
 	$(MAKE) --no-print-directory compile SOURCE=toolchain/examples/hello.tl
 	cmp build/hello.com build/examples/hello.com
 	$(MAKE) --no-print-directory compile SOURCE=toolchain/examples/arithmetic.tl OUTPUT=build/compile-check/arithmetic.com
 	cmp build/compile-check/arithmetic.com build/examples/arithmetic.com
+	$(MAKE) --no-print-directory compile SOURCE=toolchain/examples/jump_over_data.tl OUTPUT=build/compile-check/jump_over_data.com MAP=build/compile-check/jump_over_data.map
+	cmp build/compile-check/jump_over_data.com build/examples/jump_over_data.com
+	grep -Fx '0x00000105 0x00000005 message' build/compile-check/jump_over_data.map
+	grep -Fx '0x0000010C 0x0000000C program' build/compile-check/jump_over_data.map
 
 program: build/hello.com
 
@@ -104,7 +109,11 @@ compile: | build
 	@test -f "$(SOURCE)" || { echo "error: TinyLang source not found: $(SOURCE)" >&2; exit 1; }
 	@test -n "$(OUTPUT)" || { echo "error: set OUTPUT to a .com destination" >&2; exit 1; }
 	@mkdir -p "$(dir $(OUTPUT))"
-	$(PYTHON) toolchain/tinylang.py "$(SOURCE)" "$(OUTPUT)"
+	@if [ -n "$(MAP)" ]; then \
+		$(PYTHON) toolchain/tinylang.py --map "$(MAP)" "$(SOURCE)" "$(OUTPUT)"; \
+	else \
+		$(PYTHON) toolchain/tinylang.py "$(SOURCE)" "$(OUTPUT)"; \
+	fi
 
 # Validate one edited source without creating or replacing a program image.
 check-source:

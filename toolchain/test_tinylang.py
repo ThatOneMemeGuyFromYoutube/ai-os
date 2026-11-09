@@ -97,6 +97,70 @@ def test_cli_check_mode() -> None:
         assert not (directory / "ignored.com").exists()
 
 
+def test_cli_symbol_map() -> None:
+    compiler = Path(__file__).with_name("tinylang.py")
+    with tempfile.TemporaryDirectory() as temporary:
+        directory = Path(temporary)
+        source = directory / "labels.tl"
+        source.write_text(
+            "zeta:\nalpha:\nstart: jmp done\ndata: db 0x90\ndone: exit\n",
+            encoding="utf-8",
+        )
+        output = directory / "nested" / "program.com"
+        map_path = directory / "nested" / "program.map"
+
+        built = subprocess.run(
+            [sys.executable, str(compiler), "--map", str(map_path),
+             str(source), str(output)],
+            capture_output=True, text=True, check=False,
+        )
+        assert built.returncode == 0, built.stderr
+        assert output.read_bytes() == bytes([0xE9, 1, 0, 0, 0, 0x90, 0xF4])
+        assert map_path.read_text(encoding="utf-8") == (
+            "# TinyLang symbol map\n"
+            "# load base: 0x00000100\n"
+            "# address    offset     symbol\n"
+            "0x00000100 0x00000000 alpha\n"
+            "0x00000100 0x00000000 start\n"
+            "0x00000100 0x00000000 zeta\n"
+            "0x00000105 0x00000005 data\n"
+            "0x00000106 0x00000006 done\n"
+        )
+        assert "symbol map:" in built.stdout
+
+        checked_with_map = subprocess.run(
+            [sys.executable, str(compiler), "--check", "--map",
+             str(map_path), str(source)],
+            capture_output=True, text=True, check=False,
+        )
+        assert checked_with_map.returncode == 2
+        assert "--map cannot be used with --check" in checked_with_map.stderr
+        assert map_path.is_file()
+
+        collision = subprocess.run(
+            [sys.executable, str(compiler), "--map", str(output),
+             str(source), str(output)],
+            capture_output=True, text=True, check=False,
+        )
+        assert collision.returncode == 2
+        assert "map path must differ from output path" in collision.stderr
+        assert output.read_bytes() == bytes([0xE9, 1, 0, 0, 0, 0x90, 0xF4])
+
+        broken = directory / "broken.tl"
+        broken.write_text("jmp missing\n", encoding="utf-8")
+        failed_output = directory / "failed" / "program.com"
+        failed_map = directory / "failed" / "program.map"
+        failed = subprocess.run(
+            [sys.executable, str(compiler), "--map", str(failed_map),
+             str(broken), str(failed_output)],
+            capture_output=True, text=True, check=False,
+        )
+        assert failed.returncode == 1
+        assert "line 1: unknown label" in failed.stderr
+        assert not failed_output.exists()
+        assert not failed_map.exists()
+
+
 def main() -> None:
     image = compile_source("""
         start: ; labels may be followed by semicolon comments
@@ -179,6 +243,7 @@ def main() -> None:
 
     test_example_programs()
     test_cli_check_mode()
+    test_cli_symbol_map()
     print("tinylang: tests passed")
 
 
