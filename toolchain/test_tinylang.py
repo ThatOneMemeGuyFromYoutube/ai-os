@@ -2,6 +2,7 @@
 """Small dependency-free regression tests for TinyLang."""
 
 from pathlib import Path
+import os
 import subprocess
 import sys
 import tempfile
@@ -161,6 +162,49 @@ def test_cli_symbol_map() -> None:
         assert not failed_map.exists()
 
 
+
+def test_cli_rejects_source_output_aliases() -> None:
+    compiler = Path(__file__).with_name("tinylang.py")
+    with tempfile.TemporaryDirectory() as temporary:
+        directory = Path(temporary)
+        source = directory / "safe-source.tl"
+        original = "mov eax, 42\\nexit\\n"
+        source.write_text(original, encoding="utf-8")
+
+        same_path = subprocess.run(
+            [sys.executable, str(compiler), str(source), str(source)],
+            capture_output=True, text=True, check=False,
+        )
+        assert same_path.returncode == 2
+        assert "output path must differ from source path" in same_path.stderr
+        assert source.read_text(encoding="utf-8") == original
+
+        symlink_alias = directory / "source-symlink.tl"
+        try:
+            symlink_alias.symlink_to(source)
+        except (NotImplementedError, OSError):
+            pass
+        else:
+            symlink_output = subprocess.run(
+                [sys.executable, str(compiler), str(source), str(symlink_alias)],
+                capture_output=True, text=True, check=False,
+            )
+            assert symlink_output.returncode == 2
+            assert "output path must differ from source path" in symlink_output.stderr
+            assert source.read_text(encoding="utf-8") == original
+
+        hardlink_alias = directory / "source-hardlink.tl"
+        os.link(source, hardlink_alias)
+        hardlink_output = subprocess.run(
+            [sys.executable, str(compiler), str(source), str(hardlink_alias)],
+            capture_output=True, text=True, check=False,
+        )
+        assert hardlink_output.returncode == 2
+        assert "output path must differ from source path" in hardlink_output.stderr
+        assert source.read_text(encoding="utf-8") == original
+        assert hardlink_alias.read_text(encoding="utf-8") == original
+
+
 def main() -> None:
     image = compile_source("""
         start: ; labels may be followed by semicolon comments
@@ -244,6 +288,7 @@ def main() -> None:
     test_example_programs()
     test_cli_check_mode()
     test_cli_symbol_map()
+    test_cli_rejects_source_output_aliases()
     print("tinylang: tests passed")
 
 
