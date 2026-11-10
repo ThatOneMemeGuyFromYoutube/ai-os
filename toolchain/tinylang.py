@@ -253,6 +253,16 @@ def format_symbol_map(labels: dict[str, int]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def paths_refer_to_same_file(left: Path, right: Path) -> bool:
+    """Detect identical paths, symlink aliases, and existing hard-link aliases."""
+    try:
+        if left.resolve() == right.resolve():
+            return True
+        return left.samefile(right)
+    except (OSError, RuntimeError):
+        return False
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Compile TinyLang to a flat AsterOS .COM-style image.")
     parser.add_argument("source", type=Path, help="TinyLang source file")
@@ -275,10 +285,12 @@ def main() -> int:
         parser.error("--map cannot be used with --check")
     if not args.check and args.output is None:
         parser.error("output is required unless --check is used")
+    if args.output is not None and paths_refer_to_same_file(args.source, args.output):
+        parser.error("output path must differ from source path")
     if args.map is not None:
-        if args.map.resolve() == args.output.resolve():
+        if args.output is not None and paths_refer_to_same_file(args.map, args.output):
             parser.error("map path must differ from output path")
-        if args.map.resolve() == args.source.resolve():
+        if paths_refer_to_same_file(args.map, args.source):
             parser.error("map path must differ from source path")
 
     try:
