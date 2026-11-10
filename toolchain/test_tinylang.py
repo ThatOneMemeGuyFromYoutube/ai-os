@@ -168,7 +168,7 @@ def test_cli_rejects_source_output_aliases() -> None:
     with tempfile.TemporaryDirectory() as temporary:
         directory = Path(temporary)
         source = directory / "safe-source.tl"
-        original = "mov eax, 42\\nexit\\n"
+        original = "mov eax, 42\nexit\n"
         source.write_text(original, encoding="utf-8")
 
         same_path = subprocess.run(
