@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Small dependency-free regression tests for TinyLang."""
 
-from pathlib import Path
 import os
+from pathlib import Path
 import subprocess
 import sys
 import tempfile
@@ -160,7 +160,6 @@ def test_cli_symbol_map() -> None:
         assert "line 1: unknown label" in failed.stderr
         assert not failed_output.exists()
         assert not failed_map.exists()
-
 
 
 def test_cli_rejects_source_output_aliases() -> None:
