@@ -29,7 +29,7 @@ make compile SOURCE=my_program.tl OUTPUT=build/my_program.com
 make compile SOURCE=my_program.tl OUTPUT=build/my_program.com MAP=build/my_program.map
 ```
 
-The destination directory is created automatically. If `OUTPUT` is omitted, Make derives `build/<source-name>.com` from `SOURCE`. The optional `MAP` variable writes a deterministic symbol map sorted by load address and label name; addresses use the current 0x100 load base, and offsets are relative to the beginning of the flat image. Map generation does not change the `.com` bytes. The lower-level compiler command remains available when you want to invoke the tool directly:
+The destination directory is created automatically. If `OUTPUT` is omitted, Make derives `build/<source-name>.com` from `SOURCE`. The compiler rejects output or map destinations that refer to the source file or to each other, including existing symlink and hard-link aliases, so a mistaken path cannot replace the source. The optional `MAP` variable writes a deterministic symbol map sorted by load address and label name; addresses use the current 0x100 load base, and offsets are relative to the beginning of the flat image. Map generation does not change the `.com` bytes. The lower-level compiler command remains available when you want to invoke the tool directly:
 
 ```sh
 python3 toolchain/tinylang.py my_program.tl build/my_program.com
