@@ -168,12 +168,12 @@ def test_cli_source_listing() -> None:
         directory = Path(temporary)
         source = directory / "listing.tl"
         source.write_text(
-            "start:\\n"
-            "mov eax, 42 ; value\\n"
-            "loop: sub eax, 1\\n"
-            "jmp done\\n"
-            "db 0x90, 0xCC\\n"
-            "done: exit\\n",
+            "start:\n"
+            "mov eax, 42 ; value\n"
+            "loop: sub eax, 1\n"
+            "jmp done\n"
+            "db 0x90, 0xCC\n"
+            "done: exit\n",
             encoding="utf-8",
         )
         output = directory / "nested" / "program.com"
@@ -192,15 +192,15 @@ def test_cli_source_listing() -> None:
             0x90, 0xCC, 0xF4,
         ])
         assert listing.read_text(encoding="utf-8") == (
-            "# TinyLang source listing\\n"
-            "# load base: 0x00000100\\n"
-            "# line  address    bytes | source\\n"
-            "0001 0x00000100   | start:\\n"
-            "0002 0x00000100  B8 2A 00 00 00 | mov eax, 42 ; value\\n"
-            "0003 0x00000105  2D 01 00 00 00 | loop: sub eax, 1\\n"
-            "0004 0x0000010A  E9 02 00 00 00 | jmp done\\n"
-            "0005 0x0000010F  90 CC | db 0x90, 0xCC\\n"
-            "0006 0x00000111  F4 | done: exit\\n"
+            "# TinyLang source listing\n"
+            "# load base: 0x00000100\n"
+            "# line  address    bytes | source\n"
+            "0001 0x00000100   | start:\n"
+            "0002 0x00000100  B8 2A 00 00 00 | mov eax, 42 ; value\n"
+            "0003 0x00000105  2D 01 00 00 00 | loop: sub eax, 1\n"
+            "0004 0x0000010A  E9 02 00 00 00 | jmp done\n"
+            "0005 0x0000010F  90 CC | db 0x90, 0xCC\n"
+            "0006 0x00000111  F4 | done: exit\n"
         )
         assert "source listing:" in built.stdout
 
@@ -220,7 +220,7 @@ def test_cli_source_listing() -> None:
         )
         assert source_collision.returncode == 2
         assert "listing path must differ from source path" in source_collision.stderr
-        assert source.read_text(encoding="utf-8").startswith("start:\\n")
+        assert source.read_text(encoding="utf-8").startswith("start:\n")
 
         output_collision = subprocess.run(
             [sys.executable, str(compiler), "--listing", str(output),
