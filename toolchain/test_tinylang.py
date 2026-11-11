@@ -162,6 +162,81 @@ def test_cli_symbol_map() -> None:
         assert not failed_map.exists()
 
 
+def test_cli_source_listing() -> None:
+    compiler = Path(__file__).with_name("tinylang.py")
+    with tempfile.TemporaryDirectory() as temporary:
+        directory = Path(temporary)
+        source = directory / "listing.tl"
+        source.write_text(
+            "start:\\n"
+            "mov eax, 42 ; value\\n"
+            "loop: sub eax, 1\\n"
+            "jmp done\\n"
+            "db 0x90, 0xCC\\n"
+            "done: exit\\n",
+            encoding="utf-8",
+        )
+        output = directory / "nested" / "program.com"
+        listing = directory / "nested" / "program.lst"
+
+        built = subprocess.run(
+            [sys.executable, str(compiler), "--listing", str(listing),
+             str(source), str(output)],
+            capture_output=True, text=True, check=False,
+        )
+        assert built.returncode == 0, built.stderr
+        assert output.read_bytes() == bytes([
+            0xB8, 42, 0, 0, 0,
+            0x2D, 1, 0, 0, 0,
+            0xE9, 2, 0, 0, 0,
+            0x90, 0xCC, 0xF4,
+        ])
+        assert listing.read_text(encoding="utf-8") == (
+            "# TinyLang source listing\\n"
+            "# load base: 0x00000100\\n"
+            "# line  address    bytes | source\\n"
+            "0001 0x00000100   | start:\\n"
+            "0002 0x00000100  B8 2A 00 00 00 | mov eax, 42 ; value\\n"
+            "0003 0x00000105  2D 01 00 00 00 | loop: sub eax, 1\\n"
+            "0004 0x0000010A  E9 02 00 00 00 | jmp done\\n"
+            "0005 0x0000010F  90 CC | db 0x90, 0xCC\\n"
+            "0006 0x00000111  F4 | done: exit\\n"
+        )
+        assert "source listing:" in built.stdout
+
+        check_listing = subprocess.run(
+            [sys.executable, str(compiler), "--check", "--listing",
+             str(listing), str(source)],
+            capture_output=True, text=True, check=False,
+        )
+        assert check_listing.returncode == 2
+        assert "--listing cannot be used with --check" in check_listing.stderr
+        assert listing.is_file()
+
+        source_collision = subprocess.run(
+            [sys.executable, str(compiler), "--listing", str(source),
+             str(source), str(output)],
+            capture_output=True, text=True, check=False,
+        )
+        assert source_collision.returncode == 2
+        assert "listing path must differ from source path" in source_collision.stderr
+        assert source.read_text(encoding="utf-8").startswith("start:\\n")
+
+        output_collision = subprocess.run(
+            [sys.executable, str(compiler), "--listing", str(output),
+             str(source), str(output)],
+            capture_output=True, text=True, check=False,
+        )
+        assert output_collision.returncode == 2
+        assert "listing path must differ from output path" in output_collision.stderr
+        assert output.read_bytes() == bytes([
+            0xB8, 42, 0, 0, 0,
+            0x2D, 1, 0, 0, 0,
+            0xE9, 2, 0, 0, 0,
+            0x90, 0xCC, 0xF4,
+        ])
+
+
 def test_cli_rejects_source_output_aliases() -> None:
     compiler = Path(__file__).with_name("tinylang.py")
     with tempfile.TemporaryDirectory() as temporary:
@@ -287,6 +362,7 @@ def main() -> None:
     test_example_programs()
     test_cli_check_mode()
     test_cli_symbol_map()
+    test_cli_source_listing()
     test_cli_rejects_source_output_aliases()
     print("tinylang: tests passed")
 
