@@ -29,10 +29,12 @@ make compile SOURCE=my_program.tl OUTPUT=build/my_program.com
 make compile SOURCE=my_program.tl OUTPUT=build/my_program.com MAP=build/my_program.map
 ```
 
-The destination directory is created automatically. If `OUTPUT` is omitted, Make derives `build/<source-name>.com` from `SOURCE`. The compiler rejects output or map destinations that refer to the source file or to each other, including existing symlink and hard-link aliases, so a mistaken path cannot replace the source. The optional `MAP` variable writes a deterministic symbol map sorted by load address and label name; addresses use the current 0x100 load base, and offsets are relative to the beginning of the flat image. Map generation does not change the `.com` bytes. The lower-level compiler command remains available when you want to invoke the tool directly:
+The destination directory is created automatically. If `OUTPUT` is omitted, Make derives `build/<source-name>.com` from `SOURCE`. The compiler rejects output or map destinations that refer to the source file or to each other, including existing symlink and hard-link aliases, so a mistaken path cannot replace the source. The optional `MAP` variable writes a deterministic symbol map sorted by load address and label name; addresses use the current 0x100 load base, and offsets are relative to the beginning of the flat image. `LISTING=build/my_program.lst` adds a source-correlated listing with source line numbers, load addresses, and final emitted bytes after jump fixups; label-only lines are included with an empty byte column. `MAP` and `LISTING` may be used together. Neither sidecar changes the `.com` bytes. The lower-level compiler command remains available when you want to invoke the tool directly:
 
 ```sh
 python3 toolchain/tinylang.py my_program.tl build/my_program.com
+# include a source-correlated byte listing
+python3 toolchain/tinylang.py --listing build/my_program.lst my_program.tl build/my_program.com
 ```
 
 A TinyLang program can use `mov`, `add`, `sub`, `int`, `jmp`, labels, `db`, and `exit`. Comments begin with `#` or `;`. Labels may be on their own line or share a line with an instruction:
