@@ -25,6 +25,7 @@ TINYLANG_IMAGES := $(patsubst toolchain/examples/%.tl,build/examples/%.com,$(TIN
 SOURCE ?= toolchain/examples/hello.tl
 OUTPUT ?= build/$(basename $(notdir $(SOURCE))).com
 MAP ?=
+LISTING ?=
 
 all: build/kernel.bin
 
@@ -96,10 +97,12 @@ check-compile: build/hello.com build/examples/hello.com build/examples/arithmeti
 	cmp build/hello.com build/examples/hello.com
 	$(MAKE) --no-print-directory compile SOURCE=toolchain/examples/arithmetic.tl OUTPUT=build/compile-check/arithmetic.com
 	cmp build/compile-check/arithmetic.com build/examples/arithmetic.com
-	$(MAKE) --no-print-directory compile SOURCE=toolchain/examples/jump_over_data.tl OUTPUT=build/compile-check/jump_over_data.com MAP=build/compile-check/jump_over_data.map
+	$(MAKE) --no-print-directory compile SOURCE=toolchain/examples/jump_over_data.tl OUTPUT=build/compile-check/jump_over_data.com MAP=build/compile-check/jump_over_data.map LISTING=build/compile-check/jump_over_data.lst
 	cmp build/compile-check/jump_over_data.com build/examples/jump_over_data.com
 	grep -Fx '0x00000105 0x00000005 message' build/compile-check/jump_over_data.map
 	grep -Fx '0x0000010C 0x0000000C program' build/compile-check/jump_over_data.map
+	grep -Fx '0002 0x00000100  E9 07 00 00 00 | jmp program' build/compile-check/jump_over_data.lst
+	grep -Fx '0004 0x0000010C  B8 2A 00 00 00 | program: mov eax, 42' build/compile-check/jump_over_data.lst
 
 program: build/hello.com
 
@@ -109,8 +112,12 @@ compile: | build
 	@test -f "$(SOURCE)" || { echo "error: TinyLang source not found: $(SOURCE)" >&2; exit 1; }
 	@test -n "$(OUTPUT)" || { echo "error: set OUTPUT to a .com destination" >&2; exit 1; }
 	@mkdir -p "$(dir $(OUTPUT))"
-	@if [ -n "$(MAP)" ]; then \
+	@if [ -n "$(MAP)" ] && [ -n "$(LISTING)" ]; then \
+		$(PYTHON) toolchain/tinylang.py --map "$(MAP)" --listing "$(LISTING)" "$(SOURCE)" "$(OUTPUT)"; \
+	elif [ -n "$(MAP)" ]; then \
 		$(PYTHON) toolchain/tinylang.py --map "$(MAP)" "$(SOURCE)" "$(OUTPUT)"; \
+	elif [ -n "$(LISTING)" ]; then \
+		$(PYTHON) toolchain/tinylang.py --listing "$(LISTING)" "$(SOURCE)" "$(OUTPUT)"; \
 	else \
 		$(PYTHON) toolchain/tinylang.py "$(SOURCE)" "$(OUTPUT)"; \
 	fi
