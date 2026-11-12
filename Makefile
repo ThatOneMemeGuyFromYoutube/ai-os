@@ -20,6 +20,7 @@ AS_BIN := $(firstword $(AS))
 
 TINYLANG_EXAMPLES := $(sort $(wildcard toolchain/examples/*.tl))
 TINYLANG_IMAGES := $(patsubst toolchain/examples/%.tl,build/examples/%.com,$(TINYLANG_EXAMPLES))
+TINYLANG_LISTING_IMAGES := $(patsubst toolchain/examples/%.tl,build/listings/%.com,$(TINYLANG_EXAMPLES))
 TINYLANG_LISTINGS := $(patsubst toolchain/examples/%.tl,build/listings/%.lst,$(TINYLANG_EXAMPLES))
 
 # `make compile SOURCE=... [OUTPUT=...]` builds one user-selected source.
