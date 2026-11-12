@@ -20,7 +20,6 @@ AS_BIN := $(firstword $(AS))
 
 TINYLANG_EXAMPLES := $(sort $(wildcard toolchain/examples/*.tl))
 TINYLANG_IMAGES := $(patsubst toolchain/examples/%.tl,build/examples/%.com,$(TINYLANG_EXAMPLES))
-TINYLANG_LISTING_IMAGES := $(patsubst toolchain/examples/%.tl,build/listings/%.com,$(TINYLANG_EXAMPLES))
 TINYLANG_LISTINGS := $(patsubst toolchain/examples/%.tl,build/listings/%.lst,$(TINYLANG_EXAMPLES))
 
 # `make compile SOURCE=... [OUTPUT=...]` builds one user-selected source.
@@ -96,17 +95,14 @@ build/listings/%.com: toolchain/examples/%.tl toolchain/tinylang.py | build
 	mkdir -p $(dir $@)
 	$(PYTHON) toolchain/tinylang.py $< $@
 
-build/listings/%.lst: toolchain/examples/%.tl build/listings/%.com toolchain/tinylang.py | build
+build/listings/%.lst: toolchain/examples/%.tl build/listings/%.com build/examples/%.com toolchain/tinylang.py | build
 	$(PYTHON) toolchain/tinylang.py --listing $@ $< build/listings/$*.com
+	test -s "$@"
+	cmp build/examples/$*.com build/listings/$*.com
 
-listings: $(TINYLANG_LISTING_IMAGES) $(TINYLANG_LISTINGS)
+listings: $(TINYLANG_LISTINGS)
 
 check-listings: listings examples
-	@for source in $(TINYLANG_EXAMPLES); do \
-		name=$(basename "$source" .tl); \
-		test -s "build/listings/$name.lst" || exit 1; \
-		cmp "build/examples/$name.com" "build/listings/$name.com" || exit 1; \
-	done
 
 check-examples: examples
 

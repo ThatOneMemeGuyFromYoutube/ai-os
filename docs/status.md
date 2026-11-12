@@ -2,7 +2,7 @@
 
 ## 2026-11-12 — Generate source listings for the TinyLang example collection
 
-The active November 2–15 IDE/developer-tooling milestone remains open. Extended the source-listing workflow with `make listings`, which creates a `.lst` and matching `.com` image for every bundled TinyLang example under `build/listings/`. Added `check-listings` to `make check`; it verifies every listing exists and each generated image matches the normal example build. This gives the beginner toolchain a one-command reference set without changing executable bytes or claiming in-OS execution. PR #31 remains open. As inspected on November 12, its two PR workflows were still queued with no jobs assigned, so full CI, ISO/QEMU validation, and release remain pending; the local environment still cannot resolve github.com for a checkout.
+The active November 2–15 IDE/developer-tooling milestone remains open. Extended the source-listing workflow with `make listings`, which creates a `.lst` and matching `.com` image for every bundled TinyLang example under `build/listings/`. Added `check-listings` to `make check`; each listing rule verifies that its sidecar is non-empty and its companion image matches the normal example build byte-for-byte. This gives the beginner toolchain a one-command reference set without changing executable bytes or claiming in-OS execution. PR #31 remains open. As inspected on November 12, its two PR workflows were still queued with no jobs assigned, so full CI, ISO/QEMU validation, and release remain pending; the local environment still cannot resolve github.com for a checkout.
 
 ## 2026-11-10 — Prevent TinyLang builds from overwriting their source
 
