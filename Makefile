@@ -20,6 +20,8 @@ AS_BIN := $(firstword $(AS))
 
 TINYLANG_EXAMPLES := $(sort $(wildcard toolchain/examples/*.tl))
 TINYLANG_IMAGES := $(patsubst toolchain/examples/%.tl,build/examples/%.com,$(TINYLANG_EXAMPLES))
+TINYLANG_LISTING_IMAGES := $(patsubst toolchain/examples/%.tl,build/listings/%.com,$(TINYLANG_EXAMPLES))
+TINYLANG_LISTINGS := $(patsubst toolchain/examples/%.tl,build/listings/%.lst,$(TINYLANG_EXAMPLES))
 
 # `make compile SOURCE=... [OUTPUT=...]` builds one user-selected source.
 SOURCE ?= toolchain/examples/hello.tl
@@ -89,6 +91,23 @@ build/examples/%.com: toolchain/examples/%.tl toolchain/tinylang.py | build
 
 examples: $(TINYLANG_IMAGES)
 
+# Generate a source-correlated listing and matching image for every example.
+build/listings/%.com: toolchain/examples/%.tl toolchain/tinylang.py | build
+	mkdir -p $(dir $@)
+	$(PYTHON) toolchain/tinylang.py $< $@
+
+build/listings/%.lst: toolchain/examples/%.tl build/listings/%.com toolchain/tinylang.py | build
+	$(PYTHON) toolchain/tinylang.py --listing $@ $< build/listings/$*.com
+
+listings: $(TINYLANG_LISTING_IMAGES) $(TINYLANG_LISTINGS)
+
+check-listings: listings examples
+	@for source in $(TINYLANG_EXAMPLES); do \
+		name=$(basename "$source" .tl); \
+		test -s "build/listings/$name.lst" || exit 1; \
+		cmp "build/examples/$name.com" "build/listings/$name.com" || exit 1; \
+	done
+
 check-examples: examples
 
 # Exercise both the derived default path and a caller-selected nested output.
@@ -155,7 +174,7 @@ check-iso: iso
 	@command -v $(QEMU) >/dev/null || (echo "error: missing QEMU binary $(QEMU)" >&2; exit 1)
 	@timeout $(QEMU_TIMEOUT)s $(QEMU) -cdrom build/ai-os.iso -display none -serial stdio -no-reboot -no-shutdown || test $$? -eq 124
 
-check: check-toolchain check-keyboard check-terminal check-desktop-input check-ps2-wait check-examples check-compile check-source
+check: check-toolchain check-keyboard check-terminal check-desktop-input check-ps2-wait check-examples check-listings check-compile check-source
 	PYTHONPATH=toolchain $(PYTHON) toolchain/test_tinylang.py
 	$(MAKE) check-artifacts
 
@@ -173,4 +192,4 @@ run-iso: build/ai-os.iso
 clean:
 	rm -rf build
 
-.PHONY: all check check-artifacts check-iso check-keyboard check-terminal check-desktop-input check-ps2-wait check-toolchain check-examples check-compile examples compile check-source clean iso package-release program run run-iso test
+.PHONY: all check check-artifacts check-iso check-keyboard check-terminal check-desktop-input check-ps2-wait check-toolchain check-examples check-listings check-compile examples listings compile check-source clean iso package-release program run run-iso test

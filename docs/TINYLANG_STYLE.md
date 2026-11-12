@@ -73,6 +73,8 @@ Label-only lines are retained so source labels can be followed through the
 listing. Relative-jump bytes are shown after fixups have been resolved.
 
 The listing is a debugging sidecar; it does not change the flat program image.
+For a quick reference set, run `make listings` to emit a listing and matching image for every bundled example under `build/listings/`; `make check` verifies the generated images against the regular example builds.
+
 It can be generated alongside the symbol map:
 
 ```sh

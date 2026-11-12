@@ -10,7 +10,7 @@ From the repository root:
 make program
 ```
 
-That creates `build/hello.com`, a flat 32-bit x86 program image. To compile the complete example collection, run `make examples`; the resulting images are written to `build/examples/`. `make check` builds and verifies every example as part of the regression suite. These are host-generated images only: AsterOS does not yet have a transient-program loader.
+That creates `build/hello.com`, a flat 32-bit x86 program image. To compile the complete example collection, run `make examples`; the resulting images are written to `build/examples/`. `make check` builds and verifies every example as part of the regression suite. Run `make listings` to create a source-correlated `.lst` and matching `.com` image for every bundled example under `build/listings/`; `make check` also verifies that those images match the normal example builds. These are host-generated images only: AsterOS does not yet have a transient-program loader.
 
 For your own source, validate it before building without creating an image:
 
