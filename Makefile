@@ -22,6 +22,7 @@ TINYLANG_EXAMPLES := $(sort $(wildcard toolchain/examples/*.tl))
 TINYLANG_IMAGES := $(patsubst toolchain/examples/%.tl,build/examples/%.com,$(TINYLANG_EXAMPLES))
 TINYLANG_LISTING_IMAGES := $(patsubst toolchain/examples/%.tl,build/listings/%.com,$(TINYLANG_EXAMPLES))
 TINYLANG_LISTINGS := $(patsubst toolchain/examples/%.tl,build/listings/%.lst,$(TINYLANG_EXAMPLES))
+.SECONDARY: $(TINYLANG_LISTING_IMAGES)
 
 # `make compile SOURCE=... [OUTPUT=...]` builds one user-selected source.
 SOURCE ?= toolchain/examples/hello.tl
@@ -101,9 +102,10 @@ build/listings/%.lst: toolchain/examples/%.tl build/listings/%.com build/example
 	test -s "$@"
 	cmp build/examples/$*.com build/listings/$*.com
 
-listings: $(TINYLANG_LISTINGS)
+listings: $(TINYLANG_LISTING_IMAGES) $(TINYLANG_LISTINGS)
 
 check-listings: listings examples
+	@$(foreach image,$(TINYLANG_LISTING_IMAGES),test -s "$(image)" && ) true
 
 check-examples: examples
 
