@@ -1,8 +1,12 @@
 # Status
 
+## 2026-11-12 — Keep TinyLang listing images after Make completes
+
+The first full `make check` log showed GNU Make deleting `build/listings/*.com` as intermediate files after producing the `.lst` outputs. Marked the companion images `.SECONDARY` and extended `check-listings` to assert every image remains present after the target finishes. This keeps the documented `make listings` output available for inspection after Make exits. PR #32 validation is pending.
+
 ## 2026-11-12 — Generate source listings for the TinyLang example collection
 
-The active November 2–15 IDE/developer-tooling milestone remains open. Extended the source-listing workflow with `make listings`, which creates a `.lst` and matching `.com` image for every bundled TinyLang example under `build/listings/`. Added `check-listings` to `make check`; each listing rule verifies that its sidecar is non-empty and its companion image matches the normal example build byte-for-byte. This gives the beginner toolchain a one-command reference set without changing executable bytes or claiming in-OS execution. PR #31 remains open. As inspected on November 12, its two PR workflows were still queued with no jobs assigned, so full CI, ISO/QEMU validation, and release remain pending; the local environment still cannot resolve github.com for a checkout.
+The active November 2–15 IDE/developer-tooling milestone remains open. Extended the source-listing workflow with `make listings`, which creates a `.lst` and matching `.com` image for every bundled TinyLang example under `build/listings/`. Added `check-listings` to `make check`; each listing rule verifies that its sidecar is non-empty and its companion image matches the normal example build byte-for-byte. This gives the beginner toolchain a one-command reference set without changing executable bytes or claiming in-OS execution. PR #31 merged as `0e3b91f5f74a64b94bcc4245a22ecd38f0e4ff55`. Its PR workflows [Build and test AsterOS #43305047350](https://github.com/ThatOneMemeGuyFromYoutube/ai-os/actions/runs/43305047350) and [Build AI-OS #43305047360](https://github.com/ThatOneMemeGuyFromYoutube/ai-os/actions/runs/43305047360) passed, including the new listing generation checks and i386 ISO/QEMU smoke test. Main-branch CI [#43305238223](https://github.com/ThatOneMemeGuyFromYoutube/ai-os/actions/runs/43305238223) also passed; the main build/release and Pages workflows were still running when this status was updated. The local environment cannot resolve github.com for a checkout.
 
 ## 2026-11-10 — Prevent TinyLang builds from overwriting their source
 
