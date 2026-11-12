@@ -148,7 +148,13 @@ def diagnose_malformed_statement(line: str, line_no: int) -> None:
         )
 
 
-def compile_source_with_symbols(source: str) -> tuple[bytes, dict[str, int]]:
+def record_listing_entry(entries, line_no: int, start: int, out: bytearray, raw_line: str) -> None:
+    """Remember one source statement and its emitted byte range for --listing."""
+    if entries is not None:
+        entries.append((line_no, LOAD_OFFSET + start, start, len(out), raw_line.strip()))
+
+
+def compile_source_with_symbols(source: str, listing_entries=None) -> tuple[bytes, dict[str, int]]:
     out = bytearray()
     labels: dict[str, int] = {}
     # Keep each reference's source line so second-pass diagnostics can point
@@ -159,6 +165,8 @@ def compile_source_with_symbols(source: str) -> tuple[bytes, dict[str, int]]:
         line = re.split(r"[#;]", raw_line, maxsplit=1)[0].strip()
         if not line:
             continue
+
+        statement_start = len(out)
 
         # The style guide permits "label: instruction" as well as a label on
         # its own line. Record the address before assembling the instruction.
@@ -172,12 +180,14 @@ def compile_source_with_symbols(source: str) -> tuple[bytes, dict[str, int]]:
             labels[label] = LOAD_OFFSET + len(out)
             line = remainder.strip()
             if not line:
+                record_listing_entry(listing_entries, line_no, statement_start, out, raw_line)
                 continue
 
         if line == "exit":
             # CLI-friendly termination primitive for the current minimal kernel:
             # halt the CPU. A real BDOS exit service will replace this later.
             out.append(0xF4)
+            record_listing_entry(listing_entries, line_no, statement_start, out, raw_line)
             continue
 
         match = MOV_RE.match(line)
@@ -186,18 +196,21 @@ def compile_source_with_symbols(source: str) -> tuple[bytes, dict[str, int]]:
             value = parse_number(match.group(2), line_no)
             out.append(opcode)
             emit_u32(out, value)
+            record_listing_entry(listing_entries, line_no, statement_start, out, raw_line)
             continue
 
         match = ADD_RE.match(line)
         if match:
             out.append(0x05)  # ADD EAX, imm32
             emit_u32(out, parse_number(match.group(1), line_no))
+            record_listing_entry(listing_entries, line_no, statement_start, out, raw_line)
             continue
 
         match = SUB_RE.match(line)
         if match:
             out.append(0x2D)  # SUB EAX, imm32
             emit_u32(out, parse_number(match.group(1), line_no))
+            record_listing_entry(listing_entries, line_no, statement_start, out, raw_line)
             continue
 
         match = INT_RE.match(line)
@@ -206,6 +219,7 @@ def compile_source_with_symbols(source: str) -> tuple[bytes, dict[str, int]]:
             if value > 0xFF:
                 raise ValueError(f"line {line_no}: interrupt vector must be 0..255")
             out.extend((0xCD, value))
+            record_listing_entry(listing_entries, line_no, statement_start, out, raw_line)
             continue
 
         match = JUMP_RE.match(line)
@@ -215,11 +229,13 @@ def compile_source_with_symbols(source: str) -> tuple[bytes, dict[str, int]]:
             fixups.append((len(out), match.group(1),
                            LOAD_OFFSET + len(out) + 4, line_no))
             out.extend(b"\x00\x00\x00\x00")
+            record_listing_entry(listing_entries, line_no, statement_start, out, raw_line)
             continue
 
         match = DB_RE.match(line)
         if match:
             parse_db(match.group(1) or "", line_no, out)
+            record_listing_entry(listing_entries, line_no, statement_start, out, raw_line)
             continue
 
         diagnose_malformed_statement(line, line_no)
@@ -253,6 +269,19 @@ def format_symbol_map(labels: dict[str, int]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def format_source_listing(entries, image: bytes) -> str:
+    """Render source lines with their final load addresses and emitted bytes."""
+    lines = [
+        "# TinyLang source listing",
+        f"# load base: 0x{LOAD_OFFSET:08X}",
+        "# line  address    bytes | source",
+    ]
+    for line_no, address, start, end, source in entries:
+        encoded = " ".join(f"{value:02X}" for value in image[start:end])
+        lines.append(f"{line_no:04d} 0x{address:08X}  {encoded} | {source}")
+    return "\n".join(lines) + "\n"
+
+
 def paths_refer_to_same_file(left: Path, right: Path) -> bool:
     """Detect identical paths, symlink aliases, and existing hard-link aliases."""
     try:
@@ -277,12 +306,18 @@ def main() -> int:
         "--map", type=Path, metavar="PATH",
         help="write a deterministic label-address map alongside the program image",
     )
+    parser.add_argument(
+        "--listing", type=Path, metavar="PATH",
+        help="write a source-correlated listing of final emitted bytes",
+    )
     args = parser.parse_args()
 
     if args.check and args.output is not None:
         parser.error("--check does not accept an output path")
     if args.check and args.map is not None:
         parser.error("--map cannot be used with --check")
+    if args.check and args.listing is not None:
+        parser.error("--listing cannot be used with --check")
     if not args.check and args.output is None:
         parser.error("output is required unless --check is used")
     if args.output is not None and paths_refer_to_same_file(args.source, args.output):
@@ -292,10 +327,18 @@ def main() -> int:
             parser.error("map path must differ from output path")
         if paths_refer_to_same_file(args.map, args.source):
             parser.error("map path must differ from source path")
+    if args.listing is not None:
+        if args.output is not None and paths_refer_to_same_file(args.listing, args.output):
+            parser.error("listing path must differ from output path")
+        if args.map is not None and paths_refer_to_same_file(args.listing, args.map):
+            parser.error("listing path must differ from map path")
+        if paths_refer_to_same_file(args.listing, args.source):
+            parser.error("listing path must differ from source path")
 
     try:
         source = args.source.read_text(encoding="utf-8")
-        image, labels = compile_source_with_symbols(source)
+        listing_entries = [] if args.listing is not None else None
+        image, labels = compile_source_with_symbols(source, listing_entries)
         if args.check:
             print(f"tinylang: {args.source} is valid ({len(image)} bytes)")
             return 0
@@ -304,6 +347,9 @@ def main() -> int:
         if args.map is not None:
             args.map.parent.mkdir(parents=True, exist_ok=True)
             args.map.write_text(format_symbol_map(labels), encoding="utf-8")
+        if args.listing is not None:
+            args.listing.parent.mkdir(parents=True, exist_ok=True)
+            args.listing.write_text(format_source_listing(listing_entries, image), encoding="utf-8")
     except (OSError, ValueError) as exc:
         print(f"tinylang: {exc}", file=sys.stderr)
         return 1
@@ -311,6 +357,8 @@ def main() -> int:
     message = f"tinylang: wrote {len(image)} bytes to {args.output}"
     if args.map is not None:
         message += f"; symbol map: {args.map}"
+    if args.listing is not None:
+        message += f"; source listing: {args.listing}"
     print(message)
     return 0
 

@@ -64,6 +64,24 @@ PYTHONPATH=toolchain python3 toolchain/test_tinylang.py
 
 Then build the 32-bit artifacts with `make check` before publishing a release.
 
+## Source listings
+
+For a compiled source, request a listing with `--listing PATH` or
+`LISTING=PATH` on `make compile`. Each non-comment source statement is
+shown with its original line number, 0x100-based load address, and final bytes.
+Label-only lines are retained so source labels can be followed through the
+listing. Relative-jump bytes are shown after fixups have been resolved.
+
+The listing is a debugging sidecar; it does not change the flat program image.
+For a quick reference set, run `make listings` to emit a listing and matching image for every bundled example under `build/listings/`; `make check` verifies the generated images against the regular example builds.
+
+It can be generated alongside the symbol map:
+
+```sh
+make compile SOURCE=my_program.tl OUTPUT=build/my_program.com \
+  MAP=build/my_program.map LISTING=build/my_program.lst
+```
+
 ## Symbol maps
 
 When building a program, pass `--map PATH` to the compiler or `MAP=PATH`
