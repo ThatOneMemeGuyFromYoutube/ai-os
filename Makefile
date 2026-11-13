@@ -29,6 +29,7 @@ SOURCE ?= toolchain/examples/hello.tl
 OUTPUT ?= build/$(basename $(notdir $(SOURCE))).com
 MAP ?=
 LISTING ?=
+INSPECT_DIR ?= build/inspect
 
 all: build/kernel.bin
 
@@ -140,6 +141,29 @@ compile: | build
 		$(PYTHON) toolchain/tinylang.py "$(SOURCE)" "$(OUTPUT)"; \
 	fi
 
+
+# Build one source and collect its executable, label map, and byte listing.
+inspect: | build
+	@test -n "$(SOURCE)" || { echo "error: set SOURCE to a TinyLang file" >&2; exit 1; }
+	@test -f "$(SOURCE)" || { echo "error: TinyLang source not found: $(SOURCE)" >&2; exit 1; }
+	@test -n "$(INSPECT_DIR)" || { echo "error: set INSPECT_DIR to a destination directory" >&2; exit 1; }
+	$(MAKE) --no-print-directory compile SOURCE="$(SOURCE)" \
+		OUTPUT="$(INSPECT_DIR)/$(basename $(notdir $(SOURCE))).com" \
+		MAP="$(INSPECT_DIR)/$(basename $(notdir $(SOURCE))).map" \
+		LISTING="$(INSPECT_DIR)/$(basename $(notdir $(SOURCE))).lst"
+
+# Verify the one-command inspection bundle and all three generated artifacts.
+check-inspect: build/examples/jump_over_data.com
+	rm -rf build/inspect-check
+	$(MAKE) --no-print-directory inspect SOURCE=toolchain/examples/jump_over_data.tl INSPECT_DIR=build/inspect-check
+	cmp build/examples/jump_over_data.com build/inspect-check/jump_over_data.com
+	grep -Fx '0x00000105 0x00000005 message' build/inspect-check/jump_over_data.map
+	grep -Fx '0002 0x00000100  E9 07 00 00 00 | jmp program' build/inspect-check/jump_over_data.lst
+	test -s build/inspect-check/jump_over_data.com
+	test -s build/inspect-check/jump_over_data.map
+	test -s build/inspect-check/jump_over_data.lst
+
+
 # Validate one edited source without creating or replacing a program image.
 check-source:
 	@test -n "$(SOURCE)" || { echo "error: set SOURCE to a TinyLang file" >&2; exit 1; }
@@ -173,7 +197,7 @@ check-iso: iso
 	@command -v $(QEMU) >/dev/null || (echo "error: missing QEMU binary $(QEMU)" >&2; exit 1)
 	@timeout $(QEMU_TIMEOUT)s $(QEMU) -cdrom build/ai-os.iso -display none -serial stdio -no-reboot -no-shutdown || test $$? -eq 124
 
-check: check-toolchain check-keyboard check-terminal check-desktop-input check-ps2-wait check-examples check-listings check-compile check-source
+check: check-toolchain check-keyboard check-terminal check-desktop-input check-ps2-wait check-examples check-listings check-compile check-inspect check-source
 	PYTHONPATH=toolchain $(PYTHON) toolchain/test_tinylang.py
 	$(MAKE) check-artifacts
 
@@ -191,4 +215,4 @@ run-iso: build/ai-os.iso
 clean:
 	rm -rf build
 
-.PHONY: all check check-artifacts check-iso check-keyboard check-terminal check-desktop-input check-ps2-wait check-toolchain check-examples check-listings check-compile examples listings compile check-source clean iso package-release program run run-iso test
+.PHONY: all check check-artifacts check-iso check-keyboard check-terminal check-desktop-input check-ps2-wait check-toolchain check-examples check-listings check-compile check-inspect examples listings compile inspect check-source clean iso package-release program run run-iso test
