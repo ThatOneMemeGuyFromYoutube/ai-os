@@ -162,6 +162,26 @@ def test_cli_symbol_map() -> None:
         assert not failed_map.exists()
 
 
+def test_cli_duplicate_label_diagnostic() -> None:
+    compiler = Path(__file__).with_name("tinylang.py")
+    with tempfile.TemporaryDirectory() as temporary:
+        directory = Path(temporary)
+        source = directory / "duplicate.tl"
+        source.write_text("""# first definition follows a comment
+first:
+exit
+
+first: exit
+""", encoding="utf-8")
+        output = directory / "duplicate.com"
+        rejected = subprocess.run(
+            [sys.executable, str(compiler), str(source), str(output)],
+            capture_output=True, text=True, check=False,
+        )
+        assert rejected.returncode == 1
+        assert "line 5: duplicate label 'first'; first defined on line 2" in rejected.stderr
+        assert not output.exists()
+
 def test_cli_source_listing() -> None:
     compiler = Path(__file__).with_name("tinylang.py")
     with tempfile.TemporaryDirectory() as temporary:
@@ -362,6 +382,7 @@ def main() -> None:
     test_example_programs()
     test_cli_check_mode()
     test_cli_symbol_map()
+    test_cli_duplicate_label_diagnostic()
     test_cli_source_listing()
     test_cli_rejects_source_output_aliases()
     print("tinylang: tests passed")
