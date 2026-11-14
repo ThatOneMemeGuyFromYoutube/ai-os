@@ -157,6 +157,7 @@ def record_listing_entry(entries, line_no: int, start: int, out: bytearray, raw_
 def compile_source_with_symbols(source: str, listing_entries=None) -> tuple[bytes, dict[str, int]]:
     out = bytearray()
     labels: dict[str, int] = {}
+    label_lines: dict[str, int] = {}
     # Keep each reference's source line so second-pass diagnostics can point
     # back to the statement that introduced the unresolved jump.
     fixups: list[tuple[int, str, int, int]] = []
@@ -176,8 +177,13 @@ def compile_source_with_symbols(source: str, listing_entries=None) -> tuple[byte
             if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", label):
                 raise ValueError(f"line {line_no}: invalid label {label!r}")
             if label in labels:
-                raise ValueError(f"line {line_no}: duplicate label {label!r}")
+                first_line = label_lines[label]
+                raise ValueError(
+                    f"line {line_no}: duplicate label {label!r}; "
+                    f"first defined on line {first_line}"
+                )
             labels[label] = LOAD_OFFSET + len(out)
+            label_lines[label] = line_no
             line = remainder.strip()
             if not line:
                 record_listing_entry(listing_entries, line_no, statement_start, out, raw_line)
