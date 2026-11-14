@@ -1,8 +1,8 @@
+# Status
+
 ## 2026-11-14 — TinyLang duplicate-label diagnostics identify the first definition
 
 The active November 2–15 IDE/developer-tooling milestone remains open. TinyLang now records the source line where each label is first defined and reports both locations when a duplicate is encountered (for example, `line 5: duplicate label 'first'; first defined on line 2`). The CLI regression includes a leading comment and blank line to verify source-line accounting and confirms that a rejected compile does not create an executable. The compiler's `compile_source()` return type, symbol addresses, jump fixups, and emitted program bytes are unchanged. Updated the TinyLang guide. PR #34 merged as `5fedfac55238c2244b66525039c954add055f3b3`. Final PR checks [Build and test AsterOS #43639738170](https://github.com/ThatOneMemeGuyFromYoutube/ai-os/actions/runs/43639738170), [Build AI-OS #43639738193](https://github.com/ThatOneMemeGuyFromYoutube/ai-os/actions/runs/43639738193), and branch-push [CI #43639733260](https://github.com/ThatOneMemeGuyFromYoutube/ai-os/actions/runs/43639733260) all passed. Merge-triggered [CI #43639861487](https://github.com/ThatOneMemeGuyFromYoutube/ai-os/actions/runs/43639861487), [build/release #43639861453](https://github.com/ThatOneMemeGuyFromYoutube/ai-os/actions/runs/43639861453), and [Pages deployment #43639861527](https://github.com/ThatOneMemeGuyFromYoutube/ai-os/actions/runs/43639861527) also succeeded. Validation included the full TinyLang suite, keyboard/terminal/desktop/PS/2 tests, i386 cross-toolchain and kernel build, bootable GRUB ISO, QEMU ISO boot smoke test, artifact packaging/checksums, and browser demo deployment. The main build published [release v0.1.79](https://github.com/ThatOneMemeGuyFromYoutube/ai-os/releases/tag/v0.1.79) against the merge commit with the build archive, ISO, and SHA-256 manifest. The workflows continue to force JavaScript actions through Node 24. This remains host-side compiler tooling; AsterOS still has no transient-program loader or native TinyLang execution path, so the milestone is not complete.
-
-# Status
 
 ## 2026-11-13 — One-command TinyLang inspection bundle
 
