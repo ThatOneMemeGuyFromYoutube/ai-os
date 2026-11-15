@@ -6,6 +6,47 @@ static void expect_hit(int8_t active_app, uint8_t x, uint8_t y, int8_t expected)
     assert(asteros_desktop_hit_test(active_app, x, y) == expected);
 }
 
+static void test_touchpad_double_tap_coalescing(void) {
+    asteros_mouse_click_filter_t filter = {0, 0, 0};
+    uint32_t first = 100u;
+    uint32_t deadline = first + ASTEROS_MOUSE_DOUBLE_TAP_WINDOW_TICKS;
+
+    /* One physical click is emitted once its coalescing window expires. */
+    assert(asteros_mouse_click_filter_update(&filter, 1, first) == 0);
+    assert(asteros_mouse_click_filter_update(&filter, 0, first + 1u) == 0);
+    assert(asteros_mouse_click_filter_update(&filter, 0, deadline - 1u) == 0);
+    assert(asteros_mouse_click_filter_update(&filter, 0, deadline) == 1);
+    assert(asteros_mouse_click_filter_update(&filter, 0, deadline + 1u) == 0);
+
+    /* Two quick tap-click pulses produce one activation, not two. */
+    assert(asteros_mouse_click_filter_update(&filter, 1, 1000u) == 0);
+    assert(asteros_mouse_click_filter_update(&filter, 0, 1010u) == 0);
+    assert(asteros_mouse_click_filter_update(&filter, 1, 2000u) == 0);
+    assert(asteros_mouse_click_filter_update(&filter, 0, 2010u) == 0);
+    assert(asteros_mouse_click_filter_update(
+        &filter, 0, 1000u + ASTEROS_MOUSE_DOUBLE_TAP_WINDOW_TICKS) == 1);
+    assert(asteros_mouse_click_filter_update(&filter, 0, 1000u +
+        ASTEROS_MOUSE_DOUBLE_TAP_WINDOW_TICKS + 1u) == 0);
+
+    /* A later click starts a fresh window after the previous one is emitted. */
+    assert(asteros_mouse_click_filter_update(&filter, 1, 500000u) == 0);
+    assert(asteros_mouse_click_filter_update(&filter, 0, 500001u) == 0);
+    assert(asteros_mouse_click_filter_update(
+        &filter, 1, 500000u + ASTEROS_MOUSE_DOUBLE_TAP_WINDOW_TICKS + 1u) == 1);
+    assert(filter.pending == 1);
+    assert(asteros_mouse_click_filter_update(&filter, 0,
+        500000u + 2u * ASTEROS_MOUSE_DOUBLE_TAP_WINDOW_TICKS + 1u) == 1);
+
+    /* Deadline arithmetic remains correct when the 32-bit timer wraps. */
+    {
+        uint32_t start = 0xFFFFFF00u;
+        assert(asteros_mouse_click_filter_update(&filter, 1, start) == 0);
+        assert(asteros_mouse_click_filter_update(&filter, 0, start + 1u) == 0);
+        assert(asteros_mouse_click_filter_update(&filter, 0,
+            start + ASTEROS_MOUSE_DOUBLE_TAP_WINDOW_TICKS) == 1);
+    }
+}
+
 static void test_alternate_mouse_activation(void) {
     assert(asteros_mouse_activation_edge(0, 1) == 1); /* left */
     assert(asteros_mouse_activation_edge(0, 2) == 2); /* right */
@@ -206,6 +247,7 @@ static void test_context_menu_hit_testing(void) {
 }
 
 int main(void) {
+    test_touchpad_double_tap_coalescing();
     test_alternate_mouse_activation();
     test_taskbar_has_priority();
     test_launcher_and_desktop_icons();

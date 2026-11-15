@@ -1,11 +1,38 @@
 #include <stdint.h>
 #include "gui.h"
+#include "desktop_input.h"
 #include "keyboard.h"
 #include "ps2_wait.h"
 enum { SVC_CONSOLE = 1, SVC_FILES = 2, SVC_PROCESS = 3 };
 #define PS2_WAIT_ATTEMPTS 100000u
 static uint8_t inb(uint16_t port) { uint8_t value; __asm__ volatile ("inb %1, %0" : "=a"(value) : "Nd"(port)); return value; }
 static void outb(uint16_t port,uint8_t value) { __asm__ volatile ("outb %0, %1" : : "a"(value), "Nd"(port)); }
+
+/* Use the PIT as a polled monotonic clock; the kernel currently has no IRQ
+   timer path. Channel 0 runs at the standard 1.193182 MHz input clock. */
+static uint16_t timer_last_count;
+static uint32_t timer_elapsed_ticks;
+static uint16_t timer_read_counter(void) {
+    uint8_t low;
+    uint8_t high;
+    outb(0x43, 0x00); /* Latch channel 0's current count. */
+    low = inb(0x40);
+    high = inb(0x40);
+    return (uint16_t)((uint16_t)low | ((uint16_t)high << 8));
+}
+static void timer_init(void) {
+    outb(0x43, 0x34); /* Channel 0, lo/hi access, rate generator, binary. */
+    outb(0x40, 0xFF);
+    outb(0x40, 0xFF);
+    timer_last_count = timer_read_counter();
+    timer_elapsed_ticks = 0;
+}
+static uint32_t timer_now(void) {
+    uint16_t current = timer_read_counter();
+    timer_elapsed_ticks += (uint16_t)(timer_last_count - current);
+    timer_last_count = current;
+    return timer_elapsed_ticks;
+}
 static uint8_t controller_status(void *context) {
     (void)context;
     return inb(0x64);
@@ -75,14 +102,26 @@ void kmain(void){
     int8_t dx,dy;
     uint8_t buttons;
     uint8_t mouse_available;
+    uint8_t mouse_buttons = 0;
+    asteros_mouse_click_filter_t click_filter = {0, 0, 0};
     gui_init();
     mouse_available=mouse_init();
+    timer_init();
     keyboard_reset_state();
     for(;;){
         /* Keep draining auxiliary bytes after a failed init, but only deliver
            pointer events when the device acknowledged streaming mode. */
-        if(mouse_poll(&dx,&dy,&buttons)&&mouse_available)
-            gui_handle_mouse(dx,dy,buttons);
+        if(mouse_poll(&dx,&dy,&buttons)&&mouse_available){
+            mouse_buttons=buttons;
+            /* Left clicks are delivered by the timed filter below. Keep
+               pointer motion and right/middle buttons responsive immediately. */
+            gui_handle_mouse(dx,dy,(uint8_t)(buttons&~1u));
+        }
+        if(mouse_available&&asteros_mouse_click_filter_update(
+            &click_filter,(uint8_t)(mouse_buttons&1u),timer_now())){
+            gui_handle_mouse(0,0,1);
+            gui_handle_mouse(0,0,0);
+        }
         if(keyboard_poll(&key))gui_handle_key(key);
     }
 }

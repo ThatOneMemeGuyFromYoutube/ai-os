@@ -1,5 +1,29 @@
 #include "desktop_input.h"
 
+uint8_t asteros_mouse_click_filter_update(asteros_mouse_click_filter_t *filter,
+                                           uint8_t left_down, uint32_t now) {
+    uint8_t emit = 0;
+    uint8_t rising_edge;
+
+    if (!filter) return 0;
+
+    /* Unsigned subtraction makes the deadline check safe across tick wrap. */
+    if (filter->pending &&
+        (uint32_t)(now - filter->deadline) < 0x80000000u) {
+        filter->pending = 0;
+        emit = 1;
+    }
+
+    rising_edge = (uint8_t)(left_down && !filter->previous_left);
+    filter->previous_left = (uint8_t)(left_down != 0);
+    if (rising_edge && !filter->pending) {
+        filter->pending = 1;
+        filter->deadline = now + ASTEROS_MOUSE_DOUBLE_TAP_WINDOW_TICKS;
+    }
+
+    return emit;
+}
+
 uint8_t asteros_mouse_activation_edge(uint8_t previous_buttons, uint8_t buttons) {
     const uint8_t activation_buttons = 0x07;
     return (uint8_t)((buttons & activation_buttons) &
