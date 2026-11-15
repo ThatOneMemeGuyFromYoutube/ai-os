@@ -66,6 +66,21 @@ int8_t asteros_context_menu_hit_test(uint8_t menu_x, uint8_t menu_y,
 /* Move through the three actionable menu rows, wrapping at either end. */
 uint8_t asteros_context_menu_move_selection(uint8_t selection, int8_t delta);
 
+/* Left clicks are delayed briefly so a rapid touchpad double-tap can be
+   coalesced into one desktop activation. The timer uses PIT input-clock ticks. */
+#define ASTEROS_MOUSE_DOUBLE_TAP_WINDOW_TICKS 357955u
+
+typedef struct {
+    uint32_t deadline;
+    uint8_t previous_left;
+    uint8_t pending;
+} asteros_mouse_click_filter_t;
+
+/* Return nonzero once a pending click is ready to deliver. Repeated left
+   presses inside the window are treated as one click. */
+uint8_t asteros_mouse_click_filter_update(asteros_mouse_click_filter_t *filter,
+                                           uint8_t left_down, uint32_t now);
+
 /* Left, right, and middle presses can activate controls. */
 uint8_t asteros_mouse_activation_edge(uint8_t previous_buttons, uint8_t buttons);
 
