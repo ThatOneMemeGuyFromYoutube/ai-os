@@ -12,11 +12,12 @@ Supported statements:
     int 0x80
     jmp label
     label:
-    db 0x90, 0x90
+    db "AsterOS", 0
     exit
 
 Labels may stand alone or precede an instruction on the same line. Numbers may
-be decimal or hexadecimal (0x...). Comments start with '#' or ';'.
+be decimal or hexadecimal (0x...). Double-quoted db strings contain ASCII bytes
+and support explicit escapes. Comments start with '#' or ';' outside strings.
 """
 
 from __future__ import annotations
@@ -77,21 +78,124 @@ def emit_u32(out: bytearray, value: int) -> None:
     out.extend(struct.pack("<I", value))
 
 
+def strip_comment(line: str) -> str:
+    """Remove comments while preserving # and ; inside quoted byte strings."""
+    in_string = False
+    escaped = False
+    for index, character in enumerate(line):
+        if in_string:
+            if escaped:
+                escaped = False
+            elif character == "\\":
+                escaped = True
+            elif character == '"':
+                in_string = False
+        elif character == '"':
+            in_string = True
+        elif character in "#;":
+            return line[:index]
+    return line
+
+
+def find_unquoted_char(line: str, target: str) -> int:
+    """Find a delimiter outside a double-quoted string, or return -1."""
+    in_string = False
+    escaped = False
+    for index, character in enumerate(line):
+        if in_string:
+            if escaped:
+                escaped = False
+            elif character == "\\":
+                escaped = True
+            elif character == '"':
+                in_string = False
+        elif character == '"':
+            in_string = True
+        elif character == target:
+            return index
+    return -1
+
+
 def parse_db(args: str, line_no: int, out: bytearray) -> None:
     if not args.strip():
         raise ValueError(f"line {line_no}: db needs at least one byte")
 
-    # Do not silently discard empty list items: a typo such as "db 1,,2"
-    # changes the emitted image while appearing to compile successfully.
-    values = [part.strip() for part in args.split(",")]
-    if any(not value for value in values):
-        raise ValueError(f"line {line_no}: db contains an empty byte operand")
+    cursor = 0
+    length = len(args)
+    while True:
+        while cursor < length and args[cursor].isspace():
+            cursor += 1
+        if cursor >= length:
+            raise ValueError(f"line {line_no}: db contains an empty byte operand")
 
-    for token in values:
-        value = parse_number(token, line_no)
-        if value > 0xFF:
-            raise ValueError(f"line {line_no}: db value must fit in one byte: {value}")
-        out.append(value)
+        if args[cursor] == '"':
+            cursor += 1
+            value = bytearray()
+            while cursor < length and args[cursor] != '"':
+                character = args[cursor]
+                if character == "\\":
+                    cursor += 1
+                    if cursor >= length:
+                        raise ValueError(
+                            f"line {line_no}: db string ends with an incomplete escape"
+                        )
+                    escape = args[cursor]
+                    escapes = {
+                        "n": 0x0A, "r": 0x0D, "t": 0x09, "0": 0x00,
+                        '"': 0x22, "\\": 0x5C,
+                    }
+                    if escape == "x":
+                        digits = args[cursor + 1:cursor + 3]
+                        if len(digits) != 2 or not re.fullmatch(r"[0-9A-Fa-f]{2}", digits):
+                            raise ValueError(
+                                f"line {line_no}: db string \\x escape requires two hexadecimal digits"
+                            )
+                        value.append(int(digits, 16))
+                        cursor += 3
+                        continue
+                    if escape not in escapes:
+                        raise ValueError(
+                            f"line {line_no}: unsupported db string escape '\\{escape}'"
+                        )
+                    value.append(escapes[escape])
+                    cursor += 1
+                    continue
+
+                codepoint = ord(character)
+                if codepoint > 0x7F:
+                    raise ValueError(
+                        f"line {line_no}: db strings support ASCII only; use \\xHH for bytes"
+                    )
+                value.append(codepoint)
+                cursor += 1
+
+            if cursor >= length:
+                raise ValueError(f"line {line_no}: unterminated db string")
+            cursor += 1
+            out.extend(value)
+        else:
+            start = cursor
+            while cursor < length and args[cursor] != ",":
+                if args[cursor] == '"':
+                    raise ValueError(
+                        f"line {line_no}: quote must begin a db operand"
+                    )
+                cursor += 1
+            token = args[start:cursor].strip()
+            if not token:
+                raise ValueError(f"line {line_no}: db contains an empty byte operand")
+            value = parse_number(token, line_no)
+            if value > 0xFF:
+                raise ValueError(f"line {line_no}: db value must fit in one byte: {value}")
+            out.append(value)
+
+        while cursor < length and args[cursor].isspace():
+            cursor += 1
+        if cursor == length:
+            return
+        if args[cursor] != ",":
+            raise ValueError(f"line {line_no}: expected ',' between db operands")
+        cursor += 1
 
 
 def diagnose_malformed_statement(line: str, line_no: int) -> None:
@@ -163,7 +267,7 @@ def compile_source_with_symbols(source: str, listing_entries=None) -> tuple[byte
     fixups: list[tuple[int, str, int, int]] = []
 
     for line_no, raw_line in enumerate(source.splitlines(), start=1):
-        line = re.split(r"[#;]", raw_line, maxsplit=1)[0].strip()
+        line = strip_comment(raw_line).strip()
         if not line:
             continue
 
@@ -171,9 +275,9 @@ def compile_source_with_symbols(source: str, listing_entries=None) -> tuple[byte
 
         # The style guide permits "label: instruction" as well as a label on
         # its own line. Record the address before assembling the instruction.
-        if ":" in line:
-            label, _, remainder = line.partition(":")
-            label = label.strip()
+        colon_at = find_unquoted_char(line, ":")
+        if colon_at >= 0:
+            label = line[:colon_at].strip()
             if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", label):
                 raise ValueError(f"line {line_no}: invalid label {label!r}")
             if label in labels:
@@ -184,7 +288,7 @@ def compile_source_with_symbols(source: str, listing_entries=None) -> tuple[byte
                 )
             labels[label] = LOAD_OFFSET + len(out)
             label_lines[label] = line_no
-            line = remainder.strip()
+            line = line[colon_at + 1:].strip()
             if not line:
                 record_listing_entry(listing_entries, line_no, statement_start, out, raw_line)
                 continue

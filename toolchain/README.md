@@ -37,7 +37,7 @@ python3 toolchain/tinylang.py my_program.tl build/my_program.com
 python3 toolchain/tinylang.py --listing build/my_program.lst my_program.tl build/my_program.com
 ```
 
-A TinyLang program can use `mov`, `add`, `sub`, `int`, `jmp`, labels, `db`, and `exit`. Comments begin with `#` or `;`. Labels may be on their own line or share a line with an instruction:
+A TinyLang program can use `mov`, `add`, `sub`, `int`, `jmp`, labels, `db`, and `exit`. The `db` directive accepts comma-separated numeric bytes and double-quoted ASCII strings, including mixtures such as `db "Hello, AsterOS!", 0`. Strings support the escapes `\n`, `\r`, `\t`, `\0`, `\\`, `\"`, and `\xHH`; non-ASCII source characters must be written as explicit byte escapes. Comments begin with `#` or `;` outside quoted strings. Labels may be on their own line or share a line with an instruction:
 
 ```text
 start: mov eax, 1
