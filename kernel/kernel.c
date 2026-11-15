@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include "gui.h"
+#include "desktop_input.h"
 #include "keyboard.h"
 #include "ps2_wait.h"
 enum { SVC_CONSOLE = 1, SVC_FILES = 2, SVC_PROCESS = 3 };
