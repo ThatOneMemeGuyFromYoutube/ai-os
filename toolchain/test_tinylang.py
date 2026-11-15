@@ -52,6 +52,37 @@ def test_example_programs() -> None:
     ])
 
 
+def test_db_string_literals() -> None:
+    examples_dir = Path(__file__).with_name("examples")
+    string_example = compile_source(
+        (examples_dir / "strings.tl").read_text(encoding="utf-8")
+    )
+    assert string_example == (
+        bytes([0xE9, 16, 0, 0, 0])
+        + b"Hello, AsterOS!\x00"
+        + bytes([0xB8, 42, 0, 0, 0, 0xF4])
+    )
+
+    # Commas, comment markers, colons, escaped quotes, and backslashes are
+    # data inside strings. Escapes emit exact bytes, not host-language text.
+    source = r'db "A,#;:\"\\", 0, "\x41\n\t\0" ; trailing comment' + "\nexit\n"
+    assert compile_source(source) == b'A,#;:"\\\x00A\n\t\x00\xf4'
+
+    # A label and URL-like string must not mistake the string's colon for a
+    # label delimiter or its #/; characters for source comments.
+    labelled = compile_source(
+        'message: db "http://asteros/#boot;ready", 0\nexit\n'
+    )
+    assert labelled == b"http://asteros/#boot;ready\x00\xf4"
+
+    expect_error('db "unterminated', "line 1", "unterminated db string")
+    expect_error(r'db "bad\q"', "line 1", "unsupported db string escape")
+    expect_error(r'db "\x0"', "line 1", "requires two hexadecimal digits")
+    expect_error('db "caf\u00e9"', "line 1", "ASCII only")
+    expect_error('db "text" 1', "line 1", "expected ',' between db operands")
+    expect_error('db 1 "text"', "line 1", "quote must begin a db operand")
+
+
 
 def test_cli_check_mode() -> None:
     compiler = Path(__file__).with_name("tinylang.py")
@@ -380,6 +411,7 @@ def main() -> None:
     expect_error("mov eax, 1\nadd ebx, 2", "line 2", "supports EAX only")
 
     test_example_programs()
+    test_db_string_literals()
     test_cli_check_mode()
     test_cli_symbol_map()
     test_cli_duplicate_label_diagnostic()

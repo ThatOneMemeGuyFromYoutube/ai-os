@@ -62,7 +62,7 @@ TinyLang is the beginner entry point:
 python3 toolchain/tinylang.py my_program.tl build/my_program.com
 ```
 
-The language supports a deliberately small set of 32-bit x86 operations (`mov`, `add`, `sub`, `int`, `jmp`, labels, `db`, and `exit`). This is enough to make real executable byte images now while the native/self-hosting compiler path is developed.
+The language supports a deliberately small set of 32-bit x86 operations (`mov`, `add`, `sub`, `int`, `jmp`, labels, `db`, and `exit`). This is enough to make real executable byte images now while the native/self-hosting compiler path is developed. The \`db\` directive accepts numeric bytes and double-quoted ASCII strings with \`\n\`, \`\r\`, \`\t\`, \`\0\`, \`\\\`, \`\"\`, and \`\xHH\` escapes.
 
 ## Development checklist
 
