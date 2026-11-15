@@ -65,8 +65,8 @@ def test_db_string_literals() -> None:
 
     # Commas, comment markers, colons, escaped quotes, and backslashes are
     # data inside strings. Escapes emit exact bytes, not host-language text.
-    source = r'db "A,#;:\"\\", 0, "\x41\n\t\0" ; trailing comment' + "\nexit\n"
-    assert compile_source(source) == b'A,#;:"\\\x00A\n\t\x00\xf4'
+    source = r'db "A,#;:\"\\", 0, "\x4F\n\r\t\0\xFF" ; trailing comment' + "\nexit\n"
+    assert compile_source(source) == b'A,#;:"\\\x00O\n\r\t\x00\xff\xf4'
 
     # A label and URL-like string must not mistake the string's colon for a
     # label delimiter or its #/; characters for source comments.
