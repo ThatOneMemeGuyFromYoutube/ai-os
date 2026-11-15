@@ -12,11 +12,12 @@ Supported statements:
     int 0x80
     jmp label
     label:
-    db 0x90, 0x90
+    db "AsterOS", 0
     exit
 
 Labels may stand alone or precede an instruction on the same line. Numbers may
-be decimal or hexadecimal (0x...). Comments start with '#' or ';'.
+be decimal or hexadecimal (0x...). Double-quoted db strings contain ASCII bytes
+and support explicit escapes. Comments start with '#' or ';' outside strings.
 """
 
 from __future__ import annotations
@@ -195,6 +196,7 @@ def parse_db(args: str, line_no: int, out: bytearray) -> None:
         if args[cursor] != ",":
             raise ValueError(f"line {line_no}: expected ',' between db operands")
         cursor += 1
+
 
 def diagnose_malformed_statement(line: str, line_no: int) -> None:
     """Give a syntax hint when a known instruction fails its full grammar."""
