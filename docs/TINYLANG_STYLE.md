@@ -48,29 +48,30 @@ exit
 
 ## Byte strings
 
-The \`db\` directive accepts comma-separated numeric byte values and double-quoted
+The `db` directive accepts comma-separated numeric byte values and double-quoted
 ASCII strings. Numeric values and strings may be mixed in one directive:
 
-\`\`\`text
+```text
 message: db "Hello, AsterOS!", 0
-escaped: db "quote: \\" slash: \\\\ newline: \\n", 0
-\`\`\`
+escaped: db "quote: \" slash: \\ newline: \n", 0
+```
 
-Supported escapes are \`\\n\` (line feed), \`\\r\` (carriage return), \`\\t\` (tab),
-\`\\0\` (NUL), \`\\"\` (double quote), \`\\\\\` (backslash), and \`\\xHH\` (one
-hexadecimal byte). Literal source characters must be ASCII; use \`\\xHH\` for
+Supported escapes are `\n` (line feed), `\r` (carriage return), `\t` (tab),
+`\0` (NUL), `\"` (double quote), `\\` (backslash), and `\xHH` (one
+hexadecimal byte). Literal source characters must be ASCII; use `\xHH` for
 other byte values. Strings are single-line and must be closed before the end
 of the source line.
 
-Comment markers \`#\` and \`;\` are recognized only outside quoted strings, so
+Comment markers `#` and `;` are recognized only outside quoted strings, so
 punctuation inside a string is emitted unchanged.
 
 ## Comments
 
-Use \`#\` or \`;\` for comments. Inline comments are supported:
+Use `#` or `;` outside quoted strings for comments. Inline comments are supported:
 
 ```text
 mov eax, 1 ; initialize the accumulator
+db "A;B#C" ; trailing comment
 ```
 
 ## Validation
