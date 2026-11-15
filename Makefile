@@ -39,7 +39,7 @@ build:
 build/boot.o: boot/boot.S | build
 	$(AS) --32 $< -o $@
 
-build/kernel.o: kernel/kernel.c kernel/gui.h kernel/keyboard.h kernel/ps2_wait.h | build
+build/kernel.o: kernel/kernel.c kernel/gui.h kernel/keyboard.h kernel/desktop_input.h kernel/ps2_wait.h | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
 build/gui.o: kernel/gui.c kernel/gui.h kernel/terminal.h kernel/desktop_input.h | build
