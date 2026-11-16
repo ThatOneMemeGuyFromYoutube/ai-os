@@ -127,6 +127,11 @@ static void test_registration_rejects_invalid_interfaces(void) {
     assert(asteros_netif_register(&interface) == ASTEROS_NET_INVALID_ARGUMENT);
     assert(asteros_netif_register(0) == ASTEROS_NET_INVALID_ARGUMENT);
     assert(asteros_netif_count() == 0);
+
+    /* The Ethernet minimum MTU is accepted at the exact lower boundary. */
+    asteros_net_init();
+    prepare_interface(&interface, "eth0", 1, &driver, ASTEROS_ETHERNET_MTU_MIN, 0);
+    assert(asteros_netif_register(&interface) == ASTEROS_NET_OK);
 }
 
 static void test_interface_registry_is_bounded(void) {
@@ -155,6 +160,8 @@ static void test_link_state_and_frame_transmit(void) {
     mock_driver_t driver = {1, 0, 0, {0}};
     uint8_t frame[TEST_FRAME_SIZE];
     uint8_t short_frame[ASTEROS_ETHERNET_HEADER_SIZE - 1u];
+    uint8_t max_frame[ASTEROS_ETHERNET_MTU_MAX +
+                      ASTEROS_ETHERNET_HEADER_SIZE];
     uint8_t oversized[ASTEROS_ETHERNET_MTU_MAX +
                       ASTEROS_ETHERNET_HEADER_SIZE + 1u];
 
@@ -181,16 +188,23 @@ static void test_link_state_and_frame_transmit(void) {
     assert(asteros_netif_send_frame(&interface, oversized, sizeof oversized) ==
            ASTEROS_NET_FRAME_TOO_LARGE);
 
-    assert(asteros_netif_send_frame(&interface, frame, sizeof frame) ==
+    memset(max_frame, 0xA5, sizeof max_frame);
+    assert(asteros_netif_send_frame(&interface, max_frame, sizeof max_frame) ==
            ASTEROS_NET_OK);
     assert(driver.transmit_calls == 1);
+    assert(driver.last_length == sizeof max_frame);
+    assert(memcmp(driver.last_frame, max_frame, sizeof max_frame) == 0);
+
+    assert(asteros_netif_send_frame(&interface, frame, sizeof frame) ==
+           ASTEROS_NET_OK);
+    assert(driver.transmit_calls == 2);
     assert(driver.last_length == sizeof frame);
     assert(memcmp(driver.last_frame, frame, sizeof frame) == 0);
 
     driver.transmit_result = 0;
     assert(asteros_netif_send_frame(&interface, frame, sizeof frame) ==
            ASTEROS_NET_TRANSMIT_FAILED);
-    assert(driver.transmit_calls == 2);
+    assert(driver.transmit_calls == 3);
 }
 
 static void test_receive_validates_and_dispatches_ethernet_ii(void) {
