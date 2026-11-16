@@ -35,6 +35,11 @@ After GitHub Pages is enabled for the repository, the demo is available at:
 https://thatonememeguyfromyoutube.github.io/ai-os/
 ```
 
+
+### Networking status
+
+The kernel now includes a small driver-neutral Ethernet II interface core: a bounded network-interface registry, link-state controls, frame-size checks, synchronous transmit callbacks, and EtherType receive dispatch. It is initialized during kernel startup and tested with a mock adapter. This is groundwork for a real guest driver, not network connectivity: AsterOS still has no PCI enumeration, NE2K/VirtIO driver, IP stack, or configured v86 network backend. Selecting a virtual NIC in the browser demo only exposes that emulated device to the guest.
+
 ## Architecture
 
 ```text
