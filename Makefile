@@ -39,7 +39,7 @@ build:
 build/boot.o: boot/boot.S | build
 	$(AS) --32 $< -o $@
 
-build/kernel.o: kernel/kernel.c kernel/gui.h kernel/keyboard.h kernel/desktop_input.h kernel/ps2_wait.h kernel/net.h | build
+build/kernel.o: kernel/kernel.c kernel/gui.h kernel/keyboard.h kernel/desktop_input.h kernel/ps2_wait.h kernel/net.h kernel/pci.h | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
 build/gui.o: kernel/gui.c kernel/gui.h kernel/terminal.h kernel/desktop_input.h | build
@@ -60,6 +60,9 @@ build/ps2_wait.o: kernel/ps2_wait.c kernel/ps2_wait.h | build
 build/net.o: kernel/net.c kernel/net.h | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
+build/pci.o: kernel/pci.c kernel/pci.h | build
+	$(CC) $(CFLAGS) -c $< -o $@
+
 build/test-terminal: kernel/terminal.c kernel/terminal.h tests/test_terminal.c | build
 	$(HOSTCC) $(HOSTCFLAGS) -Ikernel kernel/terminal.c tests/test_terminal.c -o $@
 
@@ -78,6 +81,12 @@ build/test-net: kernel/net.c kernel/net.h tests/test_net.c | build
 check-net: build/test-net
 	./build/test-net
 
+build/test-pci: kernel/pci.c kernel/pci.h tests/test_pci.c | build
+	$(HOSTCC) $(HOSTCFLAGS) -Ikernel kernel/pci.c tests/test_pci.c -o $@
+
+check-pci: build/test-pci
+	./build/test-pci
+
 build/test-desktop-input: kernel/desktop_input.c kernel/desktop_input.h tests/test_desktop_input.c | build
 	$(HOSTCC) $(HOSTCFLAGS) -Ikernel kernel/desktop_input.c tests/test_desktop_input.c -o $@
 
@@ -90,8 +99,8 @@ build/test-keyboard: kernel/keyboard.c kernel/keyboard.h tests/test_keyboard.c |
 check-keyboard: build/test-keyboard
 	./build/test-keyboard
 
-build/kernel.bin: build/boot.o build/kernel.o build/gui.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o linker.ld
-	$(LD) $(LDFLAGS) -o $@ build/boot.o build/kernel.o build/gui.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o
+build/kernel.bin: build/boot.o build/kernel.o build/gui.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o build/pci.o linker.ld
+	$(LD) $(LDFLAGS) -o $@ build/boot.o build/kernel.o build/gui.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o build/pci.o
 
 build/hello.com: toolchain/tinylang.py toolchain/examples/hello.tl | build
 	$(PYTHON) toolchain/tinylang.py toolchain/examples/hello.tl $@
@@ -206,7 +215,7 @@ check-iso: iso
 	@command -v $(QEMU) >/dev/null || (echo "error: missing QEMU binary $(QEMU)" >&2; exit 1)
 	@timeout $(QEMU_TIMEOUT)s $(QEMU) -cdrom build/ai-os.iso -display none -serial stdio -no-reboot -no-shutdown || test $$? -eq 124
 
-check: check-toolchain check-keyboard check-terminal check-desktop-input check-ps2-wait check-net check-examples check-listings check-compile check-inspect check-source
+check: check-toolchain check-keyboard check-terminal check-desktop-input check-ps2-wait check-net check-pci check-examples check-listings check-compile check-inspect check-source
 	PYTHONPATH=toolchain $(PYTHON) toolchain/test_tinylang.py
 	$(MAKE) check-artifacts
 
@@ -224,4 +233,4 @@ run-iso: build/ai-os.iso
 clean:
 	rm -rf build
 
-.PHONY: all check check-artifacts check-iso check-keyboard check-terminal check-desktop-input check-ps2-wait check-net check-toolchain check-examples check-listings check-compile check-inspect examples listings compile inspect check-source clean iso package-release program run run-iso test
+.PHONY: all check check-artifacts check-iso check-keyboard check-terminal check-desktop-input check-ps2-wait check-net check-pci check-toolchain check-examples check-listings check-compile check-inspect examples listings compile inspect check-source clean iso package-release program run run-iso test
