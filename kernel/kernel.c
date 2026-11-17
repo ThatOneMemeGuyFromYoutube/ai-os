@@ -4,6 +4,7 @@
 #include "keyboard.h"
 #include "ps2_wait.h"
 #include "net.h"
+#include "pci.h"
 enum { SVC_CONSOLE = 1, SVC_FILES = 2, SVC_PROCESS = 3 };
 #define PS2_WAIT_ATTEMPTS 100000u
 static uint8_t inb(uint16_t port) { uint8_t value; __asm__ volatile ("inb %1, %0" : "=a"(value) : "Nd"(port)); return value; }
@@ -106,6 +107,7 @@ void kmain(void){
     uint8_t mouse_buttons = 0;
     asteros_mouse_click_filter_t click_filter = {0, 0, 0};
     asteros_net_init();
+    asteros_pci_init();
     gui_init();
     mouse_available=mouse_init();
     timer_init();
