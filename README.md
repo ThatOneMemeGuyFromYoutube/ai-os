@@ -38,7 +38,7 @@ https://thatonememeguyfromyoutube.github.io/ai-os/
 
 ### Networking status
 
-The kernel now includes a small driver-neutral Ethernet II interface core: a bounded network-interface registry, link-state controls, frame-size checks, synchronous transmit callbacks, and EtherType receive dispatch. It is initialized during kernel startup and tested with a mock adapter. This is groundwork for a real guest driver, not network connectivity: AsterOS still has no PCI enumeration, NE2K/VirtIO driver, IP stack, or configured v86 network backend. Selecting a virtual NIC in the browser demo only exposes that emulated device to the guest.
+The kernel now performs read-only PCI configuration-space discovery at startup using configuration mechanism #1. It scans bus 0, follows configured PCI-to-PCI bridge secondary buses, respects multifunction headers, and records up to four class-02 network controllers for future drivers. The bus traversal is host-tested with synthetic PCI configuration fixtures, including bridge cycles and bus 255. A separate driver-neutral Ethernet II core provides a bounded network-interface registry, link-state controls, frame-size checks, synchronous transmit callbacks, and EtherType receive dispatch. These are discovery and protocol foundations, not working network connectivity: AsterOS still has no PCI BAR/resource assignment or command-register setup, NE2K/VirtIO driver, IP stack, or configured v86 network backend. Selecting a virtual NIC in the browser demo only exposes that emulated device to the guest.
 
 ## Architecture
 
