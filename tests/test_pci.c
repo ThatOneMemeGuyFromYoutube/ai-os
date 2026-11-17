@@ -146,9 +146,9 @@ static void test_bus_255_and_unconfigured_bridges(void) {
     assert(asteros_pci_scan(fake_read_config, 0, capture_device, 0, &stats) ==
            ASTEROS_PCI_OK);
     assert(stats.buses_scanned == 2);
-    assert(stats.devices_found == 2);
-    assert(visited_count == 2);
-    assert(visited[1].bus == 255);
+    assert(stats.devices_found == 3);
+    assert(visited_count == 3);
+    assert(visited[2].bus == 255);
 }
 
 static void test_invalid_callbacks_are_rejected(void) {
