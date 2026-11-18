@@ -123,6 +123,11 @@ asteros_pci_result_t asteros_pci_read_resources(
     return ASTEROS_PCI_OK;
 }
 
+asteros_pci_result_t asteros_pci_read_device_resources(
+    const asteros_pci_device_t *device, asteros_pci_resources_t *resources) {
+    return asteros_pci_read_resources(pci_read_config32, 0, device, resources);
+}
+
 asteros_pci_result_t asteros_pci_enable_command(
     asteros_pci_config_read32_fn read_config,
     asteros_pci_config_write16_fn write_config, void *config_context,
@@ -162,6 +167,13 @@ asteros_pci_result_t asteros_pci_enable_command(
 
     *enabled_command = verified;
     return ASTEROS_PCI_OK;
+}
+
+asteros_pci_result_t asteros_pci_enable_device(
+    const asteros_pci_device_t *device, uint16_t required_bits,
+    uint16_t *enabled_command) {
+    return asteros_pci_enable_command(pci_read_config32, pci_write_config16, 0,
+                                      device, required_bits, enabled_command);
 }
 
 asteros_pci_result_t asteros_pci_scan(
