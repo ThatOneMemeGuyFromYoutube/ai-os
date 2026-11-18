@@ -8,6 +8,10 @@ typedef struct {
     uint16_t vendor, device_id;
     uint8_t revision, prog_if, subclass, base_class;
     uint8_t header_type, interrupt_line, interrupt_pin, secondary_bus;
+    uint32_t bars[ASTEROS_PCI_BAR_MAX];
+    uint16_t command, status;
+    uint16_t last_write;
+    uint8_t write_success, write_apply, write_count, last_write_offset;
 } pci_fixture_t;
 
 static pci_fixture_t fixtures[32];
@@ -37,6 +41,8 @@ static void add_device(uint8_t bus, uint8_t device, uint8_t function,
     fixture->interrupt_line = interrupt_line;
     fixture->interrupt_pin = interrupt_pin;
     fixture->secondary_bus = secondary_bus;
+    fixture->write_success = 1;
+    fixture->write_apply = 1;
 }
 
 static uint32_t fake_read_config(void *context, uint8_t bus,
@@ -55,6 +61,9 @@ static uint32_t fake_read_config(void *context, uint8_t bus,
             case 0x00:
                 return (uint32_t)fixture->vendor |
                        ((uint32_t)fixture->device_id << 16);
+            case 0x04:
+                return (uint32_t)fixture->command |
+                       ((uint32_t)fixture->status << 16);
             case 0x08:
                 return (uint32_t)fixture->revision |
                        ((uint32_t)fixture->prog_if << 8) |
@@ -62,16 +71,46 @@ static uint32_t fake_read_config(void *context, uint8_t bus,
                        ((uint32_t)fixture->base_class << 24);
             case 0x0C:
                 return (uint32_t)fixture->header_type << 16;
-            case 0x18:
-                return (uint32_t)fixture->secondary_bus << 8;
             case 0x3C:
                 return (uint32_t)fixture->interrupt_line |
                        ((uint32_t)fixture->interrupt_pin << 8);
             default:
+                /* Offset 0x18 is the bridge bus-number register in a
+                   type-1 header, but BAR2 in a type-0 endpoint. */
+                if (offset == 0x18u && fixture->header_type == 0x01u)
+                    return (uint32_t)fixture->secondary_bus << 8;
+                if (offset >= 0x10u && offset <= 0x24u &&
+                    (offset & 3u) == 0u)
+                    return fixture->bars[(offset - 0x10u) / 4u];
                 return 0;
         }
     }
     return 0xFFFFFFFFu;
+}
+
+static pci_fixture_t *find_fixture(uint8_t bus, uint8_t device,
+                                   uint8_t function) {
+    size_t index;
+    for (index = 0; index < fixture_count; index++) {
+        if (fixtures[index].bus == bus && fixtures[index].device == device &&
+            fixtures[index].function == function)
+            return &fixtures[index];
+    }
+    return 0;
+}
+
+static uint8_t fake_write_config16(void *context, uint8_t bus,
+                                   uint8_t device, uint8_t function,
+                                   uint8_t offset, uint16_t value) {
+    pci_fixture_t *fixture = find_fixture(bus, device, function);
+    (void)context;
+    if (!fixture || offset != 0x04u) return 0;
+    fixture->write_count++;
+    fixture->last_write_offset = offset;
+    fixture->last_write = value;
+    if (!fixture->write_success) return 0;
+    if (fixture->write_apply) fixture->command = value;
+    return 1;
 }
 
 static void capture_device(const asteros_pci_device_t *device, void *context) {
@@ -163,10 +202,242 @@ static void test_invalid_callbacks_are_rejected(void) {
            ASTEROS_PCI_INVALID_ARGUMENT);
 }
 
+static void test_endpoint_bar_decoding(void) {
+    asteros_pci_device_t device;
+    asteros_pci_resources_t resources;
+    pci_fixture_t *fixture;
+
+    reset_fixtures();
+    add_device(0, 1, 0, 0x10EC, 0x8029, 0x02, 0x00, 0, 0x00, 1, 9, 1, 0);
+    fixture = find_fixture(0, 1, 0);
+    assert(fixture != 0);
+    fixture->bars[0] = 0x0000C001u; /* I/O BAR at 0xC000. */
+    fixture->bars[1] = 0xFEB00008u; /* Prefetchable 32-bit memory BAR. */
+    fixture->bars[2] = 0x0000200Cu; /* Prefetchable 64-bit memory BAR. */
+    fixture->bars[3] = 0x00000001u; /* High dword, not a separate BAR. */
+    fixture->bars[4] = 0x0000D001u; /* A later I/O BAR remains visible. */
+
+    memset(&device, 0, sizeof device);
+    device.bus = 0;
+    device.device = 1;
+    device.function = 0;
+    device.header_type = 0;
+    assert(asteros_pci_read_resources(fake_read_config, 0, &device,
+                                      &resources) == ASTEROS_PCI_OK);
+    assert(resources.slot_count == 6);
+    assert(resources.count == 4);
+
+    assert(resources.bars[0].index == 0);
+    assert(resources.bars[0].type == ASTEROS_PCI_BAR_IO);
+    assert(resources.bars[0].width == 32);
+    assert(resources.bars[0].prefetchable == 0);
+    assert(resources.bars[0].base_address == 0xC000u);
+
+    assert(resources.bars[1].index == 1);
+    assert(resources.bars[1].type == ASTEROS_PCI_BAR_MEMORY);
+    assert(resources.bars[1].width == 32);
+    assert(resources.bars[1].prefetchable == 1);
+    assert(resources.bars[1].base_address == 0xFEB00000u);
+
+    assert(resources.bars[2].index == 2);
+    assert(resources.bars[2].type == ASTEROS_PCI_BAR_MEMORY);
+    assert(resources.bars[2].width == 64);
+    assert(resources.bars[2].prefetchable == 1);
+    assert(resources.bars[2].base_address == 0x0000000100002000ULL);
+
+    assert(resources.bars[3].index == 4);
+    assert(resources.bars[3].type == ASTEROS_PCI_BAR_IO);
+    assert(resources.bars[3].base_address == 0xD000u);
+}
+
+static void test_bridge_bar_layout_and_unassigned_slots(void) {
+    asteros_pci_device_t device;
+    asteros_pci_resources_t resources;
+    pci_fixture_t *fixture;
+
+    reset_fixtures();
+    add_device(0, 2, 0, 0x1234, 0x5678, 0x06, 0x04, 0, 0x01, 1, 0, 0, 0);
+    fixture = find_fixture(0, 2, 0);
+    assert(fixture != 0);
+    fixture->bars[0] = 0x0000E001u;
+    fixture->bars[1] = 0u;
+    fixture->bars[2] = 0x0000F001u; /* Outside a type-1 header's BAR area. */
+
+    memset(&device, 0, sizeof device);
+    device.device = 2;
+    device.header_type = 1;
+    assert(asteros_pci_read_resources(fake_read_config, 0, &device,
+                                      &resources) == ASTEROS_PCI_OK);
+    assert(resources.slot_count == 2);
+    assert(resources.count == 1);
+    assert(resources.bars[0].index == 0);
+    assert(resources.bars[0].base_address == 0xE000u);
+
+    /* CardBus type-2 headers expose exactly one BAR slot. */
+    reset_fixtures();
+    add_device(0, 2, 0, 0x1234, 0x5678, 0x06, 0x07, 0, 0x02, 1, 0, 0, 0);
+    fixture = find_fixture(0, 2, 0);
+    assert(fixture != 0);
+    fixture->bars[0] = 0x0000E001u;
+    fixture->bars[1] = 0x0000F001u;
+    device.header_type = 2;
+    assert(asteros_pci_read_resources(fake_read_config, 0, &device,
+                                      &resources) == ASTEROS_PCI_OK);
+    assert(resources.slot_count == 1);
+    assert(resources.count == 1);
+    assert(resources.bars[0].index == 0);
+}
+
+static void test_invalid_and_unsupported_bar_layouts(void) {
+    asteros_pci_device_t device;
+    asteros_pci_resources_t resources;
+    pci_fixture_t *fixture;
+
+    reset_fixtures();
+    add_device(0, 3, 0, 0x1234, 0x1111, 0x02, 0x00, 0, 0x00, 1, 0, 0, 0);
+    fixture = find_fixture(0, 3, 0);
+    assert(fixture != 0);
+    memset(&device, 0, sizeof device);
+    device.device = 3;
+    device.header_type = 0;
+
+    fixture->bars[0] = 0x00000004u; /* An unassigned 64-bit BAR still consumes BAR1. */
+    assert(asteros_pci_read_resources(fake_read_config, 0, &device,
+                                      &resources) == ASTEROS_PCI_OK);
+    /* BAR0 is a valid 64-bit BAR; its upper slot is BAR1. */
+    fixture->bars[5] = 0x00000004u;
+    assert(asteros_pci_read_resources(fake_read_config, 0, &device,
+                                      &resources) == ASTEROS_PCI_UNSUPPORTED_BAR_TYPE);
+
+    fixture->bars[5] = 0u;
+    fixture->bars[0] = 0x00000002u; /* Below-1-MiB memory BAR. */
+    assert(asteros_pci_read_resources(fake_read_config, 0, &device,
+                                      &resources) == ASTEROS_PCI_UNSUPPORTED_BAR_TYPE);
+
+    fixture->bars[0] = 0x00000006u; /* Reserved memory BAR encoding. */
+    assert(asteros_pci_read_resources(fake_read_config, 0, &device,
+                                      &resources) == ASTEROS_PCI_UNSUPPORTED_BAR_TYPE);
+
+    fixture->bars[0] = 0xFFFFFFFFu;
+    assert(asteros_pci_read_resources(fake_read_config, 0, &device,
+                                      &resources) == ASTEROS_PCI_CONFIG_READ_FAILED);
+
+    device.header_type = 0x7Fu;
+    assert(asteros_pci_read_resources(fake_read_config, 0, &device,
+                                      &resources) == ASTEROS_PCI_UNSUPPORTED_HEADER_TYPE);
+    assert(asteros_pci_read_resources(0, 0, &device, &resources) ==
+           ASTEROS_PCI_INVALID_ARGUMENT);
+    assert(asteros_pci_read_resources(fake_read_config, 0, 0, &resources) ==
+           ASTEROS_PCI_INVALID_ARGUMENT);
+    assert(asteros_pci_read_resources(fake_read_config, 0, &device, 0) ==
+           ASTEROS_PCI_INVALID_ARGUMENT);
+}
+
+static void test_command_enable_preserves_status_and_existing_bits(void) {
+    asteros_pci_device_t device;
+    pci_fixture_t *fixture;
+    uint16_t enabled = 0;
+
+    reset_fixtures();
+    add_device(0, 4, 0, 0x10EC, 0x8029, 0x02, 0x00, 0, 0x00, 1, 9, 1, 0);
+    fixture = find_fixture(0, 4, 0);
+    assert(fixture != 0);
+    fixture->command = 0x0400u;
+    fixture->status = 0xF900u;
+
+    memset(&device, 0, sizeof device);
+    device.device = 4;
+    assert(asteros_pci_enable_command(
+        fake_read_config, fake_write_config16, 0, &device,
+        ASTEROS_PCI_COMMAND_IO_SPACE | ASTEROS_PCI_COMMAND_BUS_MASTER,
+        &enabled) == ASTEROS_PCI_OK);
+    assert(enabled == 0x0405u);
+    assert(fixture->command == 0x0405u);
+    assert(fixture->status == 0xF900u);
+    assert(fixture->write_count == 1);
+    assert(fixture->last_write_offset == 0x04u);
+    assert(fixture->last_write == 0x0405u);
+
+    /* Repeating an enable is idempotent and performs no redundant write. */
+    assert(asteros_pci_enable_command(
+        fake_read_config, fake_write_config16, 0, &device,
+        ASTEROS_PCI_COMMAND_IO_SPACE | ASTEROS_PCI_COMMAND_BUS_MASTER,
+        &enabled) == ASTEROS_PCI_OK);
+    assert(fixture->write_count == 1);
+    assert(enabled == 0x0405u);
+
+    assert(asteros_pci_enable_command(
+        fake_read_config, fake_write_config16, 0, &device, 0x8000u,
+        &enabled) == ASTEROS_PCI_INVALID_ARGUMENT);
+    assert(asteros_pci_enable_command(
+        fake_read_config, fake_write_config16, 0, &device,
+        ASTEROS_PCI_COMMAND_MEMORY_SPACE, 0) == ASTEROS_PCI_INVALID_ARGUMENT);
+    assert(asteros_pci_enable_command(
+        fake_read_config, 0, 0, &device,
+        ASTEROS_PCI_COMMAND_MEMORY_SPACE, &enabled) == ASTEROS_PCI_INVALID_ARGUMENT);
+}
+
+static void test_command_readback_and_config_read_failures(void) {
+    asteros_pci_device_t device;
+    pci_fixture_t *fixture;
+    uint16_t enabled = 0xFFFFu;
+
+    reset_fixtures();
+    add_device(0, 6, 0, 0x1234, 0x3333, 0x02, 0x00, 0, 0x00, 1, 0, 0, 0);
+    fixture = find_fixture(0, 6, 0);
+    assert(fixture != 0);
+    fixture->write_apply = 0; /* Device accepts the write but does not latch it. */
+    memset(&device, 0, sizeof device);
+    device.device = 6;
+
+    assert(asteros_pci_enable_command(
+        fake_read_config, fake_write_config16, 0, &device,
+        ASTEROS_PCI_COMMAND_IO_SPACE, &enabled) ==
+        ASTEROS_PCI_CONFIG_WRITE_FAILED);
+    assert(enabled == 0u);
+    assert(fixture->write_count == 1u);
+
+    /* A missing B/D/F target must fail before attempting a configuration write. */
+    device.device = 31;
+    assert(asteros_pci_enable_command(
+        fake_read_config, fake_write_config16, 0, &device,
+        ASTEROS_PCI_COMMAND_IO_SPACE, &enabled) ==
+        ASTEROS_PCI_CONFIG_READ_FAILED);
+    assert(enabled == 0u);
+}
+
+static void test_command_write_failure_is_reported(void) {
+    asteros_pci_device_t device;
+    pci_fixture_t *fixture;
+    uint16_t enabled = 0xFFFFu;
+
+    reset_fixtures();
+    add_device(0, 5, 0, 0x1234, 0x2222, 0x02, 0x00, 0, 0x00, 1, 0, 0, 0);
+    fixture = find_fixture(0, 5, 0);
+    assert(fixture != 0);
+    fixture->write_success = 0;
+    memset(&device, 0, sizeof device);
+    device.device = 5;
+
+    assert(asteros_pci_enable_command(
+        fake_read_config, fake_write_config16, 0, &device,
+        ASTEROS_PCI_COMMAND_MEMORY_SPACE, &enabled) ==
+        ASTEROS_PCI_CONFIG_WRITE_FAILED);
+    assert(enabled == 0u);
+    assert(fixture->command == 0u);
+    assert(fixture->write_count == 1u);
+}
+
 int main(void) {
     test_bridge_and_multifunction_enumeration();
     test_bus_255_and_unconfigured_bridges();
     test_invalid_callbacks_are_rejected();
-    puts("PCI enumeration: tests passed");
+    test_endpoint_bar_decoding();
+    test_bridge_bar_layout_and_unassigned_slots();
+    test_invalid_and_unsupported_bar_layouts();
+    test_command_enable_preserves_status_and_existing_bits();
+    test_command_write_failure_is_reported();
+    test_command_readback_and_config_read_failures();
+    puts("PCI discovery/resources: tests passed");
     return 0;
 }

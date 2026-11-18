@@ -12,7 +12,18 @@ The kernel now performs a read-only PCI configuration mechanism #1 scan during s
 - The scanner records vendor/device IDs, B/D/F location, revision, programming interface, class/subclass, header type, and interrupt line/pin. Kernel startup retains up to four class-`02` network-controller records through `asteros_pci_network_controller_count()` and `asteros_pci_network_controller_at()`.
 - The generic scanner accepts an injected configuration-read callback, so tests can exercise bridge traversal and device decoding without privileged port I/O.
 
-This is discovery only. The current module does not size or assign BARs, enable I/O or memory decoding, enable bus mastering, configure interrupt routing, or write PCI configuration space. It does not initialize a NIC.
+The scanner itself remains read-only. The PCI module now also exposes a separate resource/command API for a future driver, but kernel startup does not call it and no device is enabled. It does not size or assign BARs, configure bridge windows or interrupt routing, or initialize a NIC.
+
+## Assigned BAR resources and command register
+
+The PCI layer now provides two driver-facing helpers, both covered by synthetic host fixtures:
+
+- `asteros_pci_read_resources()` decodes the currently programmed BARs for type-0 endpoints (six slots), type-1 PCI bridges (two slots), and type-2 CardBus bridges (one slot). It reports I/O versus memory space, the BAR index, 32- or 64-bit width, prefetchability, and the assigned base address. A 64-bit BAR consumes its following slot; unassigned zero BARs are omitted.
+- The decoder rejects unsupported header layouts, below-1-MiB/reserved memory BAR encodings, truncated 64-bit BARs, and failed configuration reads. It does not write all ones to determine BAR sizes, alter a BAR, allocate an address, or infer a resource length. A reported base is only the address currently assigned by firmware/emulator.
+- `asteros_pci_enable_command()` accepts only the I/O-space, memory-space, and bus-master enable bits. It ORs those bits into the existing command word, avoids redundant writes, writes only the 16-bit command register, then reads back and verifies the requested bits. The narrow write is important: the upper half of the same configuration dword is PCI status, where writing ones clears asserted status flags.
+- Drivers must validate that the expected BAR exists, has the correct address-space type, and fits the device's register layout before enabling the corresponding decode bit. Bus mastering must only be enabled when the driver has valid DMA buffers and addresses. A 64-bit BAR can be decoded for inventory, but a 32-bit driver must not dereference a base above its addressable physical range.
+
+No current boot path invokes these helpers. BAR sizing/assignment, MMIO mapping, bridge-window setup, interrupt routing, and a concrete NIC driver remain future work.
 
 ## Ethernet II interface core
 
@@ -29,7 +40,7 @@ The registry is initialized during `kmain()`, but no interface is registered yet
 ## Driver and backend sequence
 
 1. [x] Add PCI configuration-space discovery and identify guest-visible network controller vendor/device IDs.
-2. Implement one driver against the network-interface callback contract. NE2K is a reasonable first target for a simple port-I/O driver; VirtIO requires its PCI transport and queue setup and should follow as a separate driver. Before initialization, add the required BAR/resource and PCI command-register handling.
+2. [x] Add assigned-BAR decoding and explicit PCI command-register enable helpers. Implement one driver against the network-interface callback contract; NE2K is a reasonable first target for a simple port-I/O driver, while VirtIO requires a separate PCI transport and queue setup.
 3. Feed received frames into the generic Ethernet II dispatcher and verify transmit/receive with a deterministic emulator-side peer.
 4. Add protocol layers incrementally (ARP before IPv4, then ICMP/UDP and DHCP as needed) with host-testable packet parsers.
 5. Configure a v86 network backend/relay separately from the NIC selector, then add an end-to-end guest connectivity test.
