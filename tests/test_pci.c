@@ -79,9 +79,6 @@ static uint32_t fake_read_config(void *context, uint8_t bus,
                 if (offset >= 0x10u && offset <= 0x24u &&
                     (offset & 3u) == 0u)
                     return fixture->bars[(offset - 0x10u) / 4u];
-                return 0xFFFFFFFFu;
-            /* Keep the switch exhaustive for offsets not modeled above. */
-            case 0xFF:
                 return 0;
         }
     }
