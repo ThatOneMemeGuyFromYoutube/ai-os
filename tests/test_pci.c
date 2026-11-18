@@ -71,12 +71,14 @@ static uint32_t fake_read_config(void *context, uint8_t bus,
                        ((uint32_t)fixture->base_class << 24);
             case 0x0C:
                 return (uint32_t)fixture->header_type << 16;
-            case 0x18:
-                return (uint32_t)fixture->secondary_bus << 8;
             case 0x3C:
                 return (uint32_t)fixture->interrupt_line |
                        ((uint32_t)fixture->interrupt_pin << 8);
             default:
+                /* Offset 0x18 is the bridge bus-number register in a
+                   type-1 header, but BAR2 in a type-0 endpoint. */
+                if (offset == 0x18u && fixture->header_type == 0x01u)
+                    return (uint32_t)fixture->secondary_bus << 8;
                 if (offset >= 0x10u && offset <= 0x24u &&
                     (offset & 3u) == 0u)
                     return fixture->bars[(offset - 0x10u) / 4u];
