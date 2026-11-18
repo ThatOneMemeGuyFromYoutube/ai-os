@@ -86,6 +86,11 @@ asteros_pci_result_t asteros_pci_read_resources(
     asteros_pci_config_read32_fn read_config, void *read_context,
     const asteros_pci_device_t *device, asteros_pci_resources_t *resources);
 
+/* Hardware-backed variant using configuration mechanism #1. Callers must
+   serialize access to the shared 0xCF8/0xCFC address/data ports. */
+asteros_pci_result_t asteros_pci_read_device_resources(
+    const asteros_pci_device_t *device, asteros_pci_resources_t *resources);
+
 /* Enable requested PCI command-register decode/master bits. This only sets
    supported bits, preserves every existing command bit, writes the 16-bit
    command half (never the adjacent write-one-to-clear status half), and
@@ -93,6 +98,12 @@ asteros_pci_result_t asteros_pci_read_resources(
 asteros_pci_result_t asteros_pci_enable_command(
     asteros_pci_config_read32_fn read_config,
     asteros_pci_config_write16_fn write_config, void *config_context,
+    const asteros_pci_device_t *device, uint16_t required_bits,
+    uint16_t *enabled_command);
+
+/* Hardware-backed variant using mechanism #1. Call during serialized device
+   initialization; it does not probe, assign, or validate BAR ranges for you. */
+asteros_pci_result_t asteros_pci_enable_device(
     const asteros_pci_device_t *device, uint16_t required_bits,
     uint16_t *enabled_command);
 
