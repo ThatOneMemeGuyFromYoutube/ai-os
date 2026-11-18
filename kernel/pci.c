@@ -12,19 +12,156 @@ static uint32_t pci_in32(uint16_t port) {
     return value;
 }
 
+static uint32_t pci_config_address(uint8_t bus, uint8_t device,
+                                   uint8_t function, uint8_t offset) {
+    return 0x80000000u |
+           ((uint32_t)bus << 16) |
+           ((uint32_t)(device & 0x1Fu) << 11) |
+           ((uint32_t)(function & 0x07u) << 8) |
+           ((uint32_t)offset & 0xFCu);
+}
+
 static uint32_t pci_read_config32(void *context, uint8_t bus,
                                   uint8_t device, uint8_t function,
                                   uint8_t offset) {
-    uint32_t address;
     (void)context;
-
-    address = 0x80000000u |
-              ((uint32_t)bus << 16) |
-              ((uint32_t)(device & 0x1Fu) << 11) |
-              ((uint32_t)(function & 0x07u) << 8) |
-              ((uint32_t)offset & 0xFCu);
-    pci_out32(0xCF8u, address);
+    pci_out32(0xCF8u, pci_config_address(bus, device, function, offset));
     return pci_in32(0xCFCu);
+}
+
+/* Writing only the command word avoids writing back the adjacent PCI status
+   register, whose asserted bits are cleared by writing ones. */
+static uint8_t pci_write_config16(void *context, uint8_t bus,
+                                 uint8_t device, uint8_t function,
+                                 uint8_t offset, uint16_t value) {
+    uint16_t data_port = (uint16_t)(0xCFCu + (offset & 0x03u));
+    (void)context;
+    pci_out32(0xCF8u, pci_config_address(bus, device, function, offset));
+    __asm__ volatile ("outw %0, %1" : : "a"(value), "Nd"(data_port));
+    return 1;
+}
+
+static uint8_t pci_device_address_valid(const asteros_pci_device_t *device) {
+    return (uint8_t)(device && device->device < 32u &&
+                     device->function < 8u);
+}
+
+asteros_pci_result_t asteros_pci_read_resources(
+    asteros_pci_config_read32_fn read_config, void *read_context,
+    const asteros_pci_device_t *device, asteros_pci_resources_t *resources) {
+    uint8_t slots;
+    uint8_t index;
+
+    if (resources) {
+        resources->slot_count = 0;
+        resources->count = 0;
+    }
+    if (!read_config || !pci_device_address_valid(device) || !resources)
+        return ASTEROS_PCI_INVALID_ARGUMENT;
+
+    switch (device->header_type) {
+        case 0u: slots = 6u; break; /* Endpoint / ordinary device. */
+        case 1u: slots = 2u; break; /* PCI-to-PCI bridge. */
+        case 2u: slots = 1u; break; /* CardBus bridge. */
+        default: return ASTEROS_PCI_UNSUPPORTED_HEADER_TYPE;
+    }
+    resources->slot_count = slots;
+
+    for (index = 0; index < slots; index++) {
+        uint8_t offset = (uint8_t)(0x10u + (uint8_t)(index * 4u));
+        uint32_t low = read_config(read_context, device->bus, device->device,
+                                   device->function, offset);
+        asteros_pci_bar_t *bar;
+        uint64_t base;
+        uint8_t type;
+        uint8_t width = 32u;
+        uint8_t prefetchable = 0u;
+
+        if (low == 0xFFFFFFFFu) return ASTEROS_PCI_CONFIG_READ_FAILED;
+        if (low == 0u) continue; /* Unimplemented or unassigned BAR. */
+
+        if (low & 1u) {
+            type = ASTEROS_PCI_BAR_IO;
+            base = (uint64_t)(low & 0xFFFFFFFCu);
+        } else {
+            uint8_t memory_type = (uint8_t)((low >> 1) & 0x03u);
+            prefetchable = (uint8_t)((low >> 3) & 1u);
+
+            if (memory_type == 0u) {
+                type = ASTEROS_PCI_BAR_MEMORY;
+                base = (uint64_t)(low & 0xFFFFFFF0u);
+            } else if (memory_type == 2u) {
+                uint32_t high;
+                if ((uint8_t)(index + 1u) >= slots)
+                    return ASTEROS_PCI_UNSUPPORTED_BAR_TYPE;
+                high = read_config(read_context, device->bus, device->device,
+                                   device->function, (uint8_t)(offset + 4u));
+                if (high == 0xFFFFFFFFu)
+                    return ASTEROS_PCI_CONFIG_READ_FAILED;
+                type = ASTEROS_PCI_BAR_MEMORY;
+                width = 64u;
+                base = ((uint64_t)high << 32) |
+                       (uint64_t)(low & 0xFFFFFFF0u);
+                index++; /* The high dword is not an independent BAR. */
+            } else {
+                /* Below-1-MiB and reserved memory BAR encodings are not
+                   usable by the current flat 32-bit driver model. */
+                return ASTEROS_PCI_UNSUPPORTED_BAR_TYPE;
+            }
+        }
+
+        if (base == 0u) continue;
+
+        bar = &resources->bars[resources->count++];
+        bar->index = (uint8_t)(width == 64u ? index - 1u : index);
+        bar->type = type;
+        bar->width = width;
+        bar->prefetchable = prefetchable;
+        bar->base_address = base;
+    }
+
+    return ASTEROS_PCI_OK;
+}
+
+asteros_pci_result_t asteros_pci_enable_command(
+    asteros_pci_config_read32_fn read_config,
+    asteros_pci_config_write16_fn write_config, void *config_context,
+    const asteros_pci_device_t *device, uint16_t required_bits,
+    uint16_t *enabled_command) {
+    uint32_t config_value;
+    uint16_t current;
+    uint16_t desired;
+    uint16_t verified;
+
+    if (enabled_command) *enabled_command = 0u;
+    if (!read_config || !write_config ||
+        !pci_device_address_valid(device) || !enabled_command ||
+        required_bits == 0u ||
+        (required_bits & (uint16_t)~ASTEROS_PCI_COMMAND_RESOURCE_MASK) != 0u)
+        return ASTEROS_PCI_INVALID_ARGUMENT;
+
+    config_value = read_config(config_context, device->bus, device->device,
+                               device->function, 0x04u);
+    if (config_value == 0xFFFFFFFFu)
+        return ASTEROS_PCI_CONFIG_READ_FAILED;
+
+    current = (uint16_t)(config_value & 0xFFFFu);
+    desired = (uint16_t)(current | required_bits);
+    if (desired != current &&
+        !write_config(config_context, device->bus, device->device,
+                      device->function, 0x04u, desired))
+        return ASTEROS_PCI_CONFIG_WRITE_FAILED;
+
+    config_value = read_config(config_context, device->bus, device->device,
+                               device->function, 0x04u);
+    if (config_value == 0xFFFFFFFFu)
+        return ASTEROS_PCI_CONFIG_READ_FAILED;
+    verified = (uint16_t)(config_value & 0xFFFFu);
+    if ((verified & required_bits) != required_bits)
+        return ASTEROS_PCI_CONFIG_WRITE_FAILED;
+
+    *enabled_command = verified;
+    return ASTEROS_PCI_OK;
 }
 
 asteros_pci_result_t asteros_pci_scan(
