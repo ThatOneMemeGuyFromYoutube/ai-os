@@ -10,6 +10,7 @@ mkdir -p "$OUT_DIR"
 # Keep packaging aligned with the CI toolchain and the 32-bit x86 target.
 make TARGET="$TARGET" check
 make TARGET="$TARGET" iso
+make TARGET="$TARGET" check-ne2k-iso
 
 timeout 8s "$QEMU" -cdrom build/ai-os.iso -display none -serial stdio -no-reboot -no-shutdown \
   || test "$?" -eq 124

@@ -33,6 +33,7 @@ jobs:
           make check
           make iso
           make check-iso QEMU=qemu-system-i386
+          make check-ne2k-iso QEMU=qemu-system-i386
           sha256sum build/kernel.bin build/hello.com build/ai-os.iso > build/SHA256SUMS
 
       - name: Publish GitHub release
