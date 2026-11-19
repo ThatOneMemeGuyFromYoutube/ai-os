@@ -46,6 +46,8 @@ jobs:
             Validation:
             - `make check`
             - `make iso`
+            - `make check-iso QEMU=qemu-system-i386`
+            - `make check-ne2k-iso QEMU=qemu-system-i386`
           files: |
             build/kernel.bin
             build/hello.com
