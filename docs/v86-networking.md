@@ -12,7 +12,7 @@ The kernel now performs a read-only PCI configuration mechanism #1 scan during s
 - The scanner records vendor/device IDs, B/D/F location, revision, programming interface, class/subclass, header type, and interrupt line/pin. Kernel startup retains up to four class-`02` network-controller records through `asteros_pci_network_controller_count()` and `asteros_pci_network_controller_at()`.
 - The generic scanner accepts an injected configuration-read callback, so tests can exercise bridge traversal and device decoding without privileged port I/O.
 
-The scanner itself remains read-only. The PCI module now also exposes a separate resource/command API for a future driver, but kernel startup does not call it and no device is enabled. It does not size or assign BARs, configure bridge windows or interrupt routing, or initialize a NIC.
+The scanner itself remains read-only. When startup finds a supported RTL8029AS function, the driver uses the separate resource/command API to validate its assigned BAR0 and enable only I/O decoding. Other PCI functions remain untouched. The PCI layer still does not size or assign BARs, configure bridge windows or interrupt routing, or enable bus mastering.
 
 ## Assigned BAR resources and command register
 
@@ -47,7 +47,7 @@ The kernel also builds and initializes a small hardware-independent Ethernet II 
 - Upper layers submit complete frames through `asteros_netif_send_frame()`; the core checks registration, link state, and frame bounds before calling the driver.
 - Packet buffers remain owned by the caller and are consumed synchronously. This first revision has no packet queue, interrupt synchronization, VLAN handling, LLC/SNAP parsing, ARP, IPv4, DHCP, UDP, or TCP.
 
-The registry is initialized during `kmain()`, but no interface is registered yet: the current boot path has no NIC driver. Host regression tests use mock adapters and synthetic PCI configuration fixtures; they do not require emulator hardware.
+The registry is initialized during `kmain()`. When a supported RTL8029AS/NE2K device is present and initializes successfully, the polling driver registers `eth0`; systems without that PCI ID simply retain an empty registry. Host regression tests use mock adapters and synthetic PCI configuration fixtures; they do not require emulator hardware.
 
 ## Driver and backend sequence
 
@@ -57,4 +57,4 @@ The registry is initialized during `kmain()`, but no interface is registered yet
 4. Add protocol layers incrementally (ARP before IPv4, then ICMP/UDP and DHCP as needed) with host-testable packet parsers.
 5. Configure a v86 network backend/relay separately from the NIC selector, then add an end-to-end guest connectivity test.
 
-Do not report networking as working until a guest driver, protocol path, and backend have all been exercised together. The existing v86 selector is hardware preparation only.
+Do not report end-to-end networking as working until a guest protocol path and backend have been exercised with a peer. The v86 selector only chooses the emulated NIC; the RTL8029 driver currently provides Ethernet frame I/O, not IP connectivity.
