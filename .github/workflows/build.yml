@@ -60,6 +60,10 @@ jobs:
         run: |
           make QEMU=qemu-system-i386 QEMU_TIMEOUT=8 check-iso
 
+      - name: Boot-test ISO with emulated RTL8029 NE2K
+        run: |
+          make QEMU=qemu-system-i386 QEMU_TIMEOUT=8 check-ne2k-iso
+
       - name: Generate checksums
         run: |
           sha256sum build/kernel.bin build/hello.com build/ai-os.iso > build/SHA256SUMS
@@ -87,7 +91,7 @@ jobs:
           - TinyLang regression tests passed.
           - 32-bit i386 cross-compiler, linker, and assembler checks passed.
           - Kernel and `.COM` program artifacts were generated and verified non-empty.
-          - Bootable ISO was built and boot-tested via the repository's `make check-iso` target under `qemu-system-i386`.
+          - Bootable ISO was boot-tested under `qemu-system-i386` both with the repository's `make check-iso` target and with an emulated RTL8029/NE2K PCI NIC via `make check-ne2k-iso`.
           - GitHub Actions was forced through the Node 24 compatibility path with `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true`.
           - SHA-256 checksums are included in `SHA256SUMS`.
           EOF

@@ -30,9 +30,11 @@
   }
 
   function runningMessage() {
-    return activeNetworkType
-      ? "AsterOS is running · " + networkLabel(activeNetworkType) + " device selected (network backend not configured)"
-      : "AsterOS is running · no network device selected";
+    if (!activeNetworkType) return "AsterOS is running · no network device selected";
+    if (activeNetworkType === "ne2k") {
+      return "AsterOS is running · NE2K device selected (RTL8029 driver included; IP/backend not configured)";
+    }
+    return "AsterOS is running · VirtIO device selected (guest driver/backend not configured)";
   }
 
   function updateControls() {

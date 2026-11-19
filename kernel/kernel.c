@@ -5,6 +5,7 @@
 #include "ps2_wait.h"
 #include "net.h"
 #include "pci.h"
+#include "ne2k.h"
 enum { SVC_CONSOLE = 1, SVC_FILES = 2, SVC_PROCESS = 3 };
 #define PS2_WAIT_ATTEMPTS 100000u
 static uint8_t inb(uint16_t port) { uint8_t value; __asm__ volatile ("inb %1, %0" : "=a"(value) : "Nd"(port)); return value; }
@@ -108,11 +109,13 @@ void kmain(void){
     asteros_mouse_click_filter_t click_filter = {0, 0, 0};
     asteros_net_init();
     asteros_pci_init();
+    asteros_ne2k_init_default();
     gui_init();
     mouse_available=mouse_init();
     timer_init();
     keyboard_reset_state();
     for(;;){
+        asteros_ne2k_poll_default();
         /* Keep draining auxiliary bytes after a failed init, but only deliver
            pointer events when the device acknowledged streaming mode. */
         if(mouse_poll(&dx,&dy,&buttons)&&mouse_available){

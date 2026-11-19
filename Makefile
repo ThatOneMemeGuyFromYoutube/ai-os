@@ -39,7 +39,7 @@ build:
 build/boot.o: boot/boot.S | build
 	$(AS) --32 $< -o $@
 
-build/kernel.o: kernel/kernel.c kernel/gui.h kernel/keyboard.h kernel/desktop_input.h kernel/ps2_wait.h kernel/net.h kernel/pci.h | build
+build/kernel.o: kernel/kernel.c kernel/gui.h kernel/keyboard.h kernel/desktop_input.h kernel/ps2_wait.h kernel/net.h kernel/pci.h kernel/ne2k.h | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
 build/gui.o: kernel/gui.c kernel/gui.h kernel/terminal.h kernel/desktop_input.h | build
@@ -61,6 +61,9 @@ build/net.o: kernel/net.c kernel/net.h | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
 build/pci.o: kernel/pci.c kernel/pci.h | build
+	$(CC) $(CFLAGS) -c $< -o $@
+
+build/ne2k.o: kernel/ne2k.c kernel/ne2k.h kernel/net.h kernel/pci.h | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
 build/test-terminal: kernel/terminal.c kernel/terminal.h tests/test_terminal.c | build
@@ -87,6 +90,12 @@ build/test-pci: kernel/pci.c kernel/pci.h tests/test_pci.c | build
 check-pci: build/test-pci
 	./build/test-pci
 
+build/test-ne2k: kernel/ne2k.c kernel/ne2k.h kernel/net.c kernel/net.h kernel/pci.c kernel/pci.h tests/test_ne2k.c | build
+	$(HOSTCC) $(HOSTCFLAGS) -Ikernel kernel/ne2k.c kernel/net.c kernel/pci.c tests/test_ne2k.c -o $@
+
+check-ne2k: build/test-ne2k
+	./build/test-ne2k
+
 build/test-desktop-input: kernel/desktop_input.c kernel/desktop_input.h tests/test_desktop_input.c | build
 	$(HOSTCC) $(HOSTCFLAGS) -Ikernel kernel/desktop_input.c tests/test_desktop_input.c -o $@
 
@@ -99,8 +108,8 @@ build/test-keyboard: kernel/keyboard.c kernel/keyboard.h tests/test_keyboard.c |
 check-keyboard: build/test-keyboard
 	./build/test-keyboard
 
-build/kernel.bin: build/boot.o build/kernel.o build/gui.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o build/pci.o linker.ld
-	$(LD) $(LDFLAGS) -o $@ build/boot.o build/kernel.o build/gui.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o build/pci.o
+build/kernel.bin: build/boot.o build/kernel.o build/gui.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o build/pci.o build/ne2k.o linker.ld
+	$(LD) $(LDFLAGS) -o $@ build/boot.o build/kernel.o build/gui.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o build/pci.o build/ne2k.o
 
 build/hello.com: toolchain/tinylang.py toolchain/examples/hello.tl | build
 	$(PYTHON) toolchain/tinylang.py toolchain/examples/hello.tl $@
@@ -213,9 +222,14 @@ check-artifacts: all program
 
 check-iso: iso
 	@command -v $(QEMU) >/dev/null || (echo "error: missing QEMU binary $(QEMU)" >&2; exit 1)
-	@timeout $(QEMU_TIMEOUT)s $(QEMU) -cdrom build/ai-os.iso -display none -serial stdio -no-reboot -no-shutdown || test $$? -eq 124
+	@QEMU="$(QEMU)" QEMU_TIMEOUT="$(QEMU_TIMEOUT)" bash scripts/qemu-smoke.sh -cdrom build/ai-os.iso -display none -serial stdio -no-reboot -no-shutdown
 
-check: check-toolchain check-keyboard check-terminal check-desktop-input check-ps2-wait check-net check-pci check-examples check-listings check-compile check-inspect check-source
+# Boot with the same PCI RTL8029-compatible NE2000 device used by the v86 selector.
+check-ne2k-iso: iso
+	@command -v $(QEMU) >/dev/null || (echo "error: missing QEMU binary $(QEMU)" >&2; exit 1)
+	@QEMU="$(QEMU)" QEMU_TIMEOUT="$(QEMU_TIMEOUT)" bash scripts/qemu-smoke.sh -cdrom build/ai-os.iso -display none -serial stdio -no-reboot -no-shutdown -netdev user,id=net0 -device ne2k_pci,netdev=net0
+
+check: check-toolchain check-keyboard check-terminal check-desktop-input check-ps2-wait check-net check-pci check-ne2k check-examples check-listings check-compile check-inspect check-source
 	PYTHONPATH=toolchain $(PYTHON) toolchain/test_tinylang.py
 	$(MAKE) check-artifacts
 
@@ -233,4 +247,4 @@ run-iso: build/ai-os.iso
 clean:
 	rm -rf build
 
-.PHONY: all check check-artifacts check-iso check-keyboard check-terminal check-desktop-input check-ps2-wait check-net check-pci check-toolchain check-examples check-listings check-compile check-inspect examples listings compile inspect check-source clean iso package-release program run run-iso test
+.PHONY: all check check-artifacts check-iso check-ne2k-iso check-keyboard check-terminal check-desktop-input check-ps2-wait check-net check-pci check-ne2k check-toolchain check-examples check-listings check-compile check-inspect examples listings compile inspect check-source clean iso package-release program run run-iso test
