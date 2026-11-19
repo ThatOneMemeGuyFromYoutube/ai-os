@@ -364,7 +364,8 @@ static void recover_overflow(asteros_ne2k_driver_t *driver) {
     current_page = reg_read(driver, 0x07u);
     reg_write(driver, NE2K_REG_COMMAND, NE2K_COMMAND_START_ABORT);
     discard_receive_ring(driver, current_page);
-    reg_write(driver, NE2K_REG_ISR, NE2K_ISR_OVW);
+    reg_write(driver, NE2K_REG_ISR,
+              (uint8_t)(NE2K_ISR_OVW | NE2K_ISR_PRX));
     reg_write(driver, NE2K_REG_TCR, 0u);
     reg_write(driver, NE2K_REG_COMMAND, NE2K_COMMAND_START_ABORT);
 }
@@ -409,7 +410,10 @@ asteros_ne2k_poll_result_t asteros_ne2k_poll(
     }
     packet_page = (uint8_t)(boundary + 1u);
     if (packet_page >= NE2K_RX_STOP) packet_page = NE2K_RX_START;
-    if (packet_page == current_page) return ASTEROS_NE2K_POLL_NONE;
+    if (packet_page == current_page) {
+        if (isr & NE2K_ISR_PRX) reg_write(driver, NE2K_REG_ISR, NE2K_ISR_PRX);
+        return ASTEROS_NE2K_POLL_NONE;
+    }
 
     if (!dma_read(driver, (uint16_t)(packet_page << 8), header, sizeof header))
         return ASTEROS_NE2K_POLL_ERROR;

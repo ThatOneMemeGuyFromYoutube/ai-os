@@ -74,6 +74,7 @@ static void fake_write8(void *context, uint16_t port, uint8_t value) {
     }
     if (offset == 0u) {
         fake->command = value;
+        if (!(value & 0x01u)) fake->isr &= (uint8_t)~0x80u;
         fake_begin_dma(fake, value);
         if ((value & 0x04u) && fake->transmit_ack) {
             fake->isr |= 0x02u;
@@ -84,7 +85,7 @@ static void fake_write8(void *context, uint16_t port, uint8_t value) {
         return;
     }
     if (offset == 0x07u && fake_page(fake) != 1u) {
-        fake->isr = (uint8_t)(fake->isr & (uint8_t)~value);
+        fake->isr = (uint8_t)(fake->isr & (uint8_t)~(value & 0x7Fu));
         return;
     }
     if (offset >= 16u) return;
@@ -153,7 +154,7 @@ static void fake_init(fake_ne2k_t *fake) {
     fake->enable_ack = 1u;
     for (index = 0; index < 6u; index++) {
         fake->memory[index * 2u] = test_mac[index];
-        fake->memory[index * 2u + 1u] = 0x57u;
+        fake->memory[index * 2u + 1u] = test_mac[index];
     }
 }
 
@@ -326,6 +327,7 @@ static void inject_packet(fake_ne2k_t *fake, uint8_t page, uint8_t status,
         if (address >= ring_end) address = (uint16_t)(0x46u << 8);
     }
     assert(total != 0u);
+    fake->isr |= 0x01u;
 }
 
 static void test_receive_dispatch_and_ring_wrap(void) {
@@ -365,6 +367,8 @@ static void test_receive_dispatch_and_ring_wrap(void) {
     assert(memcmp(received.prefix, frame + ASTEROS_ETHERNET_HEADER_SIZE,
                   sizeof received.prefix) == 0);
     assert(fake.page0[0x03] == 0x46u);
+    assert(asteros_ne2k_poll(&driver) == ASTEROS_NE2K_POLL_NONE);
+    assert((fake.isr & 0x01u) == 0u);
 }
 
 static void test_malformed_ring_header_is_dropped_safely(void) {
