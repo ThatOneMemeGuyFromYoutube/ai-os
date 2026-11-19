@@ -109,7 +109,8 @@ test("uses the current v86 screen API and configures the selected NIC", () => {
   instances[0].emit("emulator-started");
   assert.equal(elements.pause.disabled, false);
   assert.match(elements.status.textContent, /NE2K device selected/);
-  assert.match(elements.status.textContent, /network backend not configured/);
+  assert.match(elements.status.textContent, /RTL8029 driver included/);
+  assert.match(elements.status.textContent, /IP\/backend not configured/);
 });
 
 test("falls back to screen_container for legacy V86Starter bundles", () => {
