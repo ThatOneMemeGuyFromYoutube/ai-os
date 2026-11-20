@@ -10,15 +10,18 @@ make all
 make iso
 ```
 
-`make check` runs the TinyLang compiler tests. `make all` builds the kernel and user-space objects, while `make iso` assembles the bootable GRUB image.
+`make check` runs the host regression suites for TinyLang, keyboard decoding, the editor buffer, desktop input, PS/2 waits, Ethernet, PCI, and the NE2K driver, then verifies generated program examples and artifacts. `make all` builds the i386 kernel; `make iso` assembles the bootable GRUB image.
 
 ## Smoke test
 
-Boot the generated image with QEMU:
+Boot the generated image with QEMU using the bounded smoke targets:
 
 ```sh
-make run
+make check-iso QEMU=qemu-system-i386
+make check-ne2k-iso QEMU=qemu-system-i386
 ```
+
+For interactive desktop validation, open the IDE from the launcher or desktop icon, type and edit the sample TinyLang source, and verify cursor movement and the modified/volatile indicator. Do not treat this manual editor exercise as proof of file persistence or guest-side compilation.
 
 Confirm that the kernel reaches the AsterOS shell, keyboard navigation works, and the current milestone's launcher or command path is usable.
 
