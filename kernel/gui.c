@@ -234,7 +234,7 @@ static void draw_editor(void){
     for(row=0;row<EDITOR_VIEW_ROWS;row++){
         uint16_t line=(uint16_t)(editor_scroll_line+row);
         uint8_t y=(uint8_t)(8u+row);
-        fill(22,y,55,' ',ATTR_NORMAL);
+        fill(22,y,55,1,' ',ATTR_NORMAL);
         if(line<line_count){
             uint16_t number=(uint16_t)(line+1u);
             uint16_t start=asteros_editor_line_start(&editor_state,line);
