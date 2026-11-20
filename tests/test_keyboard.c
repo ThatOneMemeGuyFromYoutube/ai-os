@@ -68,7 +68,17 @@ int main(void) {
     expect_ignored(0xE0);
     expect_key(0x50, (char)ASTEROS_KEY_DOWN);
     expect_ignored(0xE0);
-    expect_ignored(0x4B); /* Left arrow is not part of the GUI key ABI yet. */
+    expect_key(0x4B, (char)ASTEROS_KEY_LEFT);
+    expect_ignored(0xE0);
+    expect_key(0x4D, (char)ASTEROS_KEY_RIGHT);
+    expect_ignored(0xE0);
+    expect_key(0x47, (char)ASTEROS_KEY_HOME);
+    expect_ignored(0xE0);
+    expect_key(0x4F, (char)ASTEROS_KEY_END);
+    expect_ignored(0xE0);
+    expect_key(0x53, (char)ASTEROS_KEY_DELETE);
+    expect_ignored(0xE0);
+    expect_ignored(0xCB); /* Extended arrow release. */
     expect_key(0x1E, 'a'); /* Ignored extended keys cannot poison input. */
 
     expect_ignored(0xE0);

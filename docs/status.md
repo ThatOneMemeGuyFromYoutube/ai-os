@@ -1,5 +1,13 @@
 # Status
 
+## 2026-11-20 — Reopen IDE work with a usable in-memory editor
+
+Returned to the explicitly reopened IDE/developer-tooling priority instead of extending the networking milestone again. Added a fixed-capacity, allocation-free editor module (kernel/editor.c and kernel/editor.h) and a sixth desktop application. The editor starts with a small TinyLang example and supports printable insertion, newline insertion, backspace, forward delete, left/right movement, Home/End, and vertical movement that preserves the preferred column across short lines. It scrolls the 80x25 VGA text window to keep the cursor visible and shows a modified marker plus an explicit warning that the buffer is volatile RAM only.
+
+Extended the Set 1 keyboard decoder for extended left/right, Home/End, and Delete keys; expanded desktop hit-testing, launcher, taskbar, context targeting, and app switching to include IDE. The IDE accepts q and x as source text rather than treating them as close shortcuts; Escape and Alt+F4 still close the window. Added host tests for editing operations, line accounting, vertical cursor behavior, capacity limits, dirty state, key decoding, and desktop hit targets. Added the editor test to make check and linked the new module into the i386 kernel.
+
+This is the first IDE slice, not a complete development environment. No guest file service exists, so the source cannot be saved or loaded and is lost on reboot. The guest does not run the Python host compiler and there is no transient-program loader, so compile/diagnostic/run integration remains open. The next dependency is a real BDOS-style filesystem API; after that, add file persistence, a host/guest compiler bridge with line diagnostics, and a genuine program launch path. CI/build/ISO/QEMU validation is pending for this branch; do not publish a release until it passes.
+
 ## 2026-11-19 — Bring up the first PCI Ethernet adapter
 
 Advanced the active November 16–29 networking-foundation milestone with a concrete RTL8029AS/NE2000 driver. The kernel now matches PCI vendor/device 10EC:8029, validates the assigned BAR0 as a 0x20-aligned I/O window within the 16-bit port range, and only then enables PCI I/O decoding. The driver uses the NE2000 16-bit programmed-I/O data port and bounded polling; it deliberately enables neither PCI bus mastering nor IRQs. It reads the station address from the 16-bit PROM layout, configures TX page 0x40 and an RX ring spanning pages 0x46–0x7F, registers `eth0` with the existing Ethernet II core, pads short frames to the Ethernet minimum, and validates receive status/count/next-page fields before dispatch. Receive packets that cross PSTOP are copied in two DMA-read segments. The driver is polling-only and supports this PCI ID only.

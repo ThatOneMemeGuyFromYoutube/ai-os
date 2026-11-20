@@ -58,7 +58,7 @@ static void test_alternate_mouse_activation(void) {
 }
 
 static void test_taskbar_has_priority(void) {
-    const int8_t active_apps[] = {-1, ASTEROS_APP_TERMINAL, ASTEROS_APP_SETTINGS};
+    const int8_t active_apps[] = {-1, ASTEROS_APP_TERMINAL, ASTEROS_APP_SETTINGS, ASTEROS_APP_IDE};
     size_t i;
 
     for (i = 0; i < sizeof active_apps / sizeof active_apps[0]; i++) {
@@ -69,6 +69,7 @@ static void test_taskbar_has_priority(void) {
         expect_hit(active_app, 29, 23, ASTEROS_APP_PROGRAMS);
         expect_hit(active_app, 40, 23, ASTEROS_APP_ABOUT);
         expect_hit(active_app, 47, 23, ASTEROS_APP_SETTINGS);
+        expect_hit(active_app, 56, 23, ASTEROS_APP_IDE);
         expect_hit(active_app, 65, 23, ASTEROS_HIT_NONE);
     }
 }
@@ -79,12 +80,15 @@ static void test_launcher_and_desktop_icons(void) {
     expect_hit(-1, 3, 9, ASTEROS_APP_PROGRAMS);
     expect_hit(-1, 3, 11, ASTEROS_APP_ABOUT);
     expect_hit(-1, 3, 13, ASTEROS_APP_SETTINGS);
+    expect_hit(-1, 3, 15, ASTEROS_APP_IDE);
+    expect_hit(-1, 3, 16, ASTEROS_APP_IDE);
 
     expect_hit(-1, 25, 8, ASTEROS_APP_TERMINAL);
     expect_hit(-1, 35, 8, ASTEROS_APP_FILES);
     expect_hit(-1, 45, 8, ASTEROS_APP_PROGRAMS);
     expect_hit(-1, 55, 8, ASTEROS_APP_FILES);
-    expect_hit(-1, 65, 8, ASTEROS_HIT_NONE);
+    expect_hit(-1, 65, 8, ASTEROS_APP_IDE);
+    expect_hit(-1, 65, 10, ASTEROS_HIT_NONE);
     expect_hit(-1, 18, 13, ASTEROS_HIT_NONE);
 }
 
@@ -95,6 +99,7 @@ static void test_foreground_window_blocks_background(void) {
     expect_hit(ASTEROS_APP_TERMINAL, 3, 13, ASTEROS_HIT_NONE);
     expect_hit(ASTEROS_APP_TERMINAL, 40, 7, ASTEROS_HIT_NONE);
     expect_hit(ASTEROS_APP_TERMINAL, 48, 23, ASTEROS_APP_SETTINGS);
+    expect_hit(ASTEROS_APP_TERMINAL, 56, 23, ASTEROS_APP_IDE);
     expect_hit(ASTEROS_APP_TERMINAL, 1, 23, ASTEROS_HIT_START);
 }
 
@@ -126,6 +131,8 @@ static void test_context_menu_targets_foreground_window(void) {
         ASTEROS_APP_SETTINGS, 30, 7, ASTEROS_HIT_SETTING_VISIBLE) ==
         ASTEROS_APP_SETTINGS);
     assert(asteros_context_menu_resolve_target(
+        ASTEROS_APP_IDE, 30, 8, ASTEROS_HIT_NONE) == ASTEROS_APP_IDE);
+    assert(asteros_context_menu_resolve_target(
         ASTEROS_APP_TERMINAL, 73, 4, ASTEROS_HIT_CLOSE) ==
         ASTEROS_APP_TERMINAL);
 
@@ -145,6 +152,8 @@ static void test_taskbar_minimize_decision(void) {
         ASTEROS_APP_TERMINAL, ASTEROS_APP_TERMINAL, 23) == 1);
     assert(asteros_taskbar_should_minimize(
         ASTEROS_APP_SETTINGS, ASTEROS_APP_SETTINGS, 23) == 1);
+    assert(asteros_taskbar_should_minimize(
+        ASTEROS_APP_IDE, ASTEROS_APP_IDE, 23) == 1);
 
     /* A different app switches focus; it does not minimize the current app. */
     assert(asteros_taskbar_should_minimize(
@@ -163,6 +172,8 @@ static void test_context_menu_close_action_matches_target(void) {
         ASTEROS_APP_TERMINAL, ASTEROS_APP_TERMINAL) == 1);
     assert(asteros_context_menu_close_targets_active_window(
         ASTEROS_APP_SETTINGS, ASTEROS_APP_SETTINGS) == 1);
+    assert(asteros_context_menu_close_targets_active_window(
+        ASTEROS_APP_IDE, ASTEROS_APP_IDE) == 1);
 
     /* A menu aimed at another taskbar app or the desktop must not close the
        unrelated foreground window; its action is Show desktop instead. */
@@ -181,6 +192,7 @@ static void test_close_only_discards_terminal_state_for_terminal(void) {
     assert(asteros_app_close_discards_terminal_state(ASTEROS_APP_PROGRAMS) == 0);
     assert(asteros_app_close_discards_terminal_state(ASTEROS_APP_ABOUT) == 0);
     assert(asteros_app_close_discards_terminal_state(ASTEROS_APP_SETTINGS) == 0);
+    assert(asteros_app_close_discards_terminal_state(ASTEROS_APP_IDE) == 0);
     assert(asteros_app_close_discards_terminal_state(-1) == 0);
     assert(asteros_app_close_discards_terminal_state(99) == 0);
 }

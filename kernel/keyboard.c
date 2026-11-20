@@ -93,6 +93,11 @@ uint8_t keyboard_decode_scancode(uint8_t scancode, char *key) {
         if (!key) return 0;
         if (code == 0x48) { *key = (char)ASTEROS_KEY_UP; return 1; }
         if (code == 0x50) { *key = (char)ASTEROS_KEY_DOWN; return 1; }
+        if (code == 0x4B) { *key = (char)ASTEROS_KEY_LEFT; return 1; }
+        if (code == 0x4D) { *key = (char)ASTEROS_KEY_RIGHT; return 1; }
+        if (code == 0x47) { *key = (char)ASTEROS_KEY_HOME; return 1; }
+        if (code == 0x4F) { *key = (char)ASTEROS_KEY_END; return 1; }
+        if (code == 0x53) { *key = (char)ASTEROS_KEY_DELETE; return 1; }
         return 0;
     }
     if (code == 0x1D) { left_ctrl = 1; return 0; }

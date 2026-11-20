@@ -23,3 +23,7 @@ RUN HELLO
 ```
 
 The command vocabulary should remain small and discoverable, and examples should explain every concept before introducing advanced internals.
+
+## Current IDE boundary
+
+The VGA desktop has an experimental TinyLang editor backed by a fixed 1,024-byte kernel-owned buffer. It supports editing and cursor navigation but is volatile RAM only. There is not yet a BDOS file API, guest compiler, or transient-program loader, so save/load/build/run from the guest editor are intentionally not advertised. The host compiler remains the reference implementation until those OS service boundaries exist.
