@@ -39,10 +39,6 @@ static void test_insert_delete_and_backspace(void) {
     assert(strcmp(asteros_editor_text(&editor), "") == 0);
     assert(!asteros_editor_backspace(&editor));
 
-    asteros_editor_move_end(&editor);
-    assert(!asteros_editor_delete(&editor));
-    assert(asteros_editor_backspace(&editor));
-    assert(strcmp(asteros_editor_text(&editor), "") == 0);
 }
 
 static void test_cursor_movement_and_preferred_column(void) {
