@@ -108,7 +108,7 @@ uint8_t keyboard_decode_scancode(uint8_t scancode, char *key) {
         return 1;
     }
     if ((left_ctrl || right_ctrl) && key && code == 0x1F) {
-        *key = (char)((left_shift || right_shift)
+        *key = (char)((left_alt || right_alt)
             ? ASTEROS_KEY_SAVE_AS : ASTEROS_KEY_SAVE);
         return 1;
     }
