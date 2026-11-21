@@ -95,7 +95,7 @@ int main(void) {
     expect_ignored(0xB8); /* Left Alt up. */
     expect_ignored(0x3E);
 
-    /* Ctrl+S saves, Ctrl+Shift+S saves under a chosen name, Ctrl+O opens. */
+    /* Ctrl+S saves, Ctrl+Alt+S saves under a chosen name, Ctrl+O opens. */
     expect_ignored(0x1D); /* Left Ctrl down. */
     expect_key(0x1F, (char)ASTEROS_KEY_SAVE);
     expect_ignored(0x9D); /* Left Ctrl up. */
