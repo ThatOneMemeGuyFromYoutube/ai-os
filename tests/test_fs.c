@@ -51,7 +51,7 @@ static void test_read_failures_are_non_destructive(void) {
     assert(asteros_fs_write("SMALL.TL", contents, sizeof contents - 1u) == ASTEROS_FS_OK);
     assert(asteros_fs_read("SMALL.TL", buffer, 3, &length) == ASTEROS_FS_BUFFER_TOO_SMALL);
     assert(length == sizeof contents - 1u);
-    for (uint8_t index = 0; index < sizeof buffer; index++)
+    for (uint16_t index = 0; index < sizeof buffer; index++)
         assert(buffer[index] == 0xA5);
     assert(asteros_fs_read("MISSING.TL", buffer, sizeof buffer, &length) == ASTEROS_FS_NOT_FOUND);
     assert(length == 0);
@@ -64,7 +64,7 @@ static void test_capacity_and_atomic_rejection(void) {
     memset(data, 0x5A, sizeof data);
     asteros_fs_init();
 
-    for (uint8_t index = 0; index < ASTEROS_FS_MAX_FILES; index++) {
+    for (uint16_t index = 0; index < ASTEROS_FS_MAX_FILES; index++) {
         name[0] = (char)('A' + index);
         name[1] = '\0';
         assert(asteros_fs_write(name, data, 1) == ASTEROS_FS_OK);
