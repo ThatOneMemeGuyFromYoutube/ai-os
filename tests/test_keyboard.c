@@ -99,12 +99,12 @@ int main(void) {
     expect_ignored(0x1D); /* Left Ctrl down. */
     expect_key(0x1F, (char)ASTEROS_KEY_SAVE);
     expect_ignored(0x9D); /* Left Ctrl up. */
-    expect_key(0x2A, (char)ASTEROS_KEY_HOVER_LEFT_CLICK); /* Shift down. */
-    expect_ignored(0x1D);
+    expect_ignored(0x1D); /* Left Ctrl down. */
+    expect_ignored(0x38); /* Left Alt down. */
     expect_key(0x1F, (char)ASTEROS_KEY_SAVE_AS);
+    expect_ignored(0xB8); /* Left Alt up. */
     expect_key(0x18, (char)ASTEROS_KEY_OPEN);
-    expect_ignored(0xAA); /* Shift up. */
-    expect_ignored(0x9D);
+    expect_ignored(0x9D); /* Left Ctrl up. */
 
     expect_ignored(0xE0);
     expect_ignored(0x38); /* Right Alt down. */
