@@ -102,13 +102,13 @@ static void test_load_and_clean_state(void) {
     assert(asteros_editor_insert(&editor, 'x'));
     assert(asteros_editor_is_dirty(&editor));
 
-    assert(!asteros_editor_load(&editor, "bad\\ttext", 8));
+    assert(!asteros_editor_load(&editor, "bad\ttext", 8));
     assert(strcmp(asteros_editor_text(&editor), "xunsaved") == 0);
     assert(asteros_editor_is_dirty(&editor));
     assert(!asteros_editor_load(&editor, "too long", ASTEROS_EDITOR_CAPACITY));
 
-    assert(asteros_editor_load(&editor, "mov eax, 42\\nexit", 16));
-    assert(strcmp(asteros_editor_text(&editor), "mov eax, 42\\nexit") == 0);
+    assert(asteros_editor_load(&editor, "mov eax, 42\nexit", 16));
+    assert(strcmp(asteros_editor_text(&editor), "mov eax, 42\nexit") == 0);
     assert(asteros_editor_cursor_line(&editor) == 0u);
     assert(asteros_editor_cursor_column(&editor) == 0u);
     assert(!asteros_editor_is_dirty(&editor));
