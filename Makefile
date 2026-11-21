@@ -42,13 +42,16 @@ build/boot.o: boot/boot.S | build
 build/kernel.o: kernel/kernel.c kernel/fs.h kernel/gui.h kernel/keyboard.h kernel/desktop_input.h kernel/ps2_wait.h kernel/net.h kernel/pci.h kernel/ne2k.h | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
-build/gui.o: kernel/gui.c kernel/gui.h kernel/fs.h kernel/terminal.h kernel/desktop_input.h kernel/editor.h | build
+build/gui.o: kernel/gui.c kernel/gui.h kernel/fs.h kernel/ide_file.h kernel/terminal.h kernel/desktop_input.h kernel/editor.h | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
 build/editor.o: kernel/editor.c kernel/editor.h | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
 build/fs.o: kernel/fs.c kernel/fs.h | build
+	$(CC) $(CFLAGS) -c $< -o $@
+
+build/ide_file.o: kernel/ide_file.c kernel/ide_file.h kernel/editor.h kernel/fs.h | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
 build/keyboard.o: kernel/keyboard.c kernel/keyboard.h | build
@@ -83,6 +86,12 @@ build/test-fs: kernel/fs.c kernel/fs.h tests/test_fs.c | build
 
 check-fs: build/test-fs
 	./build/test-fs
+
+build/test-ide-file: kernel/ide_file.c kernel/ide_file.h kernel/editor.c kernel/editor.h kernel/fs.c kernel/fs.h tests/test_ide_file.c | build
+	$(HOSTCC) $(HOSTCFLAGS) -Ikernel kernel/ide_file.c kernel/editor.c kernel/fs.c tests/test_ide_file.c -o $@
+
+check-ide-file: build/test-ide-file
+	./build/test-ide-file
 
 build/test-terminal: kernel/terminal.c kernel/terminal.h tests/test_terminal.c | build
 	$(HOSTCC) $(HOSTCFLAGS) -Ikernel kernel/terminal.c tests/test_terminal.c -o $@
@@ -126,8 +135,8 @@ build/test-keyboard: kernel/keyboard.c kernel/keyboard.h tests/test_keyboard.c |
 check-keyboard: build/test-keyboard
 	./build/test-keyboard
 
-build/kernel.bin: build/boot.o build/kernel.o build/gui.o build/editor.o build/fs.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o build/pci.o build/ne2k.o linker.ld
-	$(LD) $(LDFLAGS) -o $@ build/boot.o build/kernel.o build/gui.o build/editor.o build/fs.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o build/pci.o build/ne2k.o
+build/kernel.bin: build/boot.o build/kernel.o build/gui.o build/editor.o build/fs.o build/ide_file.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o build/pci.o build/ne2k.o linker.ld
+	$(LD) $(LDFLAGS) -o $@ build/boot.o build/kernel.o build/gui.o build/editor.o build/fs.o build/ide_file.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o build/pci.o build/ne2k.o
 
 build/hello.com: toolchain/tinylang.py toolchain/examples/hello.tl | build
 	$(PYTHON) toolchain/tinylang.py toolchain/examples/hello.tl $@
@@ -247,7 +256,7 @@ check-ne2k-iso: iso
 	@command -v $(QEMU) >/dev/null || (echo "error: missing QEMU binary $(QEMU)" >&2; exit 1)
 	@QEMU="$(QEMU)" QEMU_TIMEOUT="$(QEMU_TIMEOUT)" bash scripts/qemu-smoke.sh -cdrom build/ai-os.iso -display none -serial stdio -no-reboot -no-shutdown -netdev user,id=net0 -device ne2k_pci,netdev=net0
 
-check: check-toolchain check-keyboard check-editor check-fs check-terminal check-desktop-input check-ps2-wait check-net check-pci check-ne2k check-examples check-listings check-compile check-inspect check-source
+check: check-toolchain check-keyboard check-editor check-fs check-ide-file check-terminal check-desktop-input check-ps2-wait check-net check-pci check-ne2k check-examples check-listings check-compile check-inspect check-source
 	PYTHONPATH=toolchain $(PYTHON) toolchain/test_tinylang.py
 	$(MAKE) check-artifacts
 
@@ -265,4 +274,4 @@ run-iso: build/ai-os.iso
 clean:
 	rm -rf build
 
-.PHONY: all check check-artifacts check-iso check-ne2k-iso check-keyboard check-editor check-fs check-terminal check-desktop-input check-ps2-wait check-net check-pci check-ne2k check-toolchain check-examples check-listings check-compile check-inspect examples listings compile inspect check-source clean iso package-release program run run-iso test
+.PHONY: all check check-artifacts check-iso check-ne2k-iso check-keyboard check-editor check-fs check-ide-file check-terminal check-desktop-input check-ps2-wait check-net check-pci check-ne2k check-toolchain check-examples check-listings check-compile check-inspect examples listings compile inspect check-source clean iso package-release program run run-iso test
