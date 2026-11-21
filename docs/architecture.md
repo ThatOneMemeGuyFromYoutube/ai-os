@@ -4,7 +4,7 @@ AsterOS deliberately keeps the classic CP/M family separation visible:
 
 - **Boot layer:** GRUB/multiboot-compatible i386 entry point.
 - **Kernel:** protected-mode memory, interrupts, drivers, and process primitives.
-- **BDOS-like service layer:** the stable application ABI for console, filesystem, and process operations.
+- **BDOS-like service layer (planned):** the future stable application ABI for console, filesystem, and process operations; the current RAM-file API remains kernel-internal.
 - **CCP:** command interpreter responsible for launching resident commands and transient programs.
 - **Transient programs:** small user applications loaded into a defined user-memory area, with no dependency on private kernel symbols.
 - **Toolchain:** host-built compiler first; later a native compiler can target the same transient-program ABI.
