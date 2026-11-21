@@ -6,6 +6,7 @@
 #include "net.h"
 #include "pci.h"
 #include "ne2k.h"
+#include "fs.h"
 enum { SVC_CONSOLE = 1, SVC_FILES = 2, SVC_PROCESS = 3 };
 #define PS2_WAIT_ATTEMPTS 100000u
 static uint8_t inb(uint16_t port) { uint8_t value; __asm__ volatile ("inb %1, %0" : "=a"(value) : "Nd"(port)); return value; }
@@ -110,6 +111,7 @@ void kmain(void){
     asteros_net_init();
     asteros_pci_init();
     asteros_ne2k_init_default();
+    asteros_fs_init();
     gui_init();
     mouse_available=mouse_init();
     timer_init();

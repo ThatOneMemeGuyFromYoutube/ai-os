@@ -14,7 +14,10 @@ enum {
     ASTEROS_KEY_RIGHT = 0x86,
     ASTEROS_KEY_HOME = 0x87,
     ASTEROS_KEY_END = 0x88,
-    ASTEROS_KEY_DELETE = 0x89
+    ASTEROS_KEY_DELETE = 0x89,
+    ASTEROS_KEY_SAVE = 0x8A,
+    ASTEROS_KEY_SAVE_AS = 0x8B,
+    ASTEROS_KEY_OPEN = 0x8C
 };
 
 /* Decode one byte from the PS/2 Set 1 scancode stream.

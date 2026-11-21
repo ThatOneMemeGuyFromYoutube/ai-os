@@ -107,6 +107,15 @@ uint8_t keyboard_decode_scancode(uint8_t scancode, char *key) {
         *key = (char)ASTEROS_KEY_CLOSE_APP;
         return 1;
     }
+    if ((left_ctrl || right_ctrl) && key && code == 0x1F) {
+        *key = (char)((left_alt || right_alt)
+            ? ASTEROS_KEY_SAVE_AS : ASTEROS_KEY_SAVE);
+        return 1;
+    }
+    if ((left_ctrl || right_ctrl) && key && code == 0x18) {
+        *key = (char)ASTEROS_KEY_OPEN;
+        return 1;
+    }
     if (code == 0x2A) {
         if (!left_shift && key) *key = (char)((left_ctrl || right_ctrl) ? ASTEROS_KEY_HOVER_RIGHT_CLICK : ASTEROS_KEY_HOVER_LEFT_CLICK);
         else return 0;

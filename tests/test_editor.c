@@ -96,6 +96,27 @@ static void test_newline_and_bounds(void) {
     assert(editor.text[editor.length] == '\0');
 }
 
+static void test_load_and_clean_state(void) {
+    asteros_editor_t editor;
+    asteros_editor_init(&editor, "unsaved");
+    assert(asteros_editor_insert(&editor, 'x'));
+    assert(asteros_editor_is_dirty(&editor));
+
+    assert(!asteros_editor_load(&editor, "bad\ttext", 8));
+    assert(strcmp(asteros_editor_text(&editor), "xunsaved") == 0);
+    assert(asteros_editor_is_dirty(&editor));
+    assert(!asteros_editor_load(&editor, "too long", ASTEROS_EDITOR_CAPACITY));
+
+    assert(asteros_editor_load(&editor, "mov eax, 42\nexit", 16));
+    assert(strcmp(asteros_editor_text(&editor), "mov eax, 42\nexit") == 0);
+    assert(asteros_editor_cursor_line(&editor) == 0u);
+    assert(asteros_editor_cursor_column(&editor) == 0u);
+    assert(!asteros_editor_is_dirty(&editor));
+    assert(asteros_editor_insert(&editor, '!'));
+    asteros_editor_mark_clean(&editor);
+    assert(!asteros_editor_is_dirty(&editor));
+}
+
 static void test_noop_operations_preserve_dirty_state(void) {
     asteros_editor_t editor;
 
@@ -115,6 +136,7 @@ int main(void) {
     test_cursor_movement_and_preferred_column();
     test_newline_and_bounds();
     test_noop_operations_preserve_dirty_state();
+    test_load_and_clean_state();
     assert(asteros_editor_text(0)[0] == '\0');
     puts("editor: tests passed");
     return 0;
