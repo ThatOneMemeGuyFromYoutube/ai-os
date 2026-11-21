@@ -387,7 +387,7 @@ static void draw_files(void){
     uint8_t index;
     text(22,5,"RAM filesystem",ATTR_STATUS);
     text(22,6,"8.3 filenames | volatile: lost on reboot",ATTR_NORMAL);
-    text(22,7,"NAME                         SIZE",ATTR_PANEL);
+    text(22,7,"NAME                         TYPE",ATTR_PANEL);
     if(count==0){
         text(22,9,"No files. Use IDE Ctrl+Alt+S to create one.",ATTR_NORMAL);
         files_selected=0;
