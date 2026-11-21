@@ -30,8 +30,8 @@ void asteros_fs_init(void);
 asteros_fs_status_t asteros_fs_normalize_name(
     const char *name, char normalized[ASTEROS_FS_NAME_MAX + 1u]);
 
-/* Writes replace an existing file atomically after all arguments are checked.
-   Data is copied into a fixed slot; no heap allocation or disk persistence. */
+/* Validate the complete request before replacing a slot. Data is copied into
+   fixed storage; no heap allocation, disk persistence, or concurrent writers. */
 asteros_fs_status_t asteros_fs_write(const char *name,
                                      const uint8_t *data, uint16_t length);
 
