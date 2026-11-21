@@ -12,6 +12,7 @@ static void test_save_as_and_reload(void) {
     asteros_editor_init(&editor, "mov eax, 42\nexit");
     asteros_ide_file_init(&file, "hello.tl");
     assert(strcmp(file.name, "HELLO.TL") == 0);
+    asteros_editor_move_end(&editor);
     assert(asteros_editor_insert(&editor, '!'));
     assert(asteros_editor_is_dirty(&editor));
 
