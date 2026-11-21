@@ -532,10 +532,12 @@ void gui_handle_key(char key){
         return;
     }
     if(event==ASTEROS_KEY_HOVER_LEFT_CLICK){
+        if(active_app==ASTEROS_APP_IDE&&editor_prompt_mode!=EDITOR_PROMPT_NONE)return;
         if(keyboard_click_enabled){gui_handle_mouse(0,0,0);gui_handle_mouse(0,0,1);gui_handle_mouse(0,0,0);}
         return;
     }
     if(event==ASTEROS_KEY_HOVER_RIGHT_CLICK){
+        if(active_app==ASTEROS_APP_IDE&&editor_prompt_mode!=EDITOR_PROMPT_NONE)return;
         context_menu_open=1;
         context_menu_selection=ASTEROS_CONTEXT_MENU_OPEN;
         context_menu_x=(uint8_t)(mouse_x/4);
