@@ -85,6 +85,7 @@ asteros_fs_status_t asteros_fs_write(const char *name,
     char normalized[ASTEROS_FS_NAME_MAX + 1u];
     asteros_fs_status_t status;
     int8_t slot;
+    uint16_t data_index;
     uint8_t index;
 
     if (length > ASTEROS_FS_FILE_MAX) return ASTEROS_FS_TOO_LARGE;
@@ -104,8 +105,8 @@ asteros_fs_status_t asteros_fs_write(const char *name,
     if (slot < 0) return ASTEROS_FS_NO_SPACE;
 
     /* All failure conditions have been checked before mutating the slot. */
-    for (index = 0; index < length; index++)
-        files[(uint8_t)slot].data[index] = data[index];
+    for (data_index = 0; data_index < length; data_index++)
+        files[(uint8_t)slot].data[data_index] = data[data_index];
     for (index = 0; index <= ASTEROS_FS_NAME_MAX; index++)
         files[(uint8_t)slot].name[index] = normalized[index];
     files[(uint8_t)slot].length = length;
