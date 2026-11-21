@@ -22,7 +22,7 @@
 #define TERM_INPUT_MAX ASTEROS_TERMINAL_LINE_MAX
 #define EDITOR_TEXT_X 27u
 #define EDITOR_TEXT_WIDTH 48u
-#define EDITOR_VIEW_ROWS 11u
+#define EDITOR_VIEW_ROWS 10u
 #define KEY_UP 0x80
 #define KEY_DOWN 0x81
 #define KEY_TAB 0x09
@@ -372,13 +372,13 @@ static void draw_editor(void){
             }
         }
     }
+    if(editor_status[0])
+        text_n(22,18,editor_status,ATTR_STATUS,TERM_INPUT_MAX);
     if(editor_prompt_mode!=EDITOR_PROMPT_NONE){
         text(22,19,editor_prompt_mode==EDITOR_PROMPT_SAVE_AS?"Save as: ":"Open: ",ATTR_STATUS);
         text_n(31,19,editor_prompt_name,ATTR_NORMAL,ASTEROS_FS_NAME_MAX);
-    }else if(editor_status[0]){
-        text_n(22,19,editor_status,ATTR_STATUS,TERM_INPUT_MAX);
     }else{
-        text(22,19,"RAM-only files | Tab switch | Esc close",ATTR_STATUS);
+        text(22,19,"Ctrl+S save | Ctrl+Alt+S Save As | Ctrl+O open",ATTR_STATUS);
     }
 }
 
