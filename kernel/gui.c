@@ -220,7 +220,7 @@ static void draw_terminal(void){
     text(22,8,"aster> ",ATTR_STATUS);
     text_n(29,8,terminal_buffer,ATTR_NORMAL,TERM_INPUT_MAX);
     draw_terminal_result();
-    text(22,19,"Demo shell; no real filesystem/process services.",ATTR_STATUS);
+    text(22,19,"RAM files available; no process loader yet.",ATTR_STATUS);
 }
 enum { EDITOR_PROMPT_NONE = 0, EDITOR_PROMPT_SAVE_AS, EDITOR_PROMPT_OPEN };
 
@@ -367,7 +367,7 @@ static void draw_editor(void){
     text(22,6,asteros_editor_is_dirty(&editor_state)?"Modified":"Saved",ATTR_STATUS);
     text(32,6,"File:",ATTR_NORMAL);
     text_n(38,6,editor_filename,ATTR_STATUS,ASTEROS_FS_NAME_MAX);
-    text(22,7,"Ctrl+S Save | Ctrl+Shift+S Save As | Ctrl+O Open",ATTR_NORMAL);
+    text(22,7,"Ctrl+S Save | Ctrl+Alt+S Save As | Ctrl+O Open",ATTR_NORMAL);
 
     for(row=0;row<EDITOR_VIEW_ROWS;row++){
         uint16_t line=(uint16_t)(editor_scroll_line+row);
@@ -414,7 +414,7 @@ static void draw_files(void){
     text(22,6,"8.3 filenames | volatile: lost on reboot",ATTR_NORMAL);
     text(22,7,"NAME                         SIZE",ATTR_PANEL);
     if(count==0){
-        text(22,9,"No files. Use IDE Ctrl+Shift+S to create one.",ATTR_NORMAL);
+        text(22,9,"No files. Use IDE Ctrl+Alt+S to create one.",ATTR_NORMAL);
         files_selected=0;
     }else{
         if(files_selected>=count)files_selected=(uint8_t)(count-1u);
@@ -431,7 +431,7 @@ static void draw_files(void){
     if(files_status[0])text_n(22,18,files_status,ATTR_STATUS,TERM_INPUT_MAX);
     text(22,19,"Up/Down select | Enter open in IDE | Esc close",ATTR_NORMAL);
 }
-static void draw_programs(void){text(22,5,"Programs",ATTR_STATUS);text(22,7,"BUILT-IN GUI APPLICATIONS",ATTR_NORMAL);text(22,8,"Terminal   interactive command view",ATTR_NORMAL);text(22,9,"Files      presentation-only listing",ATTR_NORMAL);text(22,10,"Programs   application inventory",ATTR_NORMAL);text(22,11,"About      OS/runtime information",ATTR_NORMAL);text(22,12,"IDE        volatile TinyLang source editor",ATTR_NORMAL);text(22,14,"Q, X, Esc or Alt+F4 closes this window.",ATTR_NORMAL);text(22,15,"No filesystem or transient loader yet.",ATTR_NORMAL);}
+static void draw_programs(void){text(22,5,"Programs",ATTR_STATUS);text(22,7,"BUILT-IN GUI APPLICATIONS",ATTR_NORMAL);text(22,8,"Terminal   interactive command view",ATTR_NORMAL);text(22,9,"Files      volatile RAM filesystem",ATTR_NORMAL);text(22,10,"Programs   application inventory",ATTR_NORMAL);text(22,11,"About      OS/runtime information",ATTR_NORMAL);text(22,12,"IDE        TinyLang editor with RAM file I/O",ATTR_NORMAL);text(22,14,"Q, X, Esc or Alt+F4 closes this window.",ATTR_NORMAL);text(22,15,"No disk persistence or transient loader yet.",ATTR_NORMAL);}
 static void draw_about(void){text(22,5,"About AsterOS",ATTR_STATUS);text(22,7,"32-bit x86 experimental operating system",ATTR_NORMAL);text(22,8,"GUI shell over the CCP/BDOS direction",ATTR_NORMAL);text(22,10,"Enter opens the selected app.",ATTR_NORMAL);text(22,11,"Arrow keys or W/S navigate.",ATTR_NORMAL);text(22,12,"1-6 or T/F/P/A/C/I launches apps directly.",ATTR_NORMAL);text(22,13,"Q, X, Esc or Alt+F4 closes this window.",ATTR_NORMAL);}
 static void draw_cursor_settings(void){
     text(22,5,"Accessibility and cursor settings",ATTR_STATUS);
