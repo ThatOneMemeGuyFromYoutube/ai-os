@@ -47,7 +47,7 @@ asteros_fs_status_t asteros_fs_normalize_name(
     for (index = 0; index < length; index++) {
         char value = ascii_upper(name[index]);
         if (value == '.') {
-            if (has_extension || base_length == 0 || base_length > 8u)
+            if (has_extension || base_length == 0 || base_length > 8)
                 return ASTEROS_FS_INVALID_NAME;
             has_extension = 1;
         } else {
@@ -57,7 +57,7 @@ asteros_fs_status_t asteros_fs_normalize_name(
                 value == '_' || value == '-');
             if (!valid) return ASTEROS_FS_INVALID_NAME;
             if (has_extension) {
-                if (++extension_length > 3u)
+                if (++extension_length > 3)
                     return ASTEROS_FS_INVALID_NAME;
             } else if (++base_length > 8u) {
                 return ASTEROS_FS_INVALID_NAME;
