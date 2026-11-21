@@ -4,9 +4,9 @@
 #include <stdint.h>
 
 /* Small volatile 8.3-name RAM filesystem. Contents are lost on reboot. */
-#define ASTEROS_FS_MAX_FILES 8u
-#define ASTEROS_FS_NAME_MAX 12u
-#define ASTEROS_FS_FILE_MAX 1023u
+#define ASTEROS_FS_MAX_FILES 8
+#define ASTEROS_FS_NAME_MAX 12
+#define ASTEROS_FS_FILE_MAX 1023
 
 typedef enum {
     ASTEROS_FS_OK = 0,
