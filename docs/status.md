@@ -1,5 +1,15 @@
 # Status
 
+## 2026-11-21 — Add a volatile RAM filesystem and IDE save/load
+
+Advanced the reopened IDE milestone by adding `kernel/fs.c`/`kernel/fs.h`, a fixed-capacity kernel RAM filesystem with eight slots, 8.3-style names, and a 1,023-byte maximum file size. It validates and canonicalizes names, supports create/replace/read/stat/delete, rejects short read buffers without partial copies, and reports bounded errors. The service uses static storage and no heap allocation; contents are intentionally lost on reboot and there is no disk/block-device backend or user-mode BDOS ABI.
+
+Added `kernel/ide_file.c`/`kernel/ide_file.h` as a host-testable bridge between the editor model and filesystem. Save updates the current filename and clears the dirty marker only after a successful write. Open refuses to replace a dirty buffer, validates the complete source before changing the editor, and leaves the filename and buffer unchanged on failure. The desktop now seeds `HELLO.TL`, provides Ctrl+S, Ctrl+Alt+S (Save As), and Ctrl+O prompts, and turns the Files app into a real RAM-file listing/open view. The 8.3 prompt accepts letters, digits, underscore, hyphen, and a single optional extension separator. Shift remains reserved for the desktop's existing hover-click/context-menu behavior, so Save As uses Ctrl+Alt+S rather than Ctrl+Shift+S.
+
+Added host regressions for filename normalization, filesystem capacity and error paths, non-destructive reads, editor load/clean behavior, IDE save/open round trips, invalid text, and unsaved-buffer protection. Added the new modules and tests to the i386 kernel and `make check`. CI/build/ISO/QEMU validation is pending for this branch; no test or release result is claimed yet. A QEMU boot smoke test can validate initialization, but it does not simulate IDE typing or menu use, so direct guest interaction remains a separate validation gap.
+
+The IDE can now edit and save source files during one boot session, but it still cannot compile or execute them inside AsterOS. The next IDE work is TinyLang diagnostic/compile integration and a real transient-program loader; disk-backed persistence is a separate prerequisite for retaining files across reboot. Networking frame-peer validation remains open and was not marked complete.
+
 ## 2026-11-20 — Reopen IDE work with a usable in-memory editor
 
 Returned to the explicitly reopened IDE/developer-tooling priority instead of extending the networking milestone again. Added a fixed-capacity, allocation-free editor module (kernel/editor.c and kernel/editor.h) and a sixth desktop application. The editor starts with a small TinyLang example and supports printable insertion, newline insertion, backspace, forward delete, left/right movement, Home/End, and vertical movement that preserves the preferred column across short lines. It scrolls the 80x25 VGA text window to keep the cursor visible and shows a modified marker plus an explicit warning that the buffer is volatile RAM only.
