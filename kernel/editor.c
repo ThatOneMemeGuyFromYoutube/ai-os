@@ -52,7 +52,7 @@ void asteros_editor_init(asteros_editor_t *editor, const char *initial_text) {
 uint8_t asteros_editor_insert(asteros_editor_t *editor, char value) {
     uint16_t index;
 
-    if (!editor || editor->length >= ASTEROS_EDITOR_CAPACITY - 1u)
+    if (!editor || editor->length >= (uint16_t)ASTEROS_EDITOR_CAPACITY - 1u)
         return 0;
     if (value != '\n' && (value < 32 || value > 126)) return 0;
 
