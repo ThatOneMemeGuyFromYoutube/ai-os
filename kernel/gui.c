@@ -182,8 +182,8 @@ static void draw_terminal_result(void){
             text(22,13,"!! repeats the previous command.",ATTR_NORMAL);
             text(22,14,"history shows the previous command.",ATTR_NORMAL);
             text(22,15,"history clear forgets the previous command.",ATTR_NORMAL);
-            text(22,16,"pwd returns a placeholder path (no filesystem yet).",ATTR_NORMAL);
-            text(22,17,"apps/ls lists built-in apps, not disk files.",ATTR_NORMAL);
+            text(22,16,"pwd is a placeholder (no directory service yet).",ATTR_NORMAL);
+            text(22,17,"apps/ls lists apps; use Files for volatile RAM files.",ATTR_NORMAL);
             text(22,18,"uname reports i386; menu/exit returns to launcher.",ATTR_NORMAL);
             break;
         case TERM_APPS:
