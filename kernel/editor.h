@@ -36,5 +36,9 @@ uint16_t asteros_editor_line_length(const asteros_editor_t *editor,
                                     uint16_t line);
 const char *asteros_editor_text(const asteros_editor_t *editor);
 uint8_t asteros_editor_is_dirty(const asteros_editor_t *editor);
+/* Replace the buffer only when the complete source is valid and fits. */
+uint8_t asteros_editor_load(asteros_editor_t *editor, const char *source,
+                            uint16_t length);
+void asteros_editor_mark_clean(asteros_editor_t *editor);
 
 #endif
