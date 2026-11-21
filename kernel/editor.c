@@ -219,3 +219,29 @@ const char *asteros_editor_text(const asteros_editor_t *editor) {
 uint8_t asteros_editor_is_dirty(const asteros_editor_t *editor) {
     return (uint8_t)(editor && editor->dirty);
 }
+
+uint8_t asteros_editor_load(asteros_editor_t *editor, const char *source,
+                            uint16_t length) {
+    uint16_t index;
+
+    if (!editor || (length && !source) ||
+        length >= ASTEROS_EDITOR_CAPACITY)
+        return 0;
+    for (index = 0; index < length; index++) {
+        char value = source[index];
+        if (value != '\n' && (value < 32 || value > 126)) return 0;
+    }
+    for (index = 0; index < length; index++)
+        editor->text[index] = source[index];
+    editor->text[length] = '\0';
+    editor->length = length;
+    editor->cursor = 0;
+    editor->preferred_column = 0;
+    editor->preferred_column_valid = 0;
+    editor->dirty = 0;
+    return 1;
+}
+
+void asteros_editor_mark_clean(asteros_editor_t *editor) {
+    if (editor) editor->dirty = 0;
+}
