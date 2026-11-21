@@ -3,6 +3,7 @@
 #include "desktop_input.h"
 #include "keyboard.h"
 #include "editor.h"
+#include "fs.h"
 #define VGA ((volatile uint16_t*)0xB8000)
 #define WIDTH 80
 #define HEIGHT 25
@@ -53,6 +54,15 @@ static asteros_terminal_history_t terminal_history_state;
 static char terminal_history_output[TERM_INPUT_MAX + 1];
 static asteros_editor_t editor_state;
 static uint16_t editor_scroll_line;
+static char editor_filename[ASTEROS_FS_NAME_MAX + 1u] = "HELLO.TL";
+static char editor_prompt_name[ASTEROS_FS_NAME_MAX + 1u];
+static uint8_t editor_prompt_length;
+static uint8_t editor_prompt_mode;
+static char editor_status[TERM_INPUT_MAX + 1u];
+static char files_status[TERM_INPUT_MAX + 1u];
+static uint8_t files_selected;
+static const char editor_default_source[] =
+    "# TinyLang source editor\\nmov eax, 42\\nadd eax, 1\\nexit";
 static const char *items[] = {"Terminal", "Files", "Programs", "About", "Settings", "IDE"};
 
 enum { TERM_READY = 0, TERM_HELP, TERM_APPS, TERM_INFO, TERM_VER, TERM_ECHO, TERM_PWD, TERM_HISTORY, TERM_UNAME, TERM_UNKNOWN };
@@ -212,6 +222,134 @@ static void draw_terminal(void){
     draw_terminal_result();
     text(22,19,"Demo shell; no real filesystem/process services.",ATTR_STATUS);
 }
+enum { EDITOR_PROMPT_NONE = 0, EDITOR_PROMPT_SAVE_AS, EDITOR_PROMPT_OPEN };
+
+static void activate_app(uint8_t app);
+
+static void set_short_status(char *destination, const char *message) {
+    uint8_t index = 0;
+    while (message[index] && index < TERM_INPUT_MAX) {
+        destination[index] = message[index];
+        index++;
+    }
+    destination[index] = '\0';
+}
+
+static void copy_editor_filename(char *destination, const char *source) {
+    uint8_t index = 0;
+    while (source[index] && index < ASTEROS_FS_NAME_MAX) {
+        destination[index] = source[index];
+        index++;
+    }
+    destination[index] = '\0';
+}
+
+static uint8_t editor_filename_character(char value) {
+    return (uint8_t)(
+        (value >= 'a' && value <= 'z') ||
+        (value >= 'A' && value <= 'Z') ||
+        (value >= '0' && value <= '9') ||
+        value == '_' || value == '-' || value == '.');
+}
+
+static uint8_t editor_save_named_file(const char *name) {
+    char normalized[ASTEROS_FS_NAME_MAX + 1u];
+    asteros_fs_status_t status;
+
+    status = asteros_fs_normalize_name(name, normalized);
+    if (status != ASTEROS_FS_OK) {
+        set_short_status(editor_status, asteros_fs_status_message(status));
+        return 0;
+    }
+    status = asteros_fs_write(normalized,
+        (const uint8_t *)asteros_editor_text(&editor_state), editor_state.length);
+    if (status != ASTEROS_FS_OK) {
+        set_short_status(editor_status, asteros_fs_status_message(status));
+        return 0;
+    }
+    copy_editor_filename(editor_filename, normalized);
+    asteros_editor_mark_clean(&editor_state);
+    set_short_status(editor_status, "Saved in RAM; files are lost on reboot");
+    set_short_status(files_status, "RAM file saved");
+    return 1;
+}
+
+static uint8_t editor_load_named_file(const char *name) {
+    uint8_t contents[ASTEROS_EDITOR_CAPACITY];
+    uint16_t length = 0;
+    char normalized[ASTEROS_FS_NAME_MAX + 1u];
+    asteros_fs_status_t status;
+
+    if (asteros_editor_is_dirty(&editor_state)) {
+        set_short_status(editor_status, "Unsaved edits: save before opening another file");
+        return 0;
+    }
+    status = asteros_fs_normalize_name(name, normalized);
+    if (status != ASTEROS_FS_OK) {
+        set_short_status(editor_status, asteros_fs_status_message(status));
+        return 0;
+    }
+    status = asteros_fs_read(normalized, contents,
+        (uint16_t)(sizeof contents - 1u), &length);
+    if (status != ASTEROS_FS_OK) {
+        set_short_status(editor_status, asteros_fs_status_message(status));
+        return 0;
+    }
+    contents[length] = '\0';
+    if (!asteros_editor_load(&editor_state, (const char *)contents, length)) {
+        set_short_status(editor_status, "File contains unsupported editor text");
+        return 0;
+    }
+    copy_editor_filename(editor_filename, normalized);
+    editor_scroll_line = 0;
+    set_short_status(editor_status, "Loaded from volatile RAM filesystem");
+    return 1;
+}
+
+static void editor_begin_prompt(uint8_t mode) {
+    if (mode == EDITOR_PROMPT_OPEN && asteros_editor_is_dirty(&editor_state)) {
+        set_short_status(editor_status, "Unsaved edits: Ctrl+S saves before opening");
+        return;
+    }
+    editor_prompt_mode = mode;
+    copy_editor_filename(editor_prompt_name, editor_filename);
+    editor_prompt_length = 0;
+    while (editor_prompt_name[editor_prompt_length] &&
+           editor_prompt_length < ASTEROS_FS_NAME_MAX)
+        editor_prompt_length++;
+    editor_status[0] = '\0';
+}
+
+static void editor_finish_prompt(void) {
+    uint8_t success;
+    editor_prompt_name[editor_prompt_length] = '\0';
+    if (editor_prompt_mode == EDITOR_PROMPT_SAVE_AS)
+        success = editor_save_named_file(editor_prompt_name);
+    else if (editor_prompt_mode == EDITOR_PROMPT_OPEN)
+        success = editor_load_named_file(editor_prompt_name);
+    else
+        success = 0;
+    if (success) editor_prompt_mode = EDITOR_PROMPT_NONE;
+}
+
+static void files_open_selected(void) {
+    asteros_fs_info_t info;
+    if (asteros_fs_stat(files_selected, &info) != ASTEROS_FS_OK) {
+        set_short_status(files_status, "No file selected");
+        return;
+    }
+    if (asteros_editor_is_dirty(&editor_state)) {
+        set_short_status(files_status, "IDE has unsaved edits; save before opening");
+        return;
+    }
+    if (editor_load_named_file(info.name)) {
+        set_short_status(files_status, "Opened file in IDE");
+        activate_app(ASTEROS_APP_IDE);
+    } else {
+        set_short_status(files_status, editor_status);
+    }
+}
+
 static void draw_editor(void){
     uint16_t cursor_line=asteros_editor_cursor_line(&editor_state);
     uint16_t cursor_column=asteros_editor_cursor_column(&editor_state);
@@ -226,10 +364,10 @@ static void draw_editor(void){
         editor_scroll_line=(uint16_t)(cursor_line-EDITOR_VIEW_ROWS+1u);
 
     text(22,5,"TinyLang source editor",ATTR_STATUS);
-    text(22,6,asteros_editor_is_dirty(&editor_state)
-        ? "Modified - volatile RAM only; no disk or guest compiler"
-        : "Clean - volatile RAM only; no disk or guest compiler",ATTR_STATUS);
-    text(22,7,"Arrows move | Home/End line | Del/Backspace edit",ATTR_NORMAL);
+    text(22,6,asteros_editor_is_dirty(&editor_state)?"Modified":"Saved",ATTR_STATUS);
+    text(32,6,"File:",ATTR_NORMAL);
+    text_n(38,6,editor_filename,ATTR_STATUS,ASTEROS_FS_NAME_MAX);
+    text(22,7,"Ctrl+S Save | Ctrl+Shift+S Save As | Ctrl+O Open",ATTR_NORMAL);
 
     for(row=0;row<EDITOR_VIEW_ROWS;row++){
         uint16_t line=(uint16_t)(editor_scroll_line+row);
@@ -259,9 +397,40 @@ static void draw_editor(void){
             }
         }
     }
-    text(22,19,"Enter: newline | Tab: switch app | Esc: close",ATTR_STATUS);
+    if(editor_prompt_mode!=EDITOR_PROMPT_NONE){
+        text(22,19,editor_prompt_mode==EDITOR_PROMPT_SAVE_AS?"Save as: ":"Open: ",ATTR_STATUS);
+        text_n(31,19,editor_prompt_name,ATTR_NORMAL,ASTEROS_FS_NAME_MAX);
+    }else if(editor_status[0]){
+        text_n(22,19,editor_status,ATTR_STATUS,TERM_INPUT_MAX);
+    }else{
+        text(22,19,"RAM-only files | Tab switch | Esc close",ATTR_STATUS);
+    }
 }
-static void draw_files(void){text(22,5,"Files",ATTR_STATUS);text(22,7,"NAME                 TYPE",ATTR_NORMAL);text(22,8,"README.MD             text",ATTR_NORMAL);text(22,9,"KERNEL.BIN            system",ATTR_NORMAL);text(22,10,"PROGRAMS/             directory",ATTR_NORMAL);text(22,12,"Presentation only; no filesystem service",ATTR_NORMAL);text(22,13,"Q, X, Esc or Alt+F4 closes this window.",ATTR_NORMAL);}
+
+static void draw_files(void){
+    uint8_t count=asteros_fs_count();
+    uint8_t index;
+    text(22,5,"RAM filesystem",ATTR_STATUS);
+    text(22,6,"8.3 filenames | volatile: lost on reboot",ATTR_NORMAL);
+    text(22,7,"NAME                         SIZE",ATTR_PANEL);
+    if(count==0){
+        text(22,9,"No files. Use IDE Ctrl+Shift+S to create one.",ATTR_NORMAL);
+        files_selected=0;
+    }else{
+        if(files_selected>=count)files_selected=(uint8_t)(count-1u);
+        for(index=0;index<count&&index<ASTEROS_FS_MAX_FILES;index++){
+            asteros_fs_info_t info;
+            uint8_t y=(uint8_t)(8u+index);
+            uint8_t attribute=index==files_selected?ATTR_SELECT:ATTR_NORMAL;
+            if(asteros_fs_stat(index,&info)!=ASTEROS_FS_OK)continue;
+            fill(22,y,55,1,' ',attribute);
+            text_n(23,y,info.name,attribute,ASTEROS_FS_NAME_MAX);
+            text(42,y,"file",attribute);
+        }
+    }
+    if(files_status[0])text_n(22,18,files_status,ATTR_STATUS,TERM_INPUT_MAX);
+    text(22,19,"Up/Down select | Enter open in IDE | Esc close",ATTR_NORMAL);
+}
 static void draw_programs(void){text(22,5,"Programs",ATTR_STATUS);text(22,7,"BUILT-IN GUI APPLICATIONS",ATTR_NORMAL);text(22,8,"Terminal   interactive command view",ATTR_NORMAL);text(22,9,"Files      presentation-only listing",ATTR_NORMAL);text(22,10,"Programs   application inventory",ATTR_NORMAL);text(22,11,"About      OS/runtime information",ATTR_NORMAL);text(22,12,"IDE        volatile TinyLang source editor",ATTR_NORMAL);text(22,14,"Q, X, Esc or Alt+F4 closes this window.",ATTR_NORMAL);text(22,15,"No filesystem or transient loader yet.",ATTR_NORMAL);}
 static void draw_about(void){text(22,5,"About AsterOS",ATTR_STATUS);text(22,7,"32-bit x86 experimental operating system",ATTR_NORMAL);text(22,8,"GUI shell over the CCP/BDOS direction",ATTR_NORMAL);text(22,10,"Enter opens the selected app.",ATTR_NORMAL);text(22,11,"Arrow keys or W/S navigate.",ATTR_NORMAL);text(22,12,"1-6 or T/F/P/A/C/I launches apps directly.",ATTR_NORMAL);text(22,13,"Q, X, Esc or Alt+F4 closes this window.",ATTR_NORMAL);}
 static void draw_cursor_settings(void){
@@ -378,19 +547,20 @@ static void draw_selected_app(void){
     }
 }
 void gui_draw(void){cursor_clear();fill(0,0,WIDTH,HEIGHT,' ',ATTR_NORMAL);fill(0,0,WIDTH,1,' ',ATTR_TITLE);text(2,0,"AsterOS",ATTR_TITLE);text(68,0,"Desktop",ATTR_TITLE);border(1,2,18,19);text(3,3,"Applications",ATTR_PANEL);for(uint8_t i=0;i<ASTEROS_APP_COUNT;i++)text(3,(uint8_t)(5+i*2),items[i],i==selected?ATTR_SELECT:ATTR_PANEL);draw_desktop_surface();border(20,2,59,19);text(22,3,"Welcome to AsterOS",ATTR_NORMAL);draw_selected_app();draw_taskbar();draw_context_menu();cursor_draw();}
-void gui_init(void){selected=0;keyboard_click_enabled=1;context_menu_open=0;context_menu_selection=ASTEROS_CONTEXT_MENU_OPEN;context_menu_target=ASTEROS_HIT_NONE;active_app=-1;mouse_x=WIDTH*2;mouse_y=HEIGHT*2;cursor_active=0;cursor_visible=1;cursor_speed=1;cursor_shape=0;cursor_color=0;terminal_result=TERM_READY;terminal_output[0]='\0';terminal_history_clear(&terminal_history_state);terminal_history_output[0]='\0';terminal_reset_input();asteros_editor_init(&editor_state,"# TinyLang source editor\nmov eax, 42\nadd eax, 1\nexit");editor_scroll_line=0;gui_draw();}
+void gui_init(void){selected=0;keyboard_click_enabled=1;context_menu_open=0;context_menu_selection=ASTEROS_CONTEXT_MENU_OPEN;context_menu_target=ASTEROS_HIT_NONE;active_app=-1;mouse_x=WIDTH*2;mouse_y=HEIGHT*2;cursor_active=0;cursor_visible=1;cursor_speed=1;cursor_shape=0;cursor_color=0;terminal_result=TERM_READY;terminal_output[0]='\0';terminal_history_clear(&terminal_history_state);terminal_history_output[0]='\0';terminal_reset_input();editor_prompt_mode=EDITOR_PROMPT_NONE;editor_prompt_length=0;editor_status[0]='\\0';set_short_status(files_status,"RAM files are volatile");files_selected=0;(void)asteros_fs_write("HELLO.TL",(const uint8_t *)editor_default_source,(uint16_t)(sizeof editor_default_source-1u));asteros_editor_init(&editor_state,editor_default_source);editor_scroll_line=0;gui_draw();}
 void gui_handle_key(char key){
-    if((uint8_t)key==ASTEROS_KEY_CLOSE_APP){
+    uint8_t event=(uint8_t)key;
+    if(event==ASTEROS_KEY_CLOSE_APP){
         context_menu_open=0;
         if(active_app>=0)close_active_app();
         gui_draw();
         return;
     }
-    if((uint8_t)key==ASTEROS_KEY_HOVER_LEFT_CLICK){
+    if(event==ASTEROS_KEY_HOVER_LEFT_CLICK){
         if(keyboard_click_enabled){gui_handle_mouse(0,0,0);gui_handle_mouse(0,0,1);gui_handle_mouse(0,0,0);}
         return;
     }
-    if((uint8_t)key==ASTEROS_KEY_HOVER_RIGHT_CLICK){
+    if(event==ASTEROS_KEY_HOVER_RIGHT_CLICK){
         context_menu_open=1;
         context_menu_selection=ASTEROS_CONTEXT_MENU_OPEN;
         context_menu_x=(uint8_t)(mouse_x/4);
@@ -409,12 +579,12 @@ void gui_handle_key(char key){
             gui_draw();
             return;
         }
-        if((uint8_t)key==KEY_UP||key=='w'||key=='W'){
+        if(event==KEY_UP||key=='w'||key=='W'){
             context_menu_selection=asteros_context_menu_move_selection(context_menu_selection,-1);
             gui_draw();
             return;
         }
-        if((uint8_t)key==KEY_DOWN||key=='s'||key=='S'){
+        if(event==KEY_DOWN||key=='s'||key=='S'){
             context_menu_selection=asteros_context_menu_move_selection(context_menu_selection,1);
             gui_draw();
             return;
@@ -426,12 +596,21 @@ void gui_handle_key(char key){
         }
         return;
     }
-    if(active_app==ASTEROS_APP_SETTINGS&&(key=='b'||key=='B')){keyboard_click_enabled=(uint8_t)!keyboard_click_enabled;gui_draw();return;}
+    if(active_app==ASTEROS_APP_SETTINGS&&(key=='b'||key=='B')){
+        keyboard_click_enabled=(uint8_t)!keyboard_click_enabled;
+        gui_draw();
+        return;
+    }
     if(active_app<0){
-        if((uint8_t)key==KEY_UP||key=='w'||key=='W'){if(selected==0)selected=(uint8_t)(ASTEROS_APP_COUNT-1u);else--selected;gui_draw();}
-        else if((uint8_t)key==KEY_DOWN||key=='s'||key=='S'){selected=(uint8_t)((selected+1u)%ASTEROS_APP_COUNT);gui_draw();}
-        else if(key>='1'&&key<='6'){selected=(uint8_t)(key-'1');activate_app(selected);gui_draw();}
-        else if(key=='t'||key=='T'||key=='f'||key=='F'||key=='p'||key=='P'||key=='a'||key=='A'||key=='c'||key=='C'||key=='i'||key=='I'){
+        if(event==KEY_UP||key=='w'||key=='W'){
+            if(selected==0)selected=(uint8_t)(ASTEROS_APP_COUNT-1u);else--selected;
+            gui_draw();
+        }else if(event==KEY_DOWN||key=='s'||key=='S'){
+            selected=(uint8_t)((selected+1u)%ASTEROS_APP_COUNT);
+            gui_draw();
+        }else if(key>='1'&&key<='6'){
+            selected=(uint8_t)(key-'1');activate_app(selected);gui_draw();
+        }else if(key=='t'||key=='T'||key=='f'||key=='F'||key=='p'||key=='P'||key=='a'||key=='A'||key=='c'||key=='C'||key=='i'||key=='I'){
             if(key=='t'||key=='T')selected=ASTEROS_APP_TERMINAL;
             else if(key=='f'||key=='F')selected=ASTEROS_APP_FILES;
             else if(key=='p'||key=='P')selected=ASTEROS_APP_PROGRAMS;
@@ -439,23 +618,77 @@ void gui_handle_key(char key){
             else if(key=='c'||key=='C')selected=ASTEROS_APP_SETTINGS;
             else selected=ASTEROS_APP_IDE;
             activate_app(selected);gui_draw();
+        }else if(key=='\r'||key=='\n'){
+            activate_app(selected);gui_draw();
         }
-        else if(key=='\r'||key=='\n'){activate_app(selected);gui_draw();}
         return;
     }
-    if(key==KEY_TAB){selected=(uint8_t)((selected+1u)%ASTEROS_APP_COUNT);activate_app(selected);gui_draw();return;}
-    if(key==27||(active_app!=ASTEROS_APP_IDE&&(key=='q'||key=='Q'||key=='x'||key=='X'))){close_active_app();gui_draw();return;}
+    if(key==KEY_TAB){
+        selected=(uint8_t)((selected+1u)%ASTEROS_APP_COUNT);
+        activate_app(selected);gui_draw();return;
+    }
+    if(active_app==ASTEROS_APP_IDE&&editor_prompt_mode!=EDITOR_PROMPT_NONE&&key==27){
+        editor_prompt_mode=EDITOR_PROMPT_NONE;
+        set_short_status(editor_status,"Filename operation cancelled");
+        gui_draw();
+        return;
+    }
+    if(key==27||(active_app!=ASTEROS_APP_IDE&&(key=='q'||key=='Q'||key=='x'||key=='X'))){
+        close_active_app();gui_draw();return;
+    }
     if(active_app==ASTEROS_APP_SETTINGS){
         if(key=='v'||key=='V')cursor_setting_change(0);
         else if(key=='s'||key=='S')cursor_setting_change(1);
         else if(key=='c'||key=='C')cursor_setting_change(2);
         else if(key=='k'||key=='K')cursor_setting_change(3);
         else return;
-        gui_draw();
-        return;
+        gui_draw();return;
+    }
+    if(active_app==ASTEROS_APP_FILES){
+        uint8_t count=asteros_fs_count();
+        if(event==KEY_UP){
+            if(files_selected>0)files_selected--;
+            else if(count)files_selected=(uint8_t)(count-1u);
+        }else if(event==KEY_DOWN){
+            if(count&&files_selected+1u<count)files_selected++;
+            else if(count)files_selected=0;
+        }else if(key=='\r'||key=='\n'){
+            files_open_selected();
+        }else return;
+        gui_draw();return;
     }
     if(active_app==ASTEROS_APP_IDE){
-        uint8_t event=(uint8_t)key;
+        if(event==ASTEROS_KEY_SAVE){
+            (void)editor_save_named_file(editor_filename);
+            gui_draw();return;
+        }
+        if(event==ASTEROS_KEY_SAVE_AS){
+            editor_begin_prompt(EDITOR_PROMPT_SAVE_AS);
+            gui_draw();return;
+        }
+        if(event==ASTEROS_KEY_OPEN){
+            editor_begin_prompt(EDITOR_PROMPT_OPEN);
+            gui_draw();return;
+        }
+        if(editor_prompt_mode!=EDITOR_PROMPT_NONE){
+            if(key=='\b'){
+                if(editor_prompt_length){
+                    editor_prompt_length--;
+                    editor_prompt_name[editor_prompt_length]='\0';
+                }
+            }else if(key=='\r'||key=='\n'){
+                editor_finish_prompt();
+            }else if(key>=32&&key<=126){
+                if(editor_filename_character(key)&&
+                   editor_prompt_length<ASTEROS_FS_NAME_MAX){
+                    editor_prompt_name[editor_prompt_length++]=key;
+                    editor_prompt_name[editor_prompt_length]='\0';
+                }else{
+                    set_short_status(editor_status,"Use an 8.3 filename (letters, digits, _ or -)");
+                }
+            }else return;
+            gui_draw();return;
+        }
         if(event==ASTEROS_KEY_LEFT)asteros_editor_move_left(&editor_state);
         else if(event==ASTEROS_KEY_RIGHT)asteros_editor_move_right(&editor_state);
         else if(event==ASTEROS_KEY_UP)asteros_editor_move_up(&editor_state);
@@ -467,8 +700,8 @@ void gui_handle_key(char key){
         else if(key=='\r'||key=='\n')asteros_editor_insert(&editor_state,'\n');
         else if(key>=32&&key<=126)asteros_editor_insert(&editor_state,key);
         else return;
-        gui_draw();
-        return;
+        editor_status[0]='\0';
+        gui_draw();return;
     }
     if(active_app!=ASTEROS_APP_TERMINAL)return;
     if(key=='\b'){
