@@ -1,5 +1,20 @@
 # Status
 
+## 2026-11-22 — Add guest TinyLang diagnostics to the IDE
+
+The reopened IDE milestone now has a real in-guest source-validation path. Added \`kernel/tinylang_check.c\`/\`kernel/tinylang_check.h\`, a bounded, allocation-free freestanding checker for the current TinyLang instruction, numeric, \`db\` string/escape, label, and forward-jump grammar. It validates the IDE's 1,023-byte buffer with fixed tables for up to 64 labels and 64 jump references; number parsing stays in 32-bit arithmetic for the i386 freestanding link.
+
+F5 is decoded from the PS/2 Set 1 keyboard stream and routed through the desktop IDE. A failing check reports a 1-based source line and moves the editor cursor to that line; a successful check explicitly says it validated syntax/labels only. The checker does not generate machine code, write a \`.COM\` image, or launch a program. The host Python compiler remains the reference code generator, and the guest compiler/program loader remain open.
+
+Added \`tests/test_tinylang_check.c\` for syntax, forward/duplicate/unresolved labels, numeric limits, byte strings and escapes, malformed statements, and line reporting. Added editor navigation coverage and a test-only VGA surface with \`tests/test_gui.c\`, which drives the actual desktop key handler through F5 diagnostics/highlighting, Save As, save, dirty-buffer refusal, and reopening \`HELLO.TL\`. \`make check\` now includes both the checker and GUI integration suites.
+
+PR #43 validation passed on 2026-11-22:
+- [Build and test AsterOS](https://github.com/ThatOneMemeGuyFromYoutube/ai-os/actions/runs/45069200503) — full host regression suite, i686 kernel build, GRUB ISO, and QEMU boot with and without the emulated RTL8029/NE2K adapter.
+- [Push validation](https://github.com/ThatOneMemeGuyFromYoutube/ai-os/actions/runs/45069196482) — same CI path, successful.
+- GitHub Actions workflows continue to force the Node 24 compatibility path.
+
+The host VGA harness exercises the real GUI event path, but the release checklist still requires a direct interactive QEMU keyboard session. No guest-side code generation or transient-program execution is claimed. IDE disk persistence and the user-mode BDOS ABI also remain unfinished.
+
 ## 2026-11-21 — Add a volatile RAM filesystem and IDE save/load
 
 Advanced the reopened IDE milestone by adding `kernel/fs.c`/`kernel/fs.h`, a fixed-capacity kernel RAM filesystem with eight slots, 8.3-style names, and a 1,023-byte maximum file size. It validates and canonicalizes names, supports create/replace/read/stat/delete, rejects short read buffers without partial copies, and reports bounded errors. The service uses static storage and no heap allocation; contents are intentionally lost on reboot and there is no disk/block-device backend or user-mode BDOS ABI.
