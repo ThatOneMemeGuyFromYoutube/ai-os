@@ -90,6 +90,12 @@ build/test-tinylang-check: kernel/tinylang_check.c kernel/tinylang_check.h tests
 check-tinylang-check: build/test-tinylang-check
 	./build/test-tinylang-check
 
+build/test-gui: kernel/gui.c kernel/gui.h kernel/editor.c kernel/editor.h kernel/tinylang_check.c kernel/tinylang_check.h kernel/fs.c kernel/fs.h kernel/ide_file.c kernel/ide_file.h kernel/keyboard.c kernel/keyboard.h kernel/desktop_input.c kernel/desktop_input.h kernel/terminal.c kernel/terminal.h tests/test_gui.c | build
+	$(HOSTCC) $(HOSTCFLAGS) -DASTEROS_GUI_TEST -Ikernel kernel/gui.c kernel/editor.c kernel/tinylang_check.c kernel/fs.c kernel/ide_file.c kernel/keyboard.c kernel/desktop_input.c kernel/terminal.c tests/test_gui.c -o $@
+
+check-gui: build/test-gui
+	./build/test-gui
+
 build/test-fs: kernel/fs.c kernel/fs.h tests/test_fs.c | build
 	$(HOSTCC) $(HOSTCFLAGS) -Ikernel kernel/fs.c tests/test_fs.c -o $@
 
@@ -265,7 +271,7 @@ check-ne2k-iso: iso
 	@command -v $(QEMU) >/dev/null || (echo "error: missing QEMU binary $(QEMU)" >&2; exit 1)
 	@QEMU="$(QEMU)" QEMU_TIMEOUT="$(QEMU_TIMEOUT)" bash scripts/qemu-smoke.sh -cdrom build/ai-os.iso -display none -serial stdio -no-reboot -no-shutdown -netdev user,id=net0 -device ne2k_pci,netdev=net0
 
-check: check-toolchain check-keyboard check-editor check-tinylang-check check-fs check-ide-file check-terminal check-desktop-input check-ps2-wait check-net check-pci check-ne2k check-examples check-listings check-compile check-inspect check-source
+check: check-toolchain check-keyboard check-editor check-tinylang-check check-gui check-fs check-ide-file check-terminal check-desktop-input check-ps2-wait check-net check-pci check-ne2k check-examples check-listings check-compile check-inspect check-source
 	PYTHONPATH=toolchain $(PYTHON) toolchain/test_tinylang.py
 	$(MAKE) check-artifacts
 
