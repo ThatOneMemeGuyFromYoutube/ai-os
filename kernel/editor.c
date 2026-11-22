@@ -163,6 +163,14 @@ void asteros_editor_move_end(asteros_editor_t *editor) {
     editor->preferred_column_valid = 0;
 }
 
+void asteros_editor_move_to_line(asteros_editor_t *editor, uint16_t line) {
+    if (!editor) return;
+    if (line >= asteros_editor_line_count(editor))
+        line = (uint16_t)(asteros_editor_line_count(editor) - 1u);
+    editor->cursor = line_start_for(editor, line);
+    editor->preferred_column_valid = 0;
+}
+
 uint16_t asteros_editor_line_count(const asteros_editor_t *editor) {
     uint16_t index;
     uint16_t count = 1u;

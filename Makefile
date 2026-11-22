@@ -42,10 +42,13 @@ build/boot.o: boot/boot.S | build
 build/kernel.o: kernel/kernel.c kernel/fs.h kernel/gui.h kernel/keyboard.h kernel/desktop_input.h kernel/ps2_wait.h kernel/net.h kernel/pci.h kernel/ne2k.h | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
-build/gui.o: kernel/gui.c kernel/gui.h kernel/fs.h kernel/ide_file.h kernel/terminal.h kernel/desktop_input.h kernel/editor.h | build
+build/gui.o: kernel/gui.c kernel/gui.h kernel/fs.h kernel/ide_file.h kernel/terminal.h kernel/desktop_input.h kernel/editor.h kernel/tinylang_check.h | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
 build/editor.o: kernel/editor.c kernel/editor.h | build
+	$(CC) $(CFLAGS) -c $< -o $@
+
+build/tinylang_check.o: kernel/tinylang_check.c kernel/tinylang_check.h | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
 build/fs.o: kernel/fs.c kernel/fs.h | build
@@ -80,6 +83,18 @@ build/test-editor: kernel/editor.c kernel/editor.h tests/test_editor.c | build
 
 check-editor: build/test-editor
 	./build/test-editor
+
+build/test-tinylang-check: kernel/tinylang_check.c kernel/tinylang_check.h tests/test_tinylang_check.c | build
+	$(HOSTCC) $(HOSTCFLAGS) -Ikernel kernel/tinylang_check.c tests/test_tinylang_check.c -o $@
+
+check-tinylang-check: build/test-tinylang-check
+	./build/test-tinylang-check
+
+build/test-gui: kernel/gui.c kernel/gui.h kernel/editor.c kernel/editor.h kernel/tinylang_check.c kernel/tinylang_check.h kernel/fs.c kernel/fs.h kernel/ide_file.c kernel/ide_file.h kernel/keyboard.c kernel/keyboard.h kernel/desktop_input.c kernel/desktop_input.h kernel/terminal.c kernel/terminal.h tests/test_gui.c | build
+	$(HOSTCC) $(HOSTCFLAGS) -DASTEROS_GUI_TEST -Ikernel kernel/gui.c kernel/editor.c kernel/tinylang_check.c kernel/fs.c kernel/ide_file.c kernel/keyboard.c kernel/desktop_input.c kernel/terminal.c tests/test_gui.c -o $@
+
+check-gui: build/test-gui
+	./build/test-gui
 
 build/test-fs: kernel/fs.c kernel/fs.h tests/test_fs.c | build
 	$(HOSTCC) $(HOSTCFLAGS) -Ikernel kernel/fs.c tests/test_fs.c -o $@
@@ -135,8 +150,8 @@ build/test-keyboard: kernel/keyboard.c kernel/keyboard.h tests/test_keyboard.c |
 check-keyboard: build/test-keyboard
 	./build/test-keyboard
 
-build/kernel.bin: build/boot.o build/kernel.o build/gui.o build/editor.o build/fs.o build/ide_file.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o build/pci.o build/ne2k.o linker.ld
-	$(LD) $(LDFLAGS) -o $@ build/boot.o build/kernel.o build/gui.o build/editor.o build/fs.o build/ide_file.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o build/pci.o build/ne2k.o
+build/kernel.bin: build/boot.o build/kernel.o build/gui.o build/editor.o build/tinylang_check.o build/fs.o build/ide_file.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o build/pci.o build/ne2k.o linker.ld
+	$(LD) $(LDFLAGS) -o $@ build/boot.o build/kernel.o build/gui.o build/editor.o build/tinylang_check.o build/fs.o build/ide_file.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o build/pci.o build/ne2k.o
 
 build/hello.com: toolchain/tinylang.py toolchain/examples/hello.tl | build
 	$(PYTHON) toolchain/tinylang.py toolchain/examples/hello.tl $@
@@ -256,7 +271,7 @@ check-ne2k-iso: iso
 	@command -v $(QEMU) >/dev/null || (echo "error: missing QEMU binary $(QEMU)" >&2; exit 1)
 	@QEMU="$(QEMU)" QEMU_TIMEOUT="$(QEMU_TIMEOUT)" bash scripts/qemu-smoke.sh -cdrom build/ai-os.iso -display none -serial stdio -no-reboot -no-shutdown -netdev user,id=net0 -device ne2k_pci,netdev=net0
 
-check: check-toolchain check-keyboard check-editor check-fs check-ide-file check-terminal check-desktop-input check-ps2-wait check-net check-pci check-ne2k check-examples check-listings check-compile check-inspect check-source
+check: check-toolchain check-keyboard check-editor check-tinylang-check check-gui check-fs check-ide-file check-terminal check-desktop-input check-ps2-wait check-net check-pci check-ne2k check-examples check-listings check-compile check-inspect check-source
 	PYTHONPATH=toolchain $(PYTHON) toolchain/test_tinylang.py
 	$(MAKE) check-artifacts
 
@@ -274,4 +289,4 @@ run-iso: build/ai-os.iso
 clean:
 	rm -rf build
 
-.PHONY: all check check-artifacts check-iso check-ne2k-iso check-keyboard check-editor check-fs check-ide-file check-terminal check-desktop-input check-ps2-wait check-net check-pci check-ne2k check-toolchain check-examples check-listings check-compile check-inspect examples listings compile inspect check-source clean iso package-release program run run-iso test
+.PHONY: all check check-artifacts check-iso check-ne2k-iso check-keyboard check-editor check-tinylang-check check-gui check-fs check-ide-file check-terminal check-desktop-input check-ps2-wait check-net check-pci check-ne2k check-toolchain check-examples check-listings check-compile check-inspect examples listings compile inspect check-source clean iso package-release program run run-iso test

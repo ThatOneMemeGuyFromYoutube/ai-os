@@ -96,6 +96,20 @@ static void test_newline_and_bounds(void) {
     assert(editor.text[editor.length] == '\0');
 }
 
+static void test_move_to_line(void) {
+    asteros_editor_t editor;
+    asteros_editor_init(&editor, "first\nsecond\nthird");
+    assert(asteros_editor_insert(&editor, '!'));
+    assert(asteros_editor_is_dirty(&editor));
+    asteros_editor_move_to_line(&editor, 1u);
+    assert(asteros_editor_cursor_line(&editor) == 1u);
+    assert(asteros_editor_cursor_column(&editor) == 0u);
+    assert(asteros_editor_is_dirty(&editor));
+    asteros_editor_move_to_line(&editor, 99u);
+    assert(asteros_editor_cursor_line(&editor) == 2u);
+    assert(asteros_editor_cursor_column(&editor) == 0u);
+}
+
 static void test_load_and_clean_state(void) {
     asteros_editor_t editor;
     asteros_editor_init(&editor, "unsaved");
@@ -137,6 +151,7 @@ int main(void) {
     test_newline_and_bounds();
     test_noop_operations_preserve_dirty_state();
     test_load_and_clean_state();
+    test_move_to_line();
     assert(asteros_editor_text(0)[0] == '\0');
     puts("editor: tests passed");
     return 0;

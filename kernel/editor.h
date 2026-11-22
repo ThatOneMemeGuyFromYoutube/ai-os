@@ -26,6 +26,8 @@ void asteros_editor_move_up(asteros_editor_t *editor);
 void asteros_editor_move_down(asteros_editor_t *editor);
 void asteros_editor_move_home(asteros_editor_t *editor);
 void asteros_editor_move_end(asteros_editor_t *editor);
+/* Move to the start of a zero-based line, clamping to the last line. */
+void asteros_editor_move_to_line(asteros_editor_t *editor, uint16_t line);
 
 uint16_t asteros_editor_line_count(const asteros_editor_t *editor);
 uint16_t asteros_editor_cursor_line(const asteros_editor_t *editor);

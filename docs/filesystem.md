@@ -44,7 +44,7 @@ Next steps, in dependency order:
 
 1. Add a block-device abstraction and a disk-backed filesystem or simple persistent volume while retaining the RAM service for scratch files and tests.
 2. Define the user-mode BDOS file ABI and connect CCP/Files/IDE through that stable boundary.
-3. Add TinyLang compiler invocation and source-line diagnostics in the guest.
+3. Extend the guest F5 syntax/label checker into TinyLang code generation and compiler diagnostics, keeping host-compiler parity tests.
 4. Implement the transient-program loader before advertising an in-OS build/run workflow.
 
 Do not describe the current RAM filesystem as persistent storage or claim that the IDE can compile/run guest programs.

@@ -10,7 +10,7 @@ make all
 make iso
 ```
 
-`make check` runs the host regression suites for TinyLang, keyboard decoding, the editor buffer, desktop input, PS/2 waits, Ethernet, PCI, and the NE2K driver, then verifies generated program examples and artifacts. `make all` builds the i386 kernel; `make iso` assembles the bootable GRUB image.
+`make check` runs the host regression suites for TinyLang, the guest TinyLang syntax checker, keyboard decoding, the editor buffer, the desktop IDE event path, desktop input, PS/2 waits, Ethernet, PCI, and the NE2K driver, then verifies generated program examples and artifacts. `make all` builds the i386 kernel; `make iso` assembles the bootable GRUB image.
 
 ## Smoke test
 
@@ -21,7 +21,7 @@ make check-iso QEMU=qemu-system-i386
 make check-ne2k-iso QEMU=qemu-system-i386
 ```
 
-For interactive desktop validation, open the IDE from the launcher or desktop icon, type and edit the sample TinyLang source, and verify cursor movement and the modified/volatile indicator. Do not treat this manual editor exercise as proof of file persistence or guest-side compilation.
+For interactive desktop validation, open the IDE from the launcher or desktop icon, edit the sample source, press F5, and verify that valid input reports success while an invalid instruction or jump moves the cursor to its 1-based diagnostic line. Also verify save/open and dirty-buffer protection. Do not treat the syntax checker as code generation, and do not treat a QEMU boot-only smoke test as proof of keyboard-driven IDE behavior.
 
 Confirm that the kernel reaches the AsterOS shell, keyboard navigation works, and the current milestone's launcher or command path is usable.
 

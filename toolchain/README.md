@@ -2,7 +2,7 @@
 
 TinyLang is the first concrete program-building tool for AsterOS. It is intentionally small and host-buildable today so beginners can experiment without first needing to build a complete cross-compiler.
 
-The guest VGA desktop also includes an experimental IDE editor with a bounded 1,024-byte in-memory TinyLang buffer, line navigation, insertion, deletion, and a modified indicator. It is deliberately volatile: there is no guest filesystem service, guest-side compiler, or transient-program loader yet, so the editor cannot save or compile its buffer. Use the host `make check-source` and `make compile` commands for real validation and image generation.
+The guest VGA desktop also includes an experimental IDE editor with a bounded 1,024-byte TinyLang buffer, a volatile RAM-filesystem save/open path, and an F5 syntax/label checker with source-line diagnostics. The checker is freestanding C linked into the i386 kernel and does not allocate memory or generate machine code. Files are lost on reboot. A guest code generator/compiler and transient-program loader are still absent, so the IDE cannot build or run a `.COM` image. Use the host `make check-source` and `make compile` commands for real compilation and image generation.
 
 ## Try it
 

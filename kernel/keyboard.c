@@ -102,6 +102,11 @@ uint8_t keyboard_decode_scancode(uint8_t scancode, char *key) {
     }
     if (code == 0x1D) { left_ctrl = 1; return 0; }
     if (code == 0x38) { left_alt = 1; return 0; }
+    if (code == 0x3F) {
+        if (!key) return 0;
+        *key = (char)ASTEROS_KEY_CHECK;
+        return 1;
+    }
     if (code == 0x3E && (left_alt || right_alt)) {
         if (!key) return 0;
         *key = (char)ASTEROS_KEY_CLOSE_APP;
