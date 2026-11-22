@@ -5,6 +5,7 @@
 #include "editor.h"
 #include "fs.h"
 #include "ide_file.h"
+#include "tinylang_check.h"
 #define VGA ((volatile uint16_t*)0xB8000)
 #define WIDTH 80
 #define HEIGHT 25
@@ -307,6 +308,55 @@ static void editor_finish_prompt(void) {
     if (success) editor_prompt_mode = EDITOR_PROMPT_NONE;
 }
 
+static void editor_check_source(void) {
+    asteros_tinylang_diagnostic_t diagnostic;
+    asteros_tinylang_status_t status = asteros_tinylang_check(
+        asteros_editor_text(&editor_state), editor_state.length, &diagnostic);
+
+    if (status == ASTEROS_TINYLANG_OK) {
+        set_short_status(editor_status,
+            "Syntax/labels OK; F5 does not build code");
+        return;
+    }
+
+    {
+        char message[TERM_INPUT_MAX + 1u];
+        char digits[5];
+        uint8_t position = 0;
+        uint8_t digit_count = 0;
+        uint16_t line = diagnostic.line;
+        const char *detail = asteros_tinylang_status_message(status);
+        uint8_t index;
+
+        if (line) {
+            message[position++] = 'L';
+            message[position++] = 'i';
+            message[position++] = 'n';
+            message[position++] = 'e';
+            message[position++] = ' ';
+            do {
+                digits[digit_count++] = (char)('0' + (line % 10u));
+                line = (uint16_t)(line / 10u);
+            } while (line && digit_count < sizeof digits);
+            while (digit_count && position < TERM_INPUT_MAX)
+                message[position++] = digits[--digit_count];
+            if (position < TERM_INPUT_MAX) message[position++] = ':';
+            if (position < TERM_INPUT_MAX) message[position++] = ' ';
+        }
+
+        for (index = 0; detail[index] && position < TERM_INPUT_MAX; index++)
+            message[position++] = detail[index];
+        message[position] = '\0';
+        set_short_status(editor_status, message);
+
+        if (diagnostic.line) {
+            uint16_t target_line = (uint16_t)(diagnostic.line - 1u);
+            asteros_editor_move_to_line(&editor_state, target_line);
+            editor_scroll_line = target_line;
+        }
+    }
+}
+
 static void files_open_selected(void) {
     asteros_fs_info_t info;
     if (asteros_fs_stat(files_selected, &info) != ASTEROS_FS_OK) {
@@ -342,7 +392,7 @@ static void draw_editor(void){
     text(22,6,asteros_editor_is_dirty(&editor_state)?"Modified":"Saved",ATTR_STATUS);
     text(32,6,"File:",ATTR_NORMAL);
     text_n(38,6,editor_file.name,ATTR_STATUS,ASTEROS_FS_NAME_MAX);
-    text(22,7,"Ctrl+S Save | Ctrl+Alt+S Save As | Ctrl+O Open",ATTR_NORMAL);
+    text(22,7,"F5 Check | Ctrl+S Save | Ctrl+Alt+S Save As",ATTR_NORMAL);
 
     for(row=0;row<EDITOR_VIEW_ROWS;row++){
         uint16_t line=(uint16_t)(editor_scroll_line+row);
@@ -378,7 +428,7 @@ static void draw_editor(void){
         text(22,19,editor_prompt_mode==EDITOR_PROMPT_SAVE_AS?"Save as: ":"Open: ",ATTR_STATUS);
         text_n(31,19,editor_prompt_name,ATTR_NORMAL,ASTEROS_FS_NAME_MAX);
     }else{
-        text(22,19,"Ctrl+S save | Ctrl+Alt+S Save As | Ctrl+O open",ATTR_STATUS);
+        text(22,19,"F5 Check syntax | Ctrl+S save | Ctrl+O open",ATTR_STATUS);
     }
 }
 
@@ -645,6 +695,10 @@ void gui_handle_key(char key){
         }
         if(event==ASTEROS_KEY_OPEN){
             editor_begin_prompt(EDITOR_PROMPT_OPEN);
+            gui_draw();return;
+        }
+        if(event==ASTEROS_KEY_CHECK){
+            editor_check_source();
             gui_draw();return;
         }
         if(editor_prompt_mode!=EDITOR_PROMPT_NONE){
