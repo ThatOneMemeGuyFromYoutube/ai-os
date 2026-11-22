@@ -697,10 +697,6 @@ void gui_handle_key(char key){
             editor_begin_prompt(EDITOR_PROMPT_OPEN);
             gui_draw();return;
         }
-        if(event==ASTEROS_KEY_CHECK){
-            editor_check_source();
-            gui_draw();return;
-        }
         if(editor_prompt_mode!=EDITOR_PROMPT_NONE){
             if(key=='\b'){
                 if(editor_prompt_length){
@@ -718,6 +714,10 @@ void gui_handle_key(char key){
                     set_short_status(editor_status,"Use an 8.3 filename (letters, digits, _ or -)");
                 }
             }else return;
+            gui_draw();return;
+        }
+        if(event==ASTEROS_KEY_CHECK){
+            editor_check_source();
             gui_draw();return;
         }
         if(event==ASTEROS_KEY_LEFT)asteros_editor_move_left(&editor_state);
