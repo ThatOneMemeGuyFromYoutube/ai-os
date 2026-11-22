@@ -302,6 +302,7 @@ static asteros_tinylang_status_t parse_statement(
     }
 
     if (equals(mnemonic, "int")) {
+        if (!operands.length) return ASTEROS_TINYLANG_MALFORMED_INT;
         status = parse_number(operands, &number);
         if (status != ASTEROS_TINYLANG_OK) return status;
         return number > 0xFFu ? ASTEROS_TINYLANG_INTERRUPT_OUT_OF_RANGE
@@ -462,6 +463,7 @@ const char *asteros_tinylang_status_message(
         case ASTEROS_TINYLANG_MALFORMED_MOV: return "Expected mov register, number";
         case ASTEROS_TINYLANG_UNSUPPORTED_REGISTER: return "Unsupported mov register";
         case ASTEROS_TINYLANG_MALFORMED_ADD: return "Expected add eax, number";
+        case ASTEROS_TINYLANG_MALFORMED_INT: return "Expected int number";
         case ASTEROS_TINYLANG_MALFORMED_SUB: return "Expected sub eax, number";
         case ASTEROS_TINYLANG_MALFORMED_INT: return "Expected int number";
         case ASTEROS_TINYLANG_INTERRUPT_OUT_OF_RANGE: return "Interrupt vector must be 0..255";
