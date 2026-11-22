@@ -124,7 +124,7 @@ static asteros_tinylang_status_t parse_number(
     source_slice_t token, uint32_t *result) {
     uint16_t index = 0;
     uint8_t base = 10;
-    uint64_t value = 0;
+    uint32_t value = 0;
     token = trim(token);
     if (!token.length || !result) return ASTEROS_TINYLANG_INVALID_NUMBER;
     if (token.length >= 2u && token.data[0] == '0' &&
@@ -143,11 +143,18 @@ static asteros_tinylang_status_t parse_number(
             if (!is_hex_digit(current)) return ASTEROS_TINYLANG_INVALID_NUMBER;
             digit = hex_value(current);
         }
-        value = value * base + digit;
-        if (value > 0xFFFFFFFFull)
-            return ASTEROS_TINYLANG_NUMBER_OUT_OF_RANGE;
+        if (base == 10u) {
+            if (value > 429496729u ||
+                (value == 429496729u && digit > 5u))
+                return ASTEROS_TINYLANG_NUMBER_OUT_OF_RANGE;
+            value = value * 10u + digit;
+        } else {
+            if (value > 0x0FFFFFFFu)
+                return ASTEROS_TINYLANG_NUMBER_OUT_OF_RANGE;
+            value = (value << 4) | digit;
+        }
     }
-    *result = (uint32_t)value;
+    *result = value;
     return ASTEROS_TINYLANG_OK;
 }
 
