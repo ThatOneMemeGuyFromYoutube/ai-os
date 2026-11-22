@@ -472,7 +472,6 @@ const char *asteros_tinylang_status_message(
         case ASTEROS_TINYLANG_MALFORMED_ADD: return "Expected add eax, number";
         case ASTEROS_TINYLANG_MALFORMED_INT: return "Expected int number";
         case ASTEROS_TINYLANG_MALFORMED_SUB: return "Expected sub eax, number";
-        case ASTEROS_TINYLANG_MALFORMED_INT: return "Expected int number";
         case ASTEROS_TINYLANG_INTERRUPT_OUT_OF_RANGE: return "Interrupt vector must be 0..255";
         case ASTEROS_TINYLANG_MALFORMED_JMP: return "Expected jmp label";
         case ASTEROS_TINYLANG_UNKNOWN_LABEL: return "Unknown jump label";
