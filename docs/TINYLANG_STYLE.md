@@ -84,6 +84,12 @@ PYTHONPATH=toolchain python3 toolchain/test_tinylang.py
 
 Then build the 32-bit artifacts with `make check` before publishing a release.
 
+## Guest IDE validation
+
+The desktop IDE's **F5** command runs the freestanding C checker in `kernel/tinylang_check.c`. It validates instruction forms, numeric ranges, `db` byte strings and escapes, duplicate labels, and forward jump references without generating an image. A diagnostic includes the 1-based source line and moves the editor cursor to that line. The checker is bounded to the editor's 1,023-byte source limit and 64 labels / 64 jump references. It is an early guest-side validation path, not the Python compiler or a code generator; `make compile` remains the authoritative image-producing workflow.
+
+Run `make check-tinylang-check` for its host regression suite; the target is included in `make check`.
+
 ## Source listings
 
 For a compiled source, request a listing with `--listing PATH` or
