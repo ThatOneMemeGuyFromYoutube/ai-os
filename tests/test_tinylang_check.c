@@ -56,6 +56,7 @@ static void test_numbers_and_instruction_ranges(void) {
     assert(diagnostic.line == 1u);
     assert(check("mov eax, 4294967296\n", &diagnostic) ==
            ASTEROS_TINYLANG_NUMBER_OUT_OF_RANGE);
+    assert(check("int\n", &diagnostic) == ASTEROS_TINYLANG_MALFORMED_INT);
     assert(check("int 256\n", &diagnostic) ==
            ASTEROS_TINYLANG_INTERRUPT_OUT_OF_RANGE);
     assert(check("db 256\n", &diagnostic) ==
