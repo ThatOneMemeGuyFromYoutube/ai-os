@@ -6,7 +6,12 @@
 #include "fs.h"
 #include "ide_file.h"
 #include "tinylang_check.h"
+#ifdef ASTEROS_GUI_TEST
+volatile uint16_t asteros_gui_test_vga[80u * 25u];
+#define VGA asteros_gui_test_vga
+#else
 #define VGA ((volatile uint16_t*)0xB8000)
+#endif
 #define WIDTH 80
 #define HEIGHT 25
 #define ATTR_NORMAL 0x07
