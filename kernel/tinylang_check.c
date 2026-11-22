@@ -221,6 +221,7 @@ static asteros_tinylang_status_t parse_db(source_slice_t arguments) {
             token.data = arguments.data + start;
             token.length = (uint16_t)(cursor - start);
             token = trim(token);
+            if (!token.length) return ASTEROS_TINYLANG_MALFORMED_DB;
             status = parse_number(token, &number);
             if (status != ASTEROS_TINYLANG_OK) return status;
             if (number > 0xFFu) return ASTEROS_TINYLANG_BYTE_OUT_OF_RANGE;
