@@ -95,6 +95,9 @@ int main(void) {
     expect_ignored(0xB8); /* Left Alt up. */
     expect_ignored(0x3E);
 
+    /* F5 runs the in-guest TinyLang syntax/label check. */
+    expect_key(0x3F, (char)ASTEROS_KEY_CHECK);
+
     /* Ctrl+S saves, Ctrl+Alt+S saves under a chosen name, Ctrl+O opens. */
     expect_ignored(0x1D); /* Left Ctrl down. */
     expect_key(0x1F, (char)ASTEROS_KEY_SAVE);
