@@ -86,7 +86,8 @@ The schedule has been reset on **October 8, 2026** to recover the development ti
   - [ ] Provide a coherent edit → validate/compile → inspect diagnostics → run workflow using existing program/service boundaries; explicitly report the unavailable guest compiler and transient loader rather than simulating success.
   - [x] Add host regression coverage for editor-buffer loading, bounds, cursor movement, RAM filesystem operations, IDE save/load, unsaved-change protection, and keyboard shortcuts.
   - [x] Add host regression coverage for TinyLang syntax, labels, byte strings, operand ranges, diagnostic line numbers, F5 scancode decoding, and editor navigation to the failing line.
-  - [ ] Add direct desktop interaction and QEMU ISO coverage for F5, save/open, and dirty-buffer behavior.
+  - [x] Exercise the IDE event path against a test VGA surface: F5 diagnostics and line highlight, Save As, save, dirty-buffer refusal, and reopening a file.
+  - [ ] Add direct QEMU desktop interaction coverage for F5, save/open, and dirty-buffer behavior.
   - [ ] Keep native/self-hosting compiler support incomplete until the compiler actually runs as an AsterOS program.
 - [ ] **November 16–29 — Networking foundation:** trace the existing v86 NIC selector into a practical guest-side plan, establish hardware-independent network interfaces where they fit the current code, and progress toward testable network features without claiming that selecting an emulated NIC provides a working network stack.
   - [x] Add the driver-neutral Ethernet II interface core and host regression tests.
