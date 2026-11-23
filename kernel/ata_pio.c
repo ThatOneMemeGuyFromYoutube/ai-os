@@ -79,6 +79,8 @@ static asteros_ata_status_t begin_sector(
     if (status != ASTEROS_ATA_OK) return status;
 
     select_drive(device, (uint8_t)(lba >> 24));
+    status = wait_not_busy(device);
+    if (status != ASTEROS_ATA_OK) return status;
     device->io->out8(device->io->context,
         (uint16_t)(device->io_base + ATA_REG_SECTOR_COUNT), 1u);
     device->io->out8(device->io->context,
