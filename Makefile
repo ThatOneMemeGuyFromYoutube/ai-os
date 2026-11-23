@@ -285,7 +285,7 @@ check-ata-iso: iso
 	@command -v $(QEMU) >/dev/null || (echo "error: missing QEMU binary $(QEMU)" >&2; exit 1)
 	@rm -f build/asteros-ata-test.img
 	@truncate -s 16M build/asteros-ata-test.img
-	@QEMU="$(QEMU)" QEMU_TIMEOUT="$(QEMU_TIMEOUT)" bash scripts/qemu-smoke.sh -drive file=build/asteros-ata-test.img,format=raw,if=ide,index=0 -cdrom build/ai-os.iso -display none -serial stdio -no-reboot -no-shutdown
+	@QEMU="$(QEMU)" QEMU_TIMEOUT="$(QEMU_TIMEOUT)" bash scripts/qemu-smoke.sh -drive file=build/asteros-ata-test.img,format=raw,if=ide,index=0 -cdrom build/ai-os.iso -boot order=d -display none -serial stdio -no-reboot -no-shutdown
 
 check: check-toolchain check-keyboard check-editor check-tinylang-check check-gui check-fs check-ide-file check-terminal check-desktop-input check-ps2-wait check-net check-pci check-ne2k check-ata-pio check-examples check-listings check-compile check-inspect check-source
 	PYTHONPATH=toolchain $(PYTHON) toolchain/test_tinylang.py
