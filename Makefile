@@ -39,7 +39,7 @@ build:
 build/boot.o: boot/boot.S | build
 	$(AS) --32 $< -o $@
 
-build/kernel.o: kernel/kernel.c kernel/fs.h kernel/gui.h kernel/keyboard.h kernel/desktop_input.h kernel/ps2_wait.h kernel/net.h kernel/pci.h kernel/ne2k.h | build
+build/kernel.o: kernel/kernel.c kernel/fs.h kernel/gui.h kernel/keyboard.h kernel/desktop_input.h kernel/ps2_wait.h kernel/net.h kernel/pci.h kernel/ne2k.h kernel/ata_pio.h | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
 build/gui.o: kernel/gui.c kernel/gui.h kernel/fs.h kernel/ide_file.h kernel/terminal.h kernel/desktop_input.h kernel/editor.h kernel/tinylang_check.h | build
@@ -76,6 +76,9 @@ build/pci.o: kernel/pci.c kernel/pci.h | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
 build/ne2k.o: kernel/ne2k.c kernel/ne2k.h kernel/net.h kernel/pci.h | build
+	$(CC) $(CFLAGS) -c $< -o $@
+
+build/ata_pio.o: kernel/ata_pio.c kernel/ata_pio.h | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
 build/test-editor: kernel/editor.c kernel/editor.h tests/test_editor.c | build
@@ -138,6 +141,12 @@ build/test-ne2k: kernel/ne2k.c kernel/ne2k.h kernel/net.c kernel/net.h kernel/pc
 check-ne2k: build/test-ne2k
 	./build/test-ne2k
 
+build/test-ata-pio: kernel/ata_pio.c kernel/ata_pio.h tests/test_ata_pio.c | build
+	$(HOSTCC) $(HOSTCFLAGS) -Ikernel kernel/ata_pio.c tests/test_ata_pio.c -o $@
+
+check-ata-pio: build/test-ata-pio
+	./build/test-ata-pio
+
 build/test-desktop-input: kernel/desktop_input.c kernel/desktop_input.h tests/test_desktop_input.c | build
 	$(HOSTCC) $(HOSTCFLAGS) -Ikernel kernel/desktop_input.c tests/test_desktop_input.c -o $@
 
@@ -150,7 +159,7 @@ build/test-keyboard: kernel/keyboard.c kernel/keyboard.h tests/test_keyboard.c |
 check-keyboard: build/test-keyboard
 	./build/test-keyboard
 
-build/kernel.bin: build/boot.o build/kernel.o build/gui.o build/editor.o build/tinylang_check.o build/fs.o build/ide_file.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o build/pci.o build/ne2k.o linker.ld
+build/kernel.bin: build/boot.o build/kernel.o build/gui.o build/editor.o build/tinylang_check.o build/fs.o build/ide_file.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o build/pci.o build/ne2k.o build/ata_pio.o linker.ld
 	$(LD) $(LDFLAGS) -o $@ build/boot.o build/kernel.o build/gui.o build/editor.o build/tinylang_check.o build/fs.o build/ide_file.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o build/pci.o build/ne2k.o
 
 build/hello.com: toolchain/tinylang.py toolchain/examples/hello.tl | build
@@ -271,7 +280,13 @@ check-ne2k-iso: iso
 	@command -v $(QEMU) >/dev/null || (echo "error: missing QEMU binary $(QEMU)" >&2; exit 1)
 	@QEMU="$(QEMU)" QEMU_TIMEOUT="$(QEMU_TIMEOUT)" bash scripts/qemu-smoke.sh -cdrom build/ai-os.iso -display none -serial stdio -no-reboot -no-shutdown -netdev user,id=net0 -device ne2k_pci,netdev=net0
 
-check: check-toolchain check-keyboard check-editor check-tinylang-check check-gui check-fs check-ide-file check-terminal check-desktop-input check-ps2-wait check-net check-pci check-ne2k check-examples check-listings check-compile check-inspect check-source
+# Boot with a disposable primary-master IDE disk so the ATA probe path is exercised.
+check-ata-iso: iso
+	@command -v $(QEMU) >/dev/null || (echo "error: missing QEMU binary $(QEMU)" >&2; exit 1)
+	@truncate -s 16M build/asteros-ata-test.img
+	@QEMU="$(QEMU)" QEMU_TIMEOUT="$(QEMU_TIMEOUT)" bash scripts/qemu-smoke.sh -drive file=build/asteros-ata-test.img,format=raw,if=ide,index=0 -cdrom build/ai-os.iso -display none -serial stdio -no-reboot -no-shutdown
+
+check: check-toolchain check-keyboard check-editor check-tinylang-check check-gui check-fs check-ide-file check-terminal check-desktop-input check-ps2-wait check-net check-pci check-ne2k check-ata-pio check-examples check-listings check-compile check-inspect check-source
 	PYTHONPATH=toolchain $(PYTHON) toolchain/test_tinylang.py
 	$(MAKE) check-artifacts
 
@@ -289,4 +304,4 @@ run-iso: build/ai-os.iso
 clean:
 	rm -rf build
 
-.PHONY: all check check-artifacts check-iso check-ne2k-iso check-keyboard check-editor check-tinylang-check check-gui check-fs check-ide-file check-terminal check-desktop-input check-ps2-wait check-net check-pci check-ne2k check-toolchain check-examples check-listings check-compile check-inspect examples listings compile inspect check-source clean iso package-release program run run-iso test
+.PHONY: all check check-artifacts check-iso check-ne2k-iso check-ata-iso check-ata-pio check-keyboard check-editor check-tinylang-check check-gui check-fs check-ide-file check-terminal check-desktop-input check-ps2-wait check-net check-pci check-ne2k check-toolchain check-examples check-listings check-compile check-inspect examples listings compile inspect check-source clean iso package-release program run run-iso test
