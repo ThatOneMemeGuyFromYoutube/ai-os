@@ -80,11 +80,26 @@ static void test_save_dirty_guard_and_open_round_trip(void) {
     assert((asteros_gui_test_vga[8u * 80u + 27u] & 0xFFu) == '#');
 }
 
+static void test_ata_presence_is_reported_without_claiming_persistence(void) {
+    gui_init();
+    gui_set_ata_disk_present(1);
+    gui_handle_key('f');
+    assert(row_contains(6, "ATA PIO disk detected"));
+    assert(row_contains(6, "volatile"));
+
+    gui_init();
+    gui_set_ata_disk_present(0);
+    gui_handle_key('f');
+    assert(row_contains(6, "no ATA disk detected"));
+    assert(row_contains(6, "volatile"));
+}
+
 int main(void) {
     asteros_fs_init();
     gui_init();
     test_f5_diagnostic_and_cursor_navigation();
     test_save_dirty_guard_and_open_round_trip();
+    test_ata_presence_is_reported_without_claiming_persistence();
     puts("gui: IDE validation and file workflow tests passed");
     return 0;
 }
