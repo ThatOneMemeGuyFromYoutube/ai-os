@@ -1,3 +1,13 @@
+## 2026-11-23 — Add a bounded ATA PIO storage driver
+
+Added `kernel/ata_pio.c`/`kernel/ata_pio.h`, a freestanding primary-channel ATA PIO driver for LBA28 disks. It probes with IDENTIFY DEVICE, rejects absent devices, ATAPI signatures, disks without LBA support, and zero-capacity responses, and exposes bounded single-sector 512-byte reads/writes with CACHE FLUSH completion. All port access is injected through callbacks so host tests can exercise register programming, byte order, bounds, no-device/error/timeout paths, and write flushing without privileged I/O.
+
+Kernel startup probes only primary-master (ports 0x1F0/0x3F6) after the existing PCI/network setup. The Files app reports whether that device was detected. The probe issues no sector writes. A new disposable-disk QEMU target attaches a 16 MiB throwaway image; CI and release validation run it alongside the existing ISO and NE2K boot checks. GitHub Actions continue to force the Node 24 compatibility path.
+
+This is a driver foundation, not persistent IDE storage: the RAM filesystem is still volatile, the ATA sector API is not yet connected to a filesystem volume, and no partition or volume is automatically modified. Before enabling writes from the IDE, AsterOS must define and validate an explicit volume layout and add checksummed/crash-recoverable filesystem commits.
+
+Validation is pending the pull-request CI run; no release is published until the host suite, i686 build, ISO, and QEMU disk boot check pass.
+
 # Status
 
 ## 2026-11-22 — Add guest TinyLang diagnostics to the IDE
