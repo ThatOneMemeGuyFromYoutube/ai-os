@@ -89,6 +89,7 @@ static asteros_ata_status_t begin_sector(
         (uint16_t)(device->io_base + ATA_REG_LBA_HIGH), (uint8_t)(lba >> 16));
     device->io->out8(device->io->context,
         (uint16_t)(device->io_base + ATA_REG_STATUS_COMMAND), command);
+    io_delay(device);
     return wait_data_request(device);
 }
 
@@ -99,7 +100,7 @@ asteros_ata_status_t asteros_ata_pio_probe(
     uint16_t index;
     uint8_t status;
 
-    if (!device || !valid_io(io) || !io_base || !control_base || drive > 1u)
+    if (!device || !valid_io(io) || !io_base || io_base > 0xFFF8u || !control_base || drive > 1u)
         return ASTEROS_ATA_INVALID_ARGUMENT;
 
     device->io = io;
@@ -127,6 +128,7 @@ asteros_ata_status_t asteros_ata_pio_probe(
     io->out8(io->context, (uint16_t)(io_base + ATA_REG_LBA_HIGH), 0);
     io->out8(io->context, (uint16_t)(io_base + ATA_REG_STATUS_COMMAND),
              ATA_COMMAND_IDENTIFY);
+    io_delay(device);
 
     status = read_status(device);
     if (status == 0u || status == 0xFFu) return ASTEROS_ATA_NO_DEVICE;
@@ -201,6 +203,7 @@ asteros_ata_status_t asteros_ata_pio_write(
     device->io->out8(device->io->context,
         (uint16_t)(device->io_base + ATA_REG_STATUS_COMMAND),
         ATA_COMMAND_CACHE_FLUSH);
+    io_delay(device);
     return wait_not_busy(device);
 }
 
