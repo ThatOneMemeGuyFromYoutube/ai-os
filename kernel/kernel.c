@@ -7,10 +7,21 @@
 #include "pci.h"
 #include "ne2k.h"
 #include "fs.h"
+#include "ata_pio.h"
 enum { SVC_CONSOLE = 1, SVC_FILES = 2, SVC_PROCESS = 3 };
 #define PS2_WAIT_ATTEMPTS 100000u
 static uint8_t inb(uint16_t port) { uint8_t value; __asm__ volatile ("inb %1, %0" : "=a"(value) : "Nd"(port)); return value; }
 static void outb(uint16_t port,uint8_t value) { __asm__ volatile ("outb %0, %1" : : "a"(value), "Nd"(port)); }
+static uint16_t inw(uint16_t port) { uint16_t value; __asm__ volatile ("inw %1, %0" : "=a"(value) : "Nd"(port)); return value; }
+static void outw(uint16_t port,uint16_t value) { __asm__ volatile ("outw %0, %1" : : "a"(value), "Nd"(port)); }
+static uint8_t ata_in8(void *context,uint16_t port) { (void)context; return inb(port); }
+static uint16_t ata_in16(void *context,uint16_t port) { (void)context; return inw(port); }
+static void ata_out8(void *context,uint16_t port,uint8_t value) { (void)context; outb(port,value); }
+static void ata_out16(void *context,uint16_t port,uint16_t value) { (void)context; outw(port,value); }
+static const asteros_ata_io_t ata_io = {
+    0, ata_in8, ata_in16, ata_out8, ata_out16
+};
+static asteros_ata_device_t ata_primary_master;
 
 /* Use the PIT as a polled monotonic clock; the kernel currently has no IRQ
    timer path. Channel 0 runs at the standard 1.193182 MHz input clock. */
@@ -112,7 +123,11 @@ void kmain(void){
     asteros_pci_init();
     asteros_ne2k_init_default();
     asteros_fs_init();
+    /* Probe only: no sector is written until a validated AsterOS volume exists. */
+    (void)asteros_ata_pio_probe(&ata_primary_master, &ata_io,
+                                0x1F0u, 0x3F6u, 0u);
     gui_init();
+    gui_set_ata_disk_present(ata_primary_master.present);
     mouse_available=mouse_init();
     timer_init();
     keyboard_reset_state();
