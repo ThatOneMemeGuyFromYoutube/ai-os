@@ -61,7 +61,7 @@ static void fake_out8(void *context, uint16_t port, uint8_t value) {
     if (port == ATA_BASE + 7u) {
         fake->command = value;
         fake->data_index = 0;
-        fake->write_index = 0;
+        if (value == 0x30u) fake->write_index = 0;
         if (fake->no_device) fake->status = 0;
         else if (fake->stuck_busy) fake->status = 0x80u;
         else if (fake->device_error) fake->status = 0x01u;
