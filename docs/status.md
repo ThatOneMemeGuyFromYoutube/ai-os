@@ -6,7 +6,12 @@ Kernel startup probes only primary-master (ports 0x1F0/0x3F6) after the existing
 
 This is a driver foundation, not persistent IDE storage: the RAM filesystem is still volatile, the ATA sector API is not yet connected to a filesystem volume, and no partition or volume is automatically modified. Before enabling writes from the IDE, AsterOS must define and validate an explicit volume layout and add checksummed/crash-recoverable filesystem commits.
 
-Validation is pending the pull-request CI run; no release is published until the host suite, i686 build, ISO, and QEMU disk boot check pass.
+PR #45 was merged as `b287cf8bef9d6edea23eab0a70d3b14a6ed4144e` after both pull-request workflows passed on 2026-11-23:
+- [Build AI-OS](https://github.com/ThatOneMemeGuyFromYoutube/ai-os/actions/runs/45260818563) — full host suite (including ATA PIO tests), i686 kernel build, ISO, standard QEMU boot, NE2K boot, disposable ATA-disk boot, and build-artifact packaging.
+- [Build and test AsterOS](https://github.com/ThatOneMemeGuyFromYoutube/ai-os/actions/runs/45260818664) — full regression suite, i686 build, ISO, and all three QEMU boot configurations.
+- Both workflows forced the GitHub Actions Node 24 compatibility path.
+
+The disposable-disk QEMU check verifies the attached-disk startup path only; it does not issue sector reads/writes. The host mock-I/O tests exercise sector transfer programming, byte order, LBA bounds, timeout/error handling, and cache-flush sequencing. The main-branch release workflow is expected to publish the validated build after merge.
 
 # Status
 
