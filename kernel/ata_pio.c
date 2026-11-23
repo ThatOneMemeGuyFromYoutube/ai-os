@@ -116,8 +116,10 @@ asteros_ata_status_t asteros_ata_pio_probe(
              (uint8_t)(0xA0u | (drive << 4)));
     io_delay(device);
 
-    if (wait_not_busy(device) != ASTEROS_ATA_OK)
-        return wait_not_busy(device);
+    {
+        asteros_ata_status_t result = wait_not_busy(device);
+        if (result != ASTEROS_ATA_OK) return result;
+    }
 
     io->out8(io->context, (uint16_t)(io_base + ATA_REG_SECTOR_COUNT), 0);
     io->out8(io->context, (uint16_t)(io_base + ATA_REG_LBA_LOW), 0);
