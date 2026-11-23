@@ -88,8 +88,8 @@ static void fake_init(fake_ata_t *fake, asteros_ata_io_t *io) {
     memset(fake, 0, sizeof *fake);
     fake->status = 0x50u;
     fake->identify[49] = 0x0200u;
-    fake->identify[60] = 0x1234u;
-    fake->identify[61] = 0x0001u;
+    fake->identify[60] = 0x0000u;
+    fake->identify[61] = 0x0200u;
     for (index = 0; index < 256u; index++)
         fake->read_words[index] = (uint16_t)(0xA000u + index);
     *io = fake_io_template;
@@ -102,7 +102,7 @@ static void probe_ok(fake_ata_t *fake, asteros_ata_io_t *io,
     assert(asteros_ata_pio_probe(device, io, ATA_BASE, ATA_CONTROL, 0) ==
            ASTEROS_ATA_OK);
     assert(device->present == 1u);
-    assert(device->sectors == 0x00011234u);
+    assert(device->sectors == 0x02000000u);
 }
 
 static void test_probe_and_rejections(void) {
