@@ -11,7 +11,9 @@ PR #45 was merged as `b287cf8bef9d6edea23eab0a70d3b14a6ed4144e` after both pull-
 - [Build and test AsterOS](https://github.com/ThatOneMemeGuyFromYoutube/ai-os/actions/runs/45260818664) — full regression suite, i686 build, ISO, and all three QEMU boot configurations.
 - Both workflows forced the GitHub Actions Node 24 compatibility path.
 
-The disposable-disk QEMU check verifies the attached-disk startup path only; it does not issue sector reads/writes. The host mock-I/O tests exercise sector transfer programming, byte order, LBA bounds, timeout/error handling, and cache-flush sequencing. The main-branch release workflow is expected to publish the validated build after merge.
+The disposable-disk QEMU check verifies the attached-disk startup path only; it does not issue sector reads/writes. The host mock-I/O tests exercise sector transfer programming, byte order, LBA bounds, timeout/error handling, and cache-flush sequencing. Published [AsterOS v0.1.91](https://github.com/ThatOneMemeGuyFromYoutube/ai-os/releases/tag/v0.1.91) from the merge commit, with the kernel/build archive, bootable ISO, and SHA-256 manifest.
+
+A follow-up status-documentation commit triggered the existing main-push release workflow again, producing [v0.1.92](https://github.com/ThatOneMemeGuyFromYoutube/ai-os/releases/tag/v0.1.92) from the same OS code. That second package contains no additional OS behavior; it is a documentation-only rebuild. The current build workflow publishes on every push to main, including status-only commits. Use `[skip ci]` for future post-validation log-only corrections or gate the release step on OS/build changes to avoid duplicate releases.
 
 # Status
 
