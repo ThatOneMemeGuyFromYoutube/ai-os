@@ -43,7 +43,7 @@ static uint16_t fake_in16(void *context, uint16_t port) {
     } else if (fake->command == 0x20u) {
         value = fake->read_words[fake->data_index++];
     }
-    if (fake->data_index == 256u) fake->status = 0;
+    if (fake->data_index == 256u) fake->status = 0x50u;
     return value;
 }
 
@@ -67,7 +67,7 @@ static void fake_out8(void *context, uint16_t port, uint8_t value) {
         else if (fake->device_error) fake->status = 0x01u;
         else if (value == 0xECu || value == 0x20u || value == 0x30u)
             fake->status = 0x08u;
-        else fake->status = 0;
+        else fake->status = 0x50u;
     }
 }
 
@@ -76,7 +76,7 @@ static void fake_out16(void *context, uint16_t port, uint16_t value) {
     assert(port == ATA_BASE);
     assert(fake->write_index < 256u);
     fake->written_words[fake->write_index++] = value;
-    if (fake->write_index == 256u) fake->status = 0;
+    if (fake->write_index == 256u) fake->status = 0x50u;
 }
 
 static const asteros_ata_io_t fake_io_template = {
@@ -86,6 +86,7 @@ static const asteros_ata_io_t fake_io_template = {
 static void fake_init(fake_ata_t *fake, asteros_ata_io_t *io) {
     uint16_t index;
     memset(fake, 0, sizeof *fake);
+    fake->status = 0x50u;
     fake->identify[49] = 0x0200u;
     fake->identify[60] = 0x1234u;
     fake->identify[61] = 0x0001u;
