@@ -64,6 +64,10 @@ jobs:
         run: |
           make QEMU=qemu-system-i386 QEMU_TIMEOUT=8 check-ne2k-iso
 
+      - name: Boot-test ISO with disposable ATA disk
+        run: |
+          make QEMU=qemu-system-i386 QEMU_TIMEOUT=8 check-ata-iso
+
       - name: Generate checksums
         run: |
           sha256sum build/kernel.bin build/hello.com build/ai-os.iso > build/SHA256SUMS
