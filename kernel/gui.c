@@ -68,6 +68,7 @@ static uint8_t editor_prompt_mode;
 static char editor_status[TERM_INPUT_MAX + 1u];
 static char files_status[TERM_INPUT_MAX + 1u];
 static uint8_t files_selected;
+static uint8_t ata_disk_present;
 static const char editor_default_source[] =
     "# TinyLang source editor\nmov eax, 42\nadd eax, 1\nexit";
 static const char *items[] = {"Terminal", "Files", "Programs", "About", "Settings", "IDE"};
@@ -441,7 +442,7 @@ static void draw_files(void){
     uint8_t count=asteros_fs_count();
     uint8_t index;
     text(22,5,"RAM filesystem",ATTR_STATUS);
-    text(22,6,"8.3 filenames | volatile: lost on reboot",ATTR_NORMAL);
+    text(22,6,ata_disk_present?"8.3 files volatile | ATA PIO disk detected":"8.3 files volatile | no ATA disk detected",ATTR_NORMAL);
     text(22,7,"NAME                         TYPE",ATTR_PANEL);
     if(count==0){
         text(22,9,"No files. Use IDE Ctrl+Alt+S to create one.",ATTR_NORMAL);
@@ -577,7 +578,8 @@ static void draw_selected_app(void){
     }
 }
 void gui_draw(void){cursor_clear();fill(0,0,WIDTH,HEIGHT,' ',ATTR_NORMAL);fill(0,0,WIDTH,1,' ',ATTR_TITLE);text(2,0,"AsterOS",ATTR_TITLE);text(68,0,"Desktop",ATTR_TITLE);border(1,2,18,19);text(3,3,"Applications",ATTR_PANEL);for(uint8_t i=0;i<ASTEROS_APP_COUNT;i++)text(3,(uint8_t)(5+i*2),items[i],i==selected?ATTR_SELECT:ATTR_PANEL);draw_desktop_surface();border(20,2,59,19);text(22,3,"Welcome to AsterOS",ATTR_NORMAL);draw_selected_app();draw_taskbar();draw_context_menu();cursor_draw();}
-void gui_init(void){selected=0;keyboard_click_enabled=1;context_menu_open=0;context_menu_selection=ASTEROS_CONTEXT_MENU_OPEN;context_menu_target=ASTEROS_HIT_NONE;active_app=-1;mouse_x=WIDTH*2;mouse_y=HEIGHT*2;cursor_active=0;cursor_visible=1;cursor_speed=1;cursor_shape=0;cursor_color=0;terminal_result=TERM_READY;terminal_output[0]='\0';terminal_history_clear(&terminal_history_state);terminal_history_output[0]='\0';terminal_reset_input();editor_prompt_mode=EDITOR_PROMPT_NONE;editor_prompt_length=0;editor_status[0]='\0';asteros_ide_file_init(&editor_file,"HELLO.TL");set_short_status(files_status,"RAM files are volatile");files_selected=0;(void)asteros_fs_write(editor_file.name,(const uint8_t *)editor_default_source,(uint16_t)(sizeof editor_default_source-1u));asteros_editor_init(&editor_state,editor_default_source);editor_scroll_line=0;gui_draw();}
+void gui_init(void){ata_disk_present=0;selected=0;keyboard_click_enabled=1;context_menu_open=0;context_menu_selection=ASTEROS_CONTEXT_MENU_OPEN;context_menu_target=ASTEROS_HIT_NONE;active_app=-1;mouse_x=WIDTH*2;mouse_y=HEIGHT*2;cursor_active=0;cursor_visible=1;cursor_speed=1;cursor_shape=0;cursor_color=0;terminal_result=TERM_READY;terminal_output[0]='\0';terminal_history_clear(&terminal_history_state);terminal_history_output[0]='\0';terminal_reset_input();editor_prompt_mode=EDITOR_PROMPT_NONE;editor_prompt_length=0;editor_status[0]='\0';asteros_ide_file_init(&editor_file,"HELLO.TL");set_short_status(files_status,"RAM files are volatile");files_selected=0;(void)asteros_fs_write(editor_file.name,(const uint8_t *)editor_default_source,(uint16_t)(sizeof editor_default_source-1u));asteros_editor_init(&editor_state,editor_default_source);editor_scroll_line=0;gui_draw();}
+void gui_set_ata_disk_present(uint8_t present){ata_disk_present=(uint8_t)(present!=0);}
 void gui_handle_key(char key){
     uint8_t event=(uint8_t)key;
     if(event==ASTEROS_KEY_CLOSE_APP){
