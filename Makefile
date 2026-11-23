@@ -283,6 +283,7 @@ check-ne2k-iso: iso
 # Boot with a disposable primary-master IDE disk so the ATA probe path is exercised.
 check-ata-iso: iso
 	@command -v $(QEMU) >/dev/null || (echo "error: missing QEMU binary $(QEMU)" >&2; exit 1)
+	@rm -f build/asteros-ata-test.img
 	@truncate -s 16M build/asteros-ata-test.img
 	@QEMU="$(QEMU)" QEMU_TIMEOUT="$(QEMU_TIMEOUT)" bash scripts/qemu-smoke.sh -drive file=build/asteros-ata-test.img,format=raw,if=ide,index=0 -cdrom build/ai-os.iso -display none -serial stdio -no-reboot -no-shutdown
 
