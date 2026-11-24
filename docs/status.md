@@ -25,8 +25,11 @@ The first CI firmware build exposed a toolchain collision: the repository's
 workflow-level `CC`/`LD` point to the i686 kernel cross-toolchain, while the
 SeaBIOS build probe compiles and links host test objects. The script now passes
 host `gcc`/`ld` and `python3` explicitly (overridable with `ASTERBIOS_CC`,
-`ASTERBIOS_LD`, and `ASTERBIOS_PYTHON`) instead of weakening the upstream
-linker compatibility check. The follow-up CI run must confirm this correction.
+`ASTERBIOS_LD`, and `ASTERBIOS_PYTHON`) and applies a small documented patch
+that compiles the alignment probe as i386 and asks GNU ld for `elf_i386`
+emulation. The patch is shipped beside the exact upstream source archive; it
+changes only the test probe, not BIOS runtime code. Follow-up CI must confirm
+this correction.
 
 This is an upstream-derived branded build, not yet an independently developed
 firmware implementation: no upstream firmware logic has been modified. The
