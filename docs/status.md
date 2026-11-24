@@ -21,6 +21,13 @@ selection and reset-time firmware switch. CI adds a QEMU boot attempt using the
 custom ROM. Do not mark the side project fully validated until those workflows
 pass and the deployed v86 browser path has been manually exercised.
 
+The first CI firmware build exposed a toolchain collision: the repository's
+workflow-level `CC`/`LD` point to the i686 kernel cross-toolchain, while the
+SeaBIOS build probe compiles and links host test objects. The script now passes
+host `gcc`/`ld` and `python3` explicitly (overridable with `ASTERBIOS_CC`,
+`ASTERBIOS_LD`, and `ASTERBIOS_PYTHON`) instead of weakening the upstream
+linker compatibility check. The follow-up CI run must confirm this correction.
+
 This is an upstream-derived branded build, not yet an independently developed
 firmware implementation: no upstream firmware logic has been modified. The
 roadmap therefore requires a pinned and reproducible source build, boot/service
