@@ -36,8 +36,11 @@ Build it with:
 make asterbios
 ```
 
-The result is `build/firmware/asterbios.bin`. The source archive and
-`COPYING`/ `COPYING.LESSER` notices are beside it. The build requires Git,
+The result is `build/firmware/asterbios.bin`. The exact source archive, the `seabios.config` build profile,
+`compat-test-link-i386.patch`, and the `COPYING`/`COPYING.LESSER` notices
+are beside it. The profile targets the 128 KiB system-BIOS window used by v86:
+it keeps QEMU/IDE, floppy, PS/2, PCI, and ACPI support while disabling USB and
+non-IDE storage controllers to stay within that ROM size. The build requires Git,
 GNU make, a host GCC/binutils toolchain, and Python 3 as required by SeaBIOS.
 The default kernel/ISO build does not download or depend on this optional
 firmware project.
@@ -51,7 +54,8 @@ make run-asterbios-iso QEMU=qemu-system-i386
 
 This bounded boot check demonstrates firmware-to-GRUB-to-kernel compatibility;
 it does not establish compatibility with arbitrary operating systems or
-physical PCs. No firmware binary is committed to the repository.
+physical PCs. The reduced 128 KiB profile is intended for the project's QEMU/v86
+development path, not as a drop-in replacement for a full-featured PC BIOS. No firmware binary is committed to the repository.
 
 ## Roadmap
 

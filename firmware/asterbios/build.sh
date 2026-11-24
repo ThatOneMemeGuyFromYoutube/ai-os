@@ -11,6 +11,7 @@ SEABIOS_MIRROR_URL="${SEABIOS_MIRROR_URL:-https://github.com/qemu/seabios.git}"
 ASTERBIOS_CC="${ASTERBIOS_CC:-gcc}"
 ASTERBIOS_LD="${ASTERBIOS_LD:-ld}"
 ASTERBIOS_PYTHON="${ASTERBIOS_PYTHON:-python3}"
+CONFIG_FILE="$ROOT_DIR/firmware/asterbios/seabios.config"
 source_url="existing checkout"
 
 mkdir -p "$OUTPUT_DIR"
@@ -44,6 +45,13 @@ if [ "$actual_tag" != "$SEABIOS_TAG" ] || [ "$actual_commit" != "$SEABIOS_COMMIT
 fi
 
 PATCH_FILE="$ROOT_DIR/firmware/asterbios/compat-test-link-i386.patch"
+cp "$CONFIG_FILE" "$SOURCE_DIR/.config"
+make -C "$SOURCE_DIR" olddefconfig
+if ! grep -qx 'CONFIG_QEMU=y' "$SOURCE_DIR/.config" ||
+   ! grep -qx 'CONFIG_ROM_SIZE=128' "$SOURCE_DIR/.config"; then
+  echo "error: SeaBIOS did not retain the AsterOS 128 KiB QEMU configuration" >&2
+  exit 1
+fi
 if git -C "$SOURCE_DIR" apply --check "$PATCH_FILE"; then
   git -C "$SOURCE_DIR" apply "$PATCH_FILE"
 elif git -C "$SOURCE_DIR" apply --reverse --check "$PATCH_FILE"; then
@@ -67,7 +75,8 @@ git -C "$SOURCE_DIR" archive --format=tar.gz --prefix="seabios-$SEABIOS_TAG/" "$
 cp "$SOURCE_DIR/COPYING" "$OUTPUT_DIR/SeaBIOS-COPYING"
 cp "$SOURCE_DIR/COPYING.LESSER" "$OUTPUT_DIR/SeaBIOS-COPYING.LESSER"
 cp "$PATCH_FILE" "$OUTPUT_DIR/asterbios-build.patch"
-printf "SeaBIOS tag: %s\nSeaBIOS commit: %s\nSeaBIOS source URL: %s\nAsterBIOS suffix: -AsterOS\nBuild patch: compat-test-link-i386.patch\n" "$SEABIOS_TAG" "$actual_commit" "$source_url" > "$OUTPUT_DIR/asterbios-build-info.txt"
+cp "$CONFIG_FILE" "$OUTPUT_DIR/asterbios-seabios.config"
+printf "SeaBIOS tag: %s\nSeaBIOS commit: %s\nSeaBIOS source URL: %s\nSeaBIOS config: asterbios-seabios.config\nAsterBIOS suffix: -AsterOS\nBuild patch: compat-test-link-i386.patch\n" "$SEABIOS_TAG" "$actual_commit" "$source_url" > "$OUTPUT_DIR/asterbios-build-info.txt"
 printf 'Built AsterBIOS from SeaBIOS %s (%s)\n' "$SEABIOS_TAG" "$actual_commit"
 printf 'ROM: %s\n' "$OUTPUT_DIR/asterbios.bin"
 printf 'Corresponding source: %s\n' "$OUTPUT_DIR/asterbios-source-$SEABIOS_TAG.tar.gz"
