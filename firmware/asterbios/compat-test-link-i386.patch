@@ -7,7 +7,7 @@ diff --git a/scripts/test-build.sh b/scripts/test-build.sh
 +$CC -m32 -O -g -c $TMPFILE1 -o $TMPFILE1o > /dev/null 2>&1
  if [ $? -ne 0 ]; then
 @@ -37,3 +37,3 @@
- 
+ fi
 -$LD -T $TMPFILE1_ld $TMPFILE1o -o $TMPFILE2o > /dev/null 2>&1
 +$LD -m elf_i386 -T $TMPFILE1_ld $TMPFILE1o -o $TMPFILE2o > /dev/null 2>&1
  if [ $? -ne 0 ]; then
