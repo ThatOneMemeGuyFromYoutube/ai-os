@@ -16,7 +16,7 @@ REGISTERS = ("eax", "ecx", "edx", "ebx", "esi", "edi")
 def is_lua_source(source: str) -> bool:
     for raw in source.splitlines():
         line = raw.strip()
-        if not line or line.startswith("--"):
+        if not line or line.startswith("--") or line.startswith("#"):
             continue
         return line.startswith("local ") or line == "return" or bool(ASSIGN.match(line))
     return False
