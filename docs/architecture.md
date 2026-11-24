@@ -2,7 +2,7 @@
 
 AsterOS deliberately keeps the classic CP/M family separation visible:
 
-- **Boot layer:** GRUB/multiboot-compatible i386 entry point.
+- **Firmware/boot layer:** SeaBIOS remains the default PC firmware in QEMU and v86; an optional AsterBIOS SeaBIOS-derived ROM can be selected for emulator testing. Both firmware paths boot the same GRUB/Multiboot-compatible i386 kernel entry point.
 - **Kernel:** protected-mode memory, interrupts, drivers, and process primitives.
 - **BDOS-like service layer (planned):** the future stable application ABI for console, filesystem, and process operations; the current RAM-file API remains kernel-internal.
 - **CCP:** command interpreter responsible for launching resident commands and transient programs.
