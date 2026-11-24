@@ -40,7 +40,7 @@ build:
 build/boot.o: boot/boot.S | build
 	$(AS) --32 $< -o $@
 
-build/kernel.o: kernel/kernel.c kernel/fs.h kernel/gui.h kernel/keyboard.h kernel/desktop_input.h kernel/ps2_wait.h kernel/net.h kernel/arp.h kernel/pci.h kernel/ne2k.h kernel/ata_pio.h | build
+build/kernel.o: kernel/kernel.c kernel/fs.h kernel/gui.h kernel/keyboard.h kernel/desktop_input.h kernel/ps2_wait.h kernel/net.h kernel/arp.h kernel/ipv4.h kernel/icmp.h kernel/pci.h kernel/ne2k.h kernel/ata_pio.h | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
 build/gui.o: kernel/gui.c kernel/gui.h kernel/fs.h kernel/ide_file.h kernel/terminal.h kernel/desktop_input.h kernel/editor.h kernel/tinylang_check.h | build
@@ -74,6 +74,12 @@ build/net.o: kernel/net.c kernel/net.h | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
 build/arp.o: kernel/arp.c kernel/arp.h kernel/net.h | build
+	$(CC) $(CFLAGS) -c $< -o $@
+
+build/ipv4.o: kernel/ipv4.c kernel/ipv4.h kernel/net.h | build
+	$(CC) $(CFLAGS) -c $< -o $@
+
+build/icmp.o: kernel/icmp.c kernel/icmp.h kernel/ipv4.h kernel/net.h | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
 build/pci.o: kernel/pci.c kernel/pci.h | build
@@ -139,6 +145,18 @@ build/test-arp: kernel/arp.c kernel/arp.h kernel/net.c kernel/net.h tests/test_a
 check-arp: build/test-arp
 	./build/test-arp
 
+build/test-ipv4: kernel/ipv4.c kernel/ipv4.h kernel/net.c kernel/net.h tests/test_ipv4.c | build
+	$(HOSTCC) $(HOSTCFLAGS) -Ikernel kernel/ipv4.c kernel/net.c tests/test_ipv4.c -o $@
+
+check-ipv4: build/test-ipv4
+	./build/test-ipv4
+
+build/test-icmp: kernel/icmp.c kernel/icmp.h kernel/ipv4.c kernel/ipv4.h kernel/net.c kernel/net.h tests/test_icmp.c | build
+	$(HOSTCC) $(HOSTCFLAGS) -Ikernel kernel/icmp.c kernel/ipv4.c kernel/net.c tests/test_icmp.c -o $@
+
+check-icmp: build/test-icmp
+	./build/test-icmp
+
 build/test-pci: kernel/pci.c kernel/pci.h tests/test_pci.c | build
 	$(HOSTCC) $(HOSTCFLAGS) -Ikernel kernel/pci.c tests/test_pci.c -o $@
 
@@ -169,8 +187,8 @@ build/test-keyboard: kernel/keyboard.c kernel/keyboard.h tests/test_keyboard.c |
 check-keyboard: build/test-keyboard
 	./build/test-keyboard
 
-build/kernel.bin: build/boot.o build/kernel.o build/gui.o build/editor.o build/tinylang_check.o build/fs.o build/ide_file.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o build/arp.o build/pci.o build/ne2k.o build/ata_pio.o linker.ld
-	$(LD) $(LDFLAGS) -o $@ build/boot.o build/kernel.o build/gui.o build/editor.o build/tinylang_check.o build/fs.o build/ide_file.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o build/arp.o build/pci.o build/ne2k.o build/ata_pio.o
+build/kernel.bin: build/boot.o build/kernel.o build/gui.o build/editor.o build/tinylang_check.o build/fs.o build/ide_file.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o build/arp.o build/ipv4.o build/icmp.o build/pci.o build/ne2k.o build/ata_pio.o linker.ld
+	$(LD) $(LDFLAGS) -o $@ build/boot.o build/kernel.o build/gui.o build/editor.o build/tinylang_check.o build/fs.o build/ide_file.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o build/arp.o build/ipv4.o build/icmp.o build/pci.o build/ne2k.o build/ata_pio.o
 
 build/hello.com: toolchain/tinylang.py toolchain/examples/hello.tl | build
 	$(PYTHON) toolchain/tinylang.py toolchain/examples/hello.tl $@
@@ -296,8 +314,8 @@ check-ne2k-iso: iso
 	@command -v $(QEMU) >/dev/null || (echo "error: missing QEMU binary $(QEMU)" >&2; exit 1)
 	@QEMU="$(QEMU)" QEMU_TIMEOUT="$(QEMU_TIMEOUT)" bash scripts/qemu-smoke.sh -cdrom build/ai-os.iso -display none -serial stdio -no-reboot -no-shutdown -netdev user,id=net0 -device ne2k_pci,netdev=net0
 
-# Exchange an ARP request/reply with a deterministic host peer over QEMU's
-# length-prefixed TCP socket backend; this exercises guest RX and TX paths.
+# Exchange ARP and IPv4 ICMP echo frames with a deterministic QEMU socket peer.
+# This exercises the guest receive path and hardware-backed transmit path.
 check-ne2k-peer-iso: iso
 	@command -v $(QEMU) >/dev/null || (echo "error: missing QEMU binary $(QEMU)" >&2; exit 1)
 	$(PYTHON) scripts/ne2k-peer-smoke.py --qemu "$(QEMU)" --iso build/ai-os.iso --timeout "$(NE2K_PEER_TIMEOUT)"
@@ -318,7 +336,7 @@ check-ata-iso: iso
 	@truncate -s 16M build/asteros-ata-test.img
 	@QEMU="$(QEMU)" QEMU_TIMEOUT="$(QEMU_TIMEOUT)" bash scripts/qemu-smoke.sh -drive file=build/asteros-ata-test.img,format=raw,if=ide,index=0 -cdrom build/ai-os.iso -boot order=d -display none -serial stdio -no-reboot -no-shutdown
 
-check: check-toolchain check-keyboard check-editor check-tinylang-check check-gui check-fs check-ide-file check-terminal check-desktop-input check-ps2-wait check-net check-arp check-pci check-ne2k check-ata-pio check-examples check-listings check-compile check-inspect check-source
+check: check-toolchain check-keyboard check-editor check-tinylang-check check-gui check-fs check-ide-file check-terminal check-desktop-input check-ps2-wait check-net check-arp check-ipv4 check-icmp check-pci check-ne2k check-ata-pio check-examples check-listings check-compile check-inspect check-source
 	PYTHONPATH=toolchain $(PYTHON) toolchain/test_tinylang.py
 	$(MAKE) check-artifacts
 
@@ -336,4 +354,4 @@ run-iso: build/ai-os.iso
 clean:
 	rm -rf build
 
-.PHONY: all check check-artifacts asterbios run-asterbios-iso check-iso check-ne2k-iso check-ne2k-peer-iso check-asterbios-iso check-ata-iso check-ata-pio check-keyboard check-editor check-tinylang-check check-gui check-fs check-ide-file check-terminal check-desktop-input check-ps2-wait check-net check-arp check-pci check-ne2k check-toolchain check-examples check-listings check-compile check-inspect examples listings compile inspect check-source clean iso package-release program run run-iso test
+.PHONY: all check check-artifacts asterbios run-asterbios-iso check-iso check-ne2k-iso check-ne2k-peer-iso check-asterbios-iso check-ata-iso check-ata-pio check-keyboard check-editor check-tinylang-check check-gui check-fs check-ide-file check-terminal check-desktop-input check-ps2-wait check-net check-arp check-ipv4 check-icmp check-pci check-ne2k check-toolchain check-examples check-listings check-compile check-inspect examples listings compile inspect check-source clean iso package-release program run run-iso test

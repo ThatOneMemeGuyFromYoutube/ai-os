@@ -43,12 +43,18 @@ static uint8_t mac_address_equal(const uint8_t *left, const uint8_t *right) {
 static uint8_t mac_address_valid(const uint8_t address[6]) {
     uint8_t index;
     uint8_t any_nonzero = 0;
-
-    if (address[0] & 1u) return 0;
-    for (index = 0; index < 6u; index++) {
+    if (!address || (address[0] & 1u)) return 0;
+    for (index = 0; index < 6u; index++)
         if (address[index]) any_nonzero = 1;
-    }
     return any_nonzero;
+}
+
+static uint8_t mac_address_broadcast(const uint8_t address[6]) {
+    uint8_t index;
+    if (!address) return 0;
+    for (index = 0; index < 6u; index++)
+        if (address[index] != 0xFFu) return 0;
+    return 1;
 }
 
 static asteros_arp_binding_t *find_binding(asteros_netif_t *interface) {
@@ -59,8 +65,11 @@ static asteros_arp_binding_t *find_binding(asteros_netif_t *interface) {
     return 0;
 }
 
-static void receive_arp(asteros_netif_t *interface, const uint8_t *packet,
-                        uint16_t length, void *context) {
+static void receive_arp(asteros_netif_t *interface,
+                        const uint8_t *source_mac,
+                        const uint8_t *destination_mac,
+                        const uint8_t *packet, uint16_t length,
+                        void *context) {
     asteros_arp_binding_t *binding;
     const uint8_t *sender_mac;
     const uint8_t *sender_ipv4;
@@ -69,7 +78,8 @@ static void receive_arp(asteros_netif_t *interface, const uint8_t *packet,
     uint8_t index;
 
     (void)context;
-    if (!interface || !packet || length < ASTEROS_ARP_PACKET_SIZE) return;
+    if (!interface || !source_mac || !destination_mac || !packet ||
+        length < ASTEROS_ARP_PACKET_SIZE) return;
     binding = find_binding(interface);
     if (!binding) return;
 
@@ -82,6 +92,9 @@ static void receive_arp(asteros_netif_t *interface, const uint8_t *packet,
     sender_ipv4 = packet + 14u;
     target_ipv4 = packet + 24u;
     if (!mac_address_valid(sender_mac) ||
+        !mac_address_equal(sender_mac, source_mac) ||
+        (!mac_address_equal(destination_mac, interface->mac) &&
+         !mac_address_broadcast(destination_mac)) ||
         mac_address_equal(sender_mac, interface->mac) ||
         !ipv4_equal(target_ipv4, binding->ipv4_address))
         return;

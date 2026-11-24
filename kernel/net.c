@@ -178,7 +178,8 @@ asteros_net_result_t asteros_netif_receive_frame(asteros_netif_t *interface,
     if (index < 0) return ASTEROS_NET_NO_HANDLER;
 
     protocol = &protocols[(uint8_t)index];
-    protocol->handler(interface, frame + ASTEROS_ETHERNET_HEADER_SIZE,
+    protocol->handler(interface, frame + 6u, frame,
+                      frame + ASTEROS_ETHERNET_HEADER_SIZE,
                       (uint16_t)(length - ASTEROS_ETHERNET_HEADER_SIZE),
                       protocol->context);
     return ASTEROS_NET_OK;

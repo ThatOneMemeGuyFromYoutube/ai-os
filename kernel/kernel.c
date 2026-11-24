@@ -5,6 +5,8 @@
 #include "ps2_wait.h"
 #include "net.h"
 #include "arp.h"
+#include "ipv4.h"
+#include "icmp.h"
 #include "pci.h"
 #include "ne2k.h"
 #include "fs.h"
@@ -125,10 +127,14 @@ void kmain(void){
     asteros_net_init();
     asteros_pci_init();
     asteros_ne2k_init_default();
-    if (asteros_arp_init() == ASTEROS_ARP_OK &&
-        asteros_netif_count() != 0u) {
+    (void)asteros_arp_init();
+    (void)asteros_ipv4_init();
+    (void)asteros_icmp_init();
+    if (asteros_netif_count() != 0u) {
         (void)asteros_arp_configure(asteros_netif_at(0),
                                     network_ipv4_address);
+        (void)asteros_ipv4_configure(asteros_netif_at(0),
+                                     network_ipv4_address);
     }
     asteros_fs_init();
     /* Probe only: no sector is written until a validated AsterOS volume exists. */

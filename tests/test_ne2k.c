@@ -291,11 +291,16 @@ static void test_initialization_and_transmit(void) {
     assert(driver.interface.link_up == 0u);
 }
 
-static void capture_frame(asteros_netif_t *interface, const uint8_t *payload,
-                          uint16_t length, void *context) {
+static void capture_frame(asteros_netif_t *interface,
+                          const uint8_t *source_mac,
+                          const uint8_t *destination_mac,
+                          const uint8_t *payload, uint16_t length,
+                          void *context) {
     received_frame_t *received = (received_frame_t *)context;
     uint16_t index;
     (void)interface;
+    (void)source_mac;
+    (void)destination_mac;
 
     received->calls++;
     received->length = length;
