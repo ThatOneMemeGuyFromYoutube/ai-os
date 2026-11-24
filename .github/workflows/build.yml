@@ -67,6 +67,7 @@ jobs:
       - name: Boot-test ISO with disposable ATA disk
         run: |
           make QEMU=qemu-system-i386 QEMU_TIMEOUT=8 check-ata-iso
+          make QEMU=qemu-system-i386 QEMU_TIMEOUT=8 check-asterbios-iso
 
       - name: Generate checksums
         run: |
