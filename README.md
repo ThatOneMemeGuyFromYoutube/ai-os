@@ -71,6 +71,31 @@ python3 toolchain/tinylang.py my_program.tl build/my_program.com
 
 The language supports a deliberately small set of 32-bit x86 operations (`mov`, `add`, `sub`, `int`, `jmp`, labels, `db`, and `exit`). This is enough to make real executable byte images now while the native/self-hosting compiler path is developed. The `db` directive accepts numeric bytes and double-quoted ASCII strings with `\n`, `\r`, `\t`, `\0`, `\\`, `\"`, and `\xHH` escapes.
 
+
+## Optional AsterBIOS firmware side project
+
+AsterOS now has an opt-in, AsterOS-branded legacy BIOS build for emulator
+experiments. The first iteration is based on the LGPLv3 SeaBIOS 1.17.0 source
+rather than a from-scratch firmware rewrite. It builds a separately named ROM,
+retains the corresponding upstream source archive and license notices, and
+can be exercised with `make check-asterbios-iso QEMU=qemu-system-i386`.
+The normal QEMU and v86 configurations continue using SeaBIOS by default.
+The v86 VGA BIOS is unchanged. See [firmware/asterbios](firmware/asterbios/README.md)
+for the build requirements, compatibility boundary, and staged roadmap.
+
+This optional side project must not block the active kernel/desktop/toolchain
+milestones. A firmware build alone is not proof of boot compatibility: keep
+AsterBIOS opt-in until both QEMU and v86 have been exercised, and retain
+SeaBIOS as the reliable fallback.
+
+### AsterBIOS side-project checklist
+
+- [x] Establish a reproducible, pinned SeaBIOS-derived AsterBIOS build with an AsterOS version suffix, ROM output, corresponding source archive, and upstream license texts.
+- [x] Add a separate QEMU ISO boot target using AsterBIOS without changing the SeaBIOS default.
+- [ ] Run the optional firmware build and QEMU boot target in CI; record exact source revision and validation outcome.
+- [ ] Add an opt-in v86 firmware selector, defaulting to SeaBIOS; publish the custom ROM and corresponding source with the Pages demo.
+- [ ] Add BIOS service and boot-contract regression coverage (boot device discovery, INT 10h/13h paths, memory map/Multiboot handoff) under QEMU and v86 before considering broader compatibility.
+
 ## Development checklist
 
 The schedule has been reset on **October 8, 2026** to recover the development time lost to repository-write access issues. Keep this schedule as the live planning source; the dates are targets, not evidence of completion. Do not mark a milestone complete just because its window has passed. Verify the implementation and tests first, then move to the next scheduled window. All work must continue to prioritize the actual repository state and the 32-bit i386/protected-mode target.

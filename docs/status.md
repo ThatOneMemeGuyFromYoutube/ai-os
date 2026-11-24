@@ -1,3 +1,42 @@
+## 2026-11-23 — Start optional AsterBIOS firmware side project
+
+Added `firmware/asterbios` as an opt-in firmware project. Repository review
+confirmed that QEMU's ISO smoke path currently uses its built-in firmware,
+while the v86 demo hard-codes `v86/seabios.bin`; the Pages workflow downloads
+that BIOS from a pinned v86 commit. The guest itself is GRUB/Multiboot v1 and
+does not need BIOS services after the kernel entry point.
+
+The first iteration deliberately reuses the mature SeaBIOS 1.17.0 implementation
+rather than attempting to recreate the PC firmware surface. Its build script
+checks out the named upstream release, builds with the `-AsterOS` version
+suffix, and emits the ROM, exact corresponding source archive, and upstream
+GPL/LGPL notices. `make asterbios` is optional; the default build and boot
+targets are unchanged. `make check-asterbios-iso` explicitly boots the normal
+AsterOS ISO using the alternative system BIOS. The VGA BIOS remains unchanged.
+
+The browser demo now has an optional system-BIOS selector, with SeaBIOS as its
+default and AsterBIOS selected only on request before Reset. The Pages build
+publishes the optional ROM and source archive. Host tests cover the default
+selection and reset-time firmware switch. CI adds a QEMU boot attempt using the
+custom ROM. Do not mark the side project fully validated until those workflows
+pass and the deployed v86 browser path has been manually exercised.
+
+The first CI firmware build exposed a toolchain collision: the repository's
+workflow-level `CC`/`LD` point to the i686 kernel cross-toolchain, while the
+SeaBIOS build probe compiles and links host test objects. The script now passes
+host `gcc`/`ld` and `python3` explicitly (overridable with `ASTERBIOS_CC`,
+`ASTERBIOS_LD`, and `ASTERBIOS_PYTHON`) and applies a small documented patch
+that compiles the alignment probe as i386 and asks GNU ld for `elf_i386`
+emulation. The patch is shipped beside the exact upstream source archive; it
+changes only the test probe, not BIOS runtime code. Follow-up CI must confirm
+this correction.
+
+This is an upstream-derived branded build, not yet an independently developed
+firmware implementation: no upstream firmware logic has been modified. The
+roadmap therefore requires a pinned and reproducible source build, boot/service
+regressions, and narrowly scoped AsterOS-specific changes only where tests show
+value. SeaBIOS stays the fallback and default.
+
 ## 2026-11-23 — Reopen desktop work for a real graphical presentation
 
 Repository review confirms the current desktop is not pixel graphics: `kernel/gui.c`

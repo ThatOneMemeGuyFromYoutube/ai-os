@@ -35,7 +35,8 @@ jobs:
           make check-iso QEMU=qemu-system-i386
           make check-ne2k-iso QEMU=qemu-system-i386
           make check-ata-iso QEMU=qemu-system-i386
-          sha256sum build/kernel.bin build/hello.com build/ai-os.iso > build/SHA256SUMS
+          make check-asterbios-iso QEMU=qemu-system-i386
+          sha256sum build/kernel.bin build/hello.com build/ai-os.iso build/firmware/asterbios.bin build/firmware/asterbios-source-rel-1.17.0.tar.gz build/firmware/asterbios-build.patch > build/SHA256SUMS
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v3
@@ -50,8 +51,16 @@ jobs:
             - `make check-iso QEMU=qemu-system-i386`
             - `make check-ne2k-iso QEMU=qemu-system-i386`
             - `make check-ata-iso QEMU=qemu-system-i386`
+            - `make check-asterbios-iso QEMU=qemu-system-i386` (optional AsterBIOS ROM; SeaBIOS remains default)
+            - AsterBIOS ROM, exact corresponding SeaBIOS source archive, build metadata, and upstream license texts are included as optional firmware artifacts.
           files: |
             build/kernel.bin
             build/hello.com
             build/ai-os.iso
+            build/firmware/asterbios.bin
+            build/firmware/asterbios-source-rel-1.17.0.tar.gz
+            build/firmware/asterbios-build-info.txt
+            build/firmware/asterbios-build.patch
+            build/firmware/SeaBIOS-COPYING
+            build/firmware/SeaBIOS-COPYING.LESSER
             build/SHA256SUMS

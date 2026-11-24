@@ -8,6 +8,8 @@ Use this checklist before publishing a release for the 32-bit x86 AsterOS projec
 make check
 make all
 make iso
+# Optional experimental firmware validation (SeaBIOS remains default)
+make check-asterbios-iso QEMU=qemu-system-i386
 ```
 
 `make check` runs the host regression suites for TinyLang, the guest TinyLang syntax checker, keyboard decoding, the editor buffer, the desktop IDE event path, desktop input, PS/2 waits, Ethernet, PCI, and the NE2K driver, then verifies generated program examples and artifacts. `make all` builds the i386 kernel; `make iso` assembles the bootable GRUB image.

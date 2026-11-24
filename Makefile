@@ -248,6 +248,12 @@ check-source:
 	@test -f "$(SOURCE)" || { echo "error: TinyLang source not found: $(SOURCE)" >&2; exit 1; }
 	$(PYTHON) toolchain/tinylang.py --check "$(SOURCE)"
 
+# Optional AsterOS-branded SeaBIOS derivative; not required for the default build.
+asterbios: build/firmware/asterbios.bin
+
+build/firmware/asterbios.bin: firmware/asterbios/build.sh | build
+	bash firmware/asterbios/build.sh
+
 iso: build/ai-os.iso
 
 build/ai-os.iso: build/kernel.bin iso/boot/grub/grub.cfg
@@ -280,6 +286,15 @@ check-ne2k-iso: iso
 	@command -v $(QEMU) >/dev/null || (echo "error: missing QEMU binary $(QEMU)" >&2; exit 1)
 	@QEMU="$(QEMU)" QEMU_TIMEOUT="$(QEMU_TIMEOUT)" bash scripts/qemu-smoke.sh -cdrom build/ai-os.iso -display none -serial stdio -no-reboot -no-shutdown -netdev user,id=net0 -device ne2k_pci,netdev=net0
 
+# Launch the ISO interactively with the optional AsterBIOS system ROM.
+run-asterbios-iso: iso build/firmware/asterbios.bin
+	$(QEMU) -bios build/firmware/asterbios.bin -cdrom build/ai-os.iso -no-reboot -no-shutdown
+
+# Boot the same ISO with the optional AsterBIOS system ROM; SeaBIOS remains default.
+check-asterbios-iso: iso build/firmware/asterbios.bin
+	@command -v $(QEMU) >/dev/null || (echo "error: missing QEMU binary $(QEMU)" >&2; exit 1)
+	@QEMU="$(QEMU)" QEMU_TIMEOUT="$(QEMU_TIMEOUT)" bash scripts/qemu-smoke.sh -bios build/firmware/asterbios.bin -cdrom build/ai-os.iso -display none -serial stdio -no-reboot -no-shutdown
+
 # Boot with a disposable primary-master IDE disk so the ATA probe path is exercised.
 check-ata-iso: iso
 	@command -v $(QEMU) >/dev/null || (echo "error: missing QEMU binary $(QEMU)" >&2; exit 1)
@@ -305,4 +320,4 @@ run-iso: build/ai-os.iso
 clean:
 	rm -rf build
 
-.PHONY: all check check-artifacts check-iso check-ne2k-iso check-ata-iso check-ata-pio check-keyboard check-editor check-tinylang-check check-gui check-fs check-ide-file check-terminal check-desktop-input check-ps2-wait check-net check-pci check-ne2k check-toolchain check-examples check-listings check-compile check-inspect examples listings compile inspect check-source clean iso package-release program run run-iso test
+.PHONY: all check check-artifacts asterbios run-asterbios-iso check-iso check-ne2k-iso check-asterbios-iso check-ata-iso check-ata-pio check-keyboard check-editor check-tinylang-check check-gui check-fs check-ide-file check-terminal check-desktop-input check-ps2-wait check-net check-pci check-ne2k check-toolchain check-examples check-listings check-compile check-inspect examples listings compile inspect check-source clean iso package-release program run run-iso test

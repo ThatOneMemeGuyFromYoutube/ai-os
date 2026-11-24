@@ -9,6 +9,7 @@
   var fullscreenButton = document.getElementById("fullscreen");
   var mouseButton = document.getElementById("mouse");
   var networkDevice = document.getElementById("network_device");
+  var firmwareDevice = document.getElementById("firmware_device");
   var emulator = null;
   var emulatorReady = false;
   var running = false;
@@ -23,6 +24,14 @@
 
   function selectedNetworkType() {
     return networkDevice && networkDevice.value !== "none" ? networkDevice.value : null;
+  }
+
+  function selectedFirmwareType() {
+    return firmwareDevice && firmwareDevice.value === "asterbios" ? "asterbios" : "seabios";
+  }
+
+  function firmwareLabel(type) {
+    return type === "asterbios" ? "AsterBIOS (experimental)" : "SeaBIOS";
   }
 
   function networkLabel(type) {
@@ -45,6 +54,7 @@
     fullscreenButton.disabled = !emulatorReady || transitioning;
     if (mouseButton) mouseButton.disabled = !canOperate;
     if (networkDevice) networkDevice.disabled = !emulatorReady || transitioning;
+    if (firmwareDevice) firmwareDevice.disabled = !emulatorReady || transitioning;
   }
 
   function setMouseState(locked) {
@@ -88,6 +98,7 @@
 
   function boot() {
     var networkType = selectedNetworkType();
+    var firmwareType = selectedFirmwareType();
     var modernApi = typeof window.V86 === "function";
     var V86Constructor = modernApi ? window.V86 : window.V86Starter;
     var options;
@@ -100,9 +111,7 @@
     if (mouseLocked && document.exitPointerLock) document.exitPointerLock();
     mouseLocked = false;
     updateControls();
-    setStatus(networkType
-      ? "Booting AsterOS with " + networkLabel(networkType) + " device…"
-      : "Booting AsterOS…");
+    setStatus("Booting AsterOS with " + firmwareLabel(firmwareType) + (networkType ? " and " + networkLabel(networkType) + " device…" : "…"));
 
     if (typeof V86Constructor !== "function") {
       failed = true;
@@ -116,7 +125,7 @@
       memory_size: 64 * 1024 * 1024,
       vga_memory_size: 8 * 1024 * 1024,
       screen: { container: screen, use_graphical_text: false },
-      bios: { url: "v86/seabios.bin" },
+      bios: { url: firmwareType === "asterbios" ? "v86/asterbios.bin" : "v86/seabios.bin" },
       vga_bios: { url: "v86/vgabios.bin" },
       cdrom: { url: "ai-os.iso" },
       autostart: true

@@ -18,3 +18,7 @@ GitHub-hosted runners began using Node 24 for JavaScript actions by default on J
 ## Emulator smoke-test helper
 
 The bounded QEMU boot targets call `scripts/qemu-smoke.sh` rather than embedding shell exit-status checks in Make recipes. In a Make recipe, `$?` is an automatic variable listing newer prerequisites; keeping shell status handling in a script avoids accidentally testing a prerequisite name instead of `timeout`'s exit code. The helper accepts exit 124 as the expected timeout and propagates other failures.
+
+## Optional firmware build toolchain
+
+AsterBIOS is a host-built real-mode firmware project, not part of the i386 kernel cross-build. Repository CI exports `CC=i686-linux-gnu-gcc` and `LD=i686-linux-gnu-ld` for AsterOS. The AsterBIOS build script must explicitly select host `gcc`/`ld` (overridable with `ASTERBIOS_CC`/`ASTERBIOS_LD`) so SeaBIOS's compiler/linker capability probe does not try to link host objects with the i386 kernel cross-linker. Keep these toolchains separate; do not relax upstream SeaBIOS's linker checks.
