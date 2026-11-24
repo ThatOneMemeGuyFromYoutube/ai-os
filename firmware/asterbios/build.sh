@@ -45,13 +45,6 @@ if [ "$actual_tag" != "$SEABIOS_TAG" ] || [ "$actual_commit" != "$SEABIOS_COMMIT
 fi
 
 PATCH_FILE="$ROOT_DIR/firmware/asterbios/compat-test-link-i386.patch"
-cp "$CONFIG_FILE" "$SOURCE_DIR/.config"
-make -C "$SOURCE_DIR" olddefconfig
-if ! grep -qx 'CONFIG_QEMU=y' "$SOURCE_DIR/.config" ||
-   ! grep -qx 'CONFIG_ROM_SIZE=128' "$SOURCE_DIR/.config"; then
-  echo "error: SeaBIOS did not retain the AsterOS 128 KiB QEMU configuration" >&2
-  exit 1
-fi
 if git -C "$SOURCE_DIR" apply --check "$PATCH_FILE"; then
   git -C "$SOURCE_DIR" apply "$PATCH_FILE"
 elif git -C "$SOURCE_DIR" apply --reverse --check "$PATCH_FILE"; then
@@ -61,7 +54,16 @@ else
   exit 1
 fi
 
-make -C "$SOURCE_DIR" clean
+# SeaBIOS runs its linker-alignment probe while parsing the Makefile, including
+# for Kconfig targets, so the i386 compatibility patch must be active first.
+cp "$CONFIG_FILE" "$SOURCE_DIR/.config"
+make -C "$SOURCE_DIR" CC="$ASTERBIOS_CC" LD="$ASTERBIOS_LD" PYTHON="$ASTERBIOS_PYTHON" olddefconfig
+if ! grep -qx 'CONFIG_QEMU=y' "$SOURCE_DIR/.config" ||
+   ! grep -qx 'CONFIG_ROM_SIZE=128' "$SOURCE_DIR/.config"; then
+  echo "error: SeaBIOS did not retain the AsterOS 128 KiB QEMU configuration" >&2
+  exit 1
+fi
+make -C "$SOURCE_DIR" CC="$ASTERBIOS_CC" LD="$ASTERBIOS_LD" PYTHON="$ASTERBIOS_PYTHON" clean
 make -C "$SOURCE_DIR" CC="$ASTERBIOS_CC" LD="$ASTERBIOS_LD" PYTHON="$ASTERBIOS_PYTHON" EXTRAVERSION="-AsterOS"
 test -s "$SOURCE_DIR/out/bios.bin"
 bios_size="$(wc -c < "$SOURCE_DIR/out/bios.bin")"
