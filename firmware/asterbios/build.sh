@@ -35,6 +35,11 @@ fi
 make -C "$SOURCE_DIR" clean
 make -C "$SOURCE_DIR" CC="$ASTERBIOS_CC" LD="$ASTERBIOS_LD" PYTHON="$ASTERBIOS_PYTHON" EXTRAVERSION="-AsterOS"
 test -s "$SOURCE_DIR/out/bios.bin"
+bios_size="$(wc -c < "$SOURCE_DIR/out/bios.bin")"
+if [ "$bios_size" -ne 131072 ]; then
+  echo "error: expected a 128 KiB v86/QEMU BIOS image, got $bios_size bytes" >&2
+  exit 1
+fi
 cp "$SOURCE_DIR/out/bios.bin" "$OUTPUT_DIR/asterbios.bin"
 git -C "$SOURCE_DIR" archive --format=tar.gz --prefix="seabios-$SEABIOS_TAG/" "$SEABIOS_TAG" \
   -o "$OUTPUT_DIR/asterbios-source-$SEABIOS_TAG.tar.gz"
