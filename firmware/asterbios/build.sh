@@ -6,6 +6,8 @@ OUTPUT_DIR="${OUTPUT_DIR:-$ROOT_DIR/build/firmware}"
 SOURCE_DIR="${SOURCE_DIR:-$ROOT_DIR/build/firmware/seabios-src}"
 SEABIOS_TAG="rel-1.17.0"
 SEABIOS_URL="https://git.seabios.org/seabios.git"
+ASTERBIOS_CC="${ASTERBIOS_CC:-gcc}"
+ASTERBIOS_LD="${ASTERBIOS_LD:-ld}"
 
 mkdir -p "$OUTPUT_DIR"
 if [ ! -d "$SOURCE_DIR/.git" ]; then
@@ -20,7 +22,7 @@ if [ "$actual_tag" != "$SEABIOS_TAG" ]; then
 fi
 
 make -C "$SOURCE_DIR" clean
-make -C "$SOURCE_DIR" EXTRAVERSION="-AsterOS"
+make -C "$SOURCE_DIR" CC="$ASTERBIOS_CC" LD="$ASTERBIOS_LD" EXTRAVERSION="-AsterOS"
 test -s "$SOURCE_DIR/out/bios.bin"
 cp "$SOURCE_DIR/out/bios.bin" "$OUTPUT_DIR/asterbios.bin"
 git -C "$SOURCE_DIR" archive --format=tar.gz --prefix="seabios-$SEABIOS_TAG/" "$SEABIOS_TAG" \
