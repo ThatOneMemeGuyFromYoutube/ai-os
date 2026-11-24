@@ -165,18 +165,18 @@ build/kernel.bin: build/boot.o build/kernel.o build/gui.o build/editor.o build/t
 build/hello.com: toolchain/tinylang.py toolchain/examples/hello.tl | build
 	$(PYTHON) toolchain/tinylang.py toolchain/examples/hello.tl $@
 
-build/examples/%.com: toolchain/examples/%.tl toolchain/tinylang.py | build
+build/examples/%.com: toolchain/examples/%.tl toolchain/tinylang.py toolchain/lua_frontend.py | build
 	mkdir -p $(dir $@)
 	$(PYTHON) toolchain/tinylang.py $< $@
 
 examples: $(TINYLANG_IMAGES)
 
 # Generate a source-correlated listing and matching image for every example.
-build/listings/%.com: toolchain/examples/%.tl toolchain/tinylang.py | build
+build/listings/%.com: toolchain/examples/%.tl toolchain/tinylang.py toolchain/lua_frontend.py | build
 	mkdir -p $(dir $@)
 	$(PYTHON) toolchain/tinylang.py $< $@
 
-build/listings/%.lst: toolchain/examples/%.tl build/listings/%.com build/examples/%.com toolchain/tinylang.py | build
+build/listings/%.lst: toolchain/examples/%.tl build/listings/%.com build/examples/%.com toolchain/tinylang.py toolchain/lua_frontend.py | build
 	$(PYTHON) toolchain/tinylang.py --listing $@ $< build/listings/$*.com
 	test -s "$@"
 	cmp build/examples/$*.com build/listings/$*.com
