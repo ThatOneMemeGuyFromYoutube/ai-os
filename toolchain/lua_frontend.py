@@ -72,7 +72,7 @@ def lower_lua_source(source: str) -> str:
                 target, operator, amount = update.groups()
                 if target != name:
                     raise ValueError(f"line {line_no}: expressions must update their own variable")
-                opcode = "add" if operator == "+" else "sub"
+                opcode = ("add" if register == "eax" else "addi") if operator == "+" else ("sub" if register == "eax" else "subi")
                 output.append(f"{opcode} {register}, {_number(amount, line_no)}")
             else:
                 output.append(f"mov {register}, {_number(expression, line_no)}")
