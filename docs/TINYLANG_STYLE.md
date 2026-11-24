@@ -1,118 +1,59 @@
 # TinyLang source style
 
-TinyLang emits flat 32-bit x86 `.COM`-style program images for AsterOS. Keep source small, explicit, and easy to inspect.
+TinyLang is a small, Lua-adjacent scripting language for AsterOS. Write source
+code, not CPU instructions. The host compiler currently lowers this beginner
+subset to the existing flat 32-bit i386 program image.
 
-## Labels
+## Current source language
 
-Labels may stand alone or share a line with an instruction:
+```lua
+-- Local values and familiar arithmetic
+local answer = 42
+answer = answer + 1
 
-```text
-start:
-    mov eax, 1
+local total = 8
+total = total + 0x10
+total = total - 2
 
-loop: sub eax, 1
-      jmp loop
+return
 ```
 
-Use labels for control-flow targets instead of hard-coded offsets. Labels are case-sensitive and may contain letters, digits, and underscores.
+- `local name = integer` declares a local scalar.
+- `name = integer` assigns a new integer value.
+- `name = name + integer` and `name = name - integer` update a local.
+- Integer literals are unsigned decimal or `0x` hexadecimal and must fit in 32 bits.
+- Names are case-sensitive identifiers beginning with a letter or underscore.
+- Up to six locals are currently supported.
+- A program may end with `return`; otherwise the compiler adds an implicit return.
+- `--` begins a line comment. A trailing semicolon is optional.
 
-## Numeric operands
+This is deliberately a first language slice, not full Lua. Expressions are
+currently integer literals or self-updates; strings, function calls, tables,
+boolean values, comparisons, `if`, `while`, and user-defined functions are
+not implemented yet. Unsupported syntax receives a source-line diagnostic.
 
-Use unsigned decimal or `0x`-prefixed hexadecimal literals. Leading zeroes do not select octal:
+## Compiler and output
 
-```text
-mov eax, 0008   # decimal eight
-add eax, 0x10   # hexadecimal sixteen
-int 0x80
-db 0, 0x7F, 0xFF
-```
+`python3 toolchain/tinylang.py source.tl build/program.com` compiles source
+into a flat 32-bit x86 image with load offset 0x100. The x86 instructions are
+compiler implementation details, not the TinyLang programming interface.
+`make check-source SOURCE=source.tl` validates without writing output;
+`make compile SOURCE=source.tl OUTPUT=build/program.com` builds the image.
 
-Immediate values must fit in 32 bits; `db` values and interrupt vectors must fit in one byte. Signed values, binary prefixes, and digit separators are not part of the current language.
+The old instruction-oriented syntax remains accepted temporarily as a
+compatibility backend for historical jump/data examples. New examples and
+new programs should use the Lua-adjacent syntax above. Do not add assembly
+mnemonics to beginner-facing examples.
 
-## Instruction forms
+## IDE validation
 
-Keep each instruction's operands in the documented order and include the comma
-between a register and an immediate value:
+The guest F5 checker currently validates the historical instruction grammar.
+It must be brought into parity with the Lua-adjacent source parser before the
+IDE can claim that F5 validates the new language. Until then, use the host
+`make check-source` or `make compile` workflow for new-style source.
 
-```text
-mov eax, 42
-add eax, 1
-sub eax, 1
-int 0x80
-jmp done
-db 0x90, 0xCC
-exit
-```
+## Regression tests
 
-`add` and `sub` currently operate on EAX only. `mov` accepts the eight 32-bit general-purpose registers listed by the compiler. `exit` takes no operands. If a known instruction is malformed, TinyLang reports its expected operand form and the source line.
-
-## Byte strings
-
-The `db` directive accepts comma-separated numeric byte values and double-quoted
-ASCII strings. Numeric values and strings may be mixed in one directive:
-
-```text
-message: db "Hello, AsterOS!", 0
-escaped: db "quote: \" slash: \\ newline: \n", 0
-```
-
-Supported escapes are `\n` (line feed), `\r` (carriage return), `\t` (tab),
-`\0` (NUL), `\"` (double quote), `\\` (backslash), and `\xHH` (one
-hexadecimal byte). Literal source characters must be ASCII; use `\xHH` for
-other byte values. Strings are single-line and must be closed before the end
-of the source line.
-
-Comment markers `#` and `;` are recognized only outside quoted strings, so
-punctuation inside a string is emitted unchanged.
-
-## Comments
-
-Use `#` or `;` outside quoted strings for comments. Inline comments are supported:
-
-```text
-mov eax, 1 ; initialize the accumulator
-db "A;B#C" ; trailing comment
-```
-
-## Validation
-
-Run the repository regression test before packaging a program:
-
-```sh
-PYTHONPATH=toolchain python3 toolchain/test_tinylang.py
-```
-
-Then build the 32-bit artifacts with `make check` before publishing a release.
-
-## Guest IDE validation
-
-The desktop IDE's **F5** command runs the freestanding C checker in `kernel/tinylang_check.c`. It validates instruction forms, numeric ranges, `db` byte strings and escapes, duplicate labels, and forward jump references without generating an image. A diagnostic includes the 1-based source line and moves the editor cursor to that line. The checker is bounded to the editor's 1,023-byte source limit and 64 labels / 64 jump references. It is an early guest-side validation path, not the Python compiler or a code generator; `make compile` remains the authoritative image-producing workflow.
-
-Run `make check-tinylang-check` for its host regression suite; the target is included in `make check`.
-
-## Source listings
-
-For a compiled source, request a listing with `--listing PATH` or
-`LISTING=PATH` on `make compile`. Each non-comment source statement is
-shown with its original line number, 0x100-based load address, and final bytes.
-Label-only lines are retained so source labels can be followed through the
-listing. Relative-jump bytes are shown after fixups have been resolved.
-
-The listing is a debugging sidecar; it does not change the flat program image.
-For a quick reference set, run `make listings` to emit a listing and matching image for every bundled example under `build/listings/`; `make check` verifies the generated images against the regular example builds.
-
-It can be generated alongside the symbol map:
-
-```sh
-make compile SOURCE=my_program.tl OUTPUT=build/my_program.com \
-  MAP=build/my_program.map LISTING=build/my_program.lst
-```
-
-## Symbol maps
-
-When building a program, pass `--map PATH` to the compiler or `MAP=PATH`
-to `make compile`. The generated text file lists labels by load address,
-including both the current 0x100-based address and the offset within the flat
-image. It is useful when checking relative-jump targets; it does not alter the
-program image. Map output is unavailable in `--check` mode because validation
-does not write build artifacts.
+Run `PYTHONPATH=toolchain python3 toolchain/test_tinylang.py` and
+`PYTHONPATH=toolchain python3 toolchain/test_lua_frontend.py`. Both are part
+of `make check`.
