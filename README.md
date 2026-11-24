@@ -9,7 +9,7 @@ A small 32-bit x86 operating-system project inspired by the architecture and use
 - **Beginner friendly:** predictable commands, tiny source examples, readable C, and one-command build/run targets.
 - **Programs are first-class:** the repository includes TinyLang, a deliberately small compiler that can create flat `.COM`-style 32-bit program images.
 - **Self-hosting path:** TinyLang's output format is simple enough to be emitted by a future native AsterOS compiler without changing the kernel/CCP boundary.
-- **Lightweight GUI shell:** a VGA text-mode desktop-like shell provides an application menu and keyboard navigation without adding a windowing stack or framebuffer dependency.
+- **Graphical desktop:** the current VGA text-mode shell is an interaction prototype; the planned desktop uses a validated linear framebuffer, pixel-rendered windows and icons, and a small testable 2D renderer while retaining keyboard-first access and a text fallback.
 
 ## Build prerequisites
 
