@@ -37,11 +37,10 @@ class ElementStub {
   querySelector(selector) { return selector === "canvas" ? this.canvas : null; }
 }
 
-function createDemo({ api = "modern" } = {}) {
-  const elements = Object.fromEntries(
-    ["screen_container", "status", "pause", "reset", "fullscreen", "mouse", "network_device", "firmware_device"]
-      .map((id) => [id, new ElementStub(id)]),
-  );
+function createDemo({ api = "modern", firmwareControl = true } = {}) {
+  const ids = ["screen_container", "status", "pause", "reset", "fullscreen", "mouse", "network_device"];
+  if (firmwareControl) ids.push("firmware_device");
+  const elements = Object.fromEntries(ids.map((id) => [id, new ElementStub(id)]));
   const documentListeners = Object.create(null);
   const documentStub = {
     pointerLockElement: null,
@@ -116,7 +115,7 @@ test("uses the current v86 screen API and configures the selected NIC", () => {
 
 
 test("keeps SeaBIOS selected when the optional firmware control is absent", () => {
-  const { instances } = createDemo();
+  const { instances } = createDemo({ firmwareControl: false });
   assert.equal(instances[0].options.bios.url, "v86/seabios.bin");
 });
 
