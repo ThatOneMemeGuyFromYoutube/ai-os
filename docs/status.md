@@ -1,3 +1,13 @@
+## 2026-11-24 — Add an ARP responder and deterministic NE2K peer path
+
+Advanced the active November 16–29 networking milestone by connecting the existing Ethernet II dispatcher to a first bounded protocol consumer. Added `kernel/arp.c`/`kernel/arp.h`: up to four registered interfaces can each bind one local IPv4 address, and the handler validates Ethernet/IPv4 ARP request fields, sender hardware address, and target address before constructing a unicast reply through the existing transmit callback. The kernel currently binds the first supported interface to `192.0.2.2`, an RFC 5737 documentation address reserved for this deterministic development path. This is not an IPv4 stack, ARP cache, DHCP client, or Internet connection.
+
+Added `tests/test_arp.c` and `make check-arp` for configuration, reply bytes, address replacement, malformed packet fields, invalid sender MACs, unrelated interfaces, and short ARP payloads. Added `scripts/ne2k-peer-smoke.py` and `make check-ne2k-peer-iso`; the host peer uses QEMU's length-prefixed TCP socket backend to send an ARP request and verify the guest's reply, so it exercises both NE2K receive dispatch and hardware-backed transmit rather than only booting with a NIC. The harness was syntax-checked and exercised against a local fake QEMU socket peer. The real QEMU target is wired into the i386 CI and release workflows; do not mark the networking peer item complete until that run passes.
+
+The broad workflow review also found the existing main-branch CI was already blocked by an invalid unified-diff hunk count in the optional SeaBIOS build-probe patch. Corrected the hunk counts, pinned SeaBIOS `rel-1.17.0` to its verified upstream commit `b52ca86e094d19b58e2304417787e96b940e39c6`, and added bounded retries with the official `qemu/seabios` GitHub mirror as a fallback after the canonical host. The compatibility patch still changes only the host build probe's i386 compile/link flags, not firmware runtime code. All existing workflows already force JavaScript actions through Node 24; no action migration was needed.
+
+Host validation performed in this run: `cc -std=c99 -O2 -Wall -Wextra -Werror` ARP regression build/run, AddressSanitizer/UndefinedBehaviorSanitizer ARP run, Python bytecode compilation, and a fake-QEMU socket-peer exchange. The environment did not have QEMU or an i686 cross-compiler installed, so the actual ISO/QEMU and full i386 validation is delegated to the newly wired GitHub Actions jobs.
+
 ## 2026-11-23 — Start optional AsterBIOS firmware side project
 
 Added `firmware/asterbios` as an opt-in firmware project. Repository review

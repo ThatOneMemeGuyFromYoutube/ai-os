@@ -34,6 +34,7 @@ jobs:
           make iso
           make check-iso QEMU=qemu-system-i386
           make check-ne2k-iso QEMU=qemu-system-i386
+          make check-ne2k-peer-iso QEMU=qemu-system-i386
           make check-ata-iso QEMU=qemu-system-i386
           make check-asterbios-iso QEMU=qemu-system-i386
           sha256sum build/kernel.bin build/hello.com build/ai-os.iso build/firmware/asterbios.bin build/firmware/asterbios-source-rel-1.17.0.tar.gz build/firmware/asterbios-build.patch > build/SHA256SUMS
@@ -50,6 +51,7 @@ jobs:
             - `make iso`
             - `make check-iso QEMU=qemu-system-i386`
             - `make check-ne2k-iso QEMU=qemu-system-i386`
+            - `make check-ne2k-peer-iso QEMU=qemu-system-i386` (guest ARP receive/transmit through a deterministic QEMU socket peer)
             - `make check-ata-iso QEMU=qemu-system-i386`
             - `make check-asterbios-iso QEMU=qemu-system-i386` (optional AsterBIOS ROM; SeaBIOS remains default)
             - AsterBIOS ROM, exact corresponding SeaBIOS source archive, build metadata, and upstream license texts are included as optional firmware artifacts.

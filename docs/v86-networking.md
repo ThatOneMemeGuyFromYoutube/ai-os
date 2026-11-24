@@ -45,16 +45,23 @@ The kernel also builds and initializes a small hardware-independent Ethernet II 
 - The registry is fixed at four interfaces and rejects duplicate names, malformed addresses, unsupported MTUs, and missing transmit callbacks. There is no heap allocation.
 - Drivers submit complete Ethernet II frames to `asteros_netif_receive_frame()`. The core checks the 14-byte header and MTU boundary, rejects IEEE 802.3 length fields for now, and dispatches the payload by EtherType to a registered protocol handler.
 - Upper layers submit complete frames through `asteros_netif_send_frame()`; the core checks registration, link state, and frame bounds before calling the driver.
-- Packet buffers remain owned by the caller and are consumed synchronously. This first revision has no packet queue, interrupt synchronization, VLAN handling, LLC/SNAP parsing, ARP, IPv4, DHCP, UDP, or TCP.
+- Packet buffers remain owned by the caller and are consumed synchronously. The first protocol consumer is a fixed-capacity ARP responder; there is still no packet queue, interrupt synchronization, VLAN handling, LLC/SNAP parsing, IPv4, DHCP, UDP, or TCP.
 
-The registry is initialized during `kmain()`. When a supported RTL8029AS/NE2K device is present and initializes successfully, the polling driver registers `eth0`; systems without that PCI ID simply retain an empty registry. Host regression tests use mock adapters and synthetic PCI configuration fixtures; they do not require emulator hardware.
+The registry is initialized during `kmain()`. When a supported RTL8029AS/NE2K device is present and initializes successfully, the polling driver registers `eth0`; systems without that PCI ID simply retain an empty registry. The ARP module binds a configured IPv4 address to a registered interface and builds replies synchronously without retaining packet buffers. The current kernel assigns `192.0.2.2` (RFC 5737 documentation space) only as a deterministic development address; there is no address negotiation, ARP cache, or IPv4 stack. Host regression tests use mock adapters and synthetic PCI configuration fixtures; they do not require emulator hardware.
+
+## ARP responder
+
+`kernel/arp.c` registers EtherType `0x0806` with the existing Ethernet II dispatcher. Each configured interface has one bounded local IPv4 binding. The handler accepts only Ethernet/IPv4 ARP requests with the expected hardware/protocol lengths, a unicast nonzero sender MAC distinct from the local MAC, and a target protocol address matching the configured interface address. It emits a complete unicast ARP reply through `asteros_netif_send_frame()`; malformed packets, replies, other protocols, and requests for another address are ignored. Configuration rejects zero-net and class-D/E addresses. The subnet mask is not known yet, so directed-broadcast validation, ARP caching, conflict detection, and address negotiation remain future work.
+
+The current kernel binds the first successfully registered interface to `192.0.2.2`, a documentation-only address reserved for this deterministic test path. `make check-arp` covers request construction, address binding/reconfiguration, and malformed/irrelevant packet rejection. `make check-ne2k-peer-iso` boots the real ISO with QEMU's `ne2k_pci` device, connects a host-side TCP socket peer, injects an ARP request from `192.0.2.1`, and checks the reply frame from the guest. The peer uses QEMU's four-byte length-prefixed socket-netdev framing; it does not attach the guest to a host or Internet network.
 
 ## Driver and backend sequence
 
 1. [x] Add PCI configuration-space discovery and identify guest-visible network controller vendor/device IDs.
 2. [x] Add assigned-BAR decoding and explicit PCI command-register enable helpers; implement the polling RTL8029AS/NE2K programmed-I/O driver against the network-interface callback contract.
-3. [ ] Feed received frames into the generic Ethernet II dispatcher and verify transmit/receive with a deterministic emulator-side peer.
-4. Add protocol layers incrementally (ARP before IPv4, then ICMP/UDP and DHCP as needed) with host-testable packet parsers.
-5. Configure a v86 network backend/relay separately from the NIC selector, then add an end-to-end guest connectivity test.
+3. [x] Feed received frames into the generic Ethernet II dispatcher and add a bounded ARP request/reply handler for a configured local address.
+4. [ ] Exercise guest receive and transmit with the deterministic QEMU socket peer; keep this separate from the protocol implementation and do not claim end-to-end connectivity until it passes.
+5. Add protocol layers incrementally (IPv4 before ICMP/UDP and DHCP as needed) with host-testable packet parsers.
+6. Configure a v86 network backend/relay separately from the NIC selector, then add an end-to-end guest connectivity test.
 
-Do not report end-to-end networking as working until a guest protocol path and backend have been exercised with a peer. The v86 selector only chooses the emulated NIC; the RTL8029 driver currently provides Ethernet frame I/O, not IP connectivity.
+Do not report end-to-end networking as working until a guest IP protocol path and backend have been exercised with a peer. The v86 selector only chooses the emulated NIC; the current ARP responder proves only a local Ethernet request/reply path.

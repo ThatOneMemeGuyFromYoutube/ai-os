@@ -18,13 +18,17 @@ through GRUB and its Multiboot v1 kernel entry point.
 
 ## Initial implementation
 
-The first AsterBIOS iteration is a reproducible, separately built SeaBIOS
-1.17.0 derivative. This reuses the mature PC firmware implementation rather
-than attempting to recreate PCI enumeration, storage boot, ACPI, BIOS
-interrupts, and option-ROM handling from scratch. The build adds the
-`-AsterOS` firmware version suffix, does not patch upstream firmware logic,
-and emits the BIOS ROM plus the exact corresponding source archive and
-license texts.
+The first AsterBIOS iteration is a separately built SeaBIOS 1.17.0 derivative
+pinned to upstream commit
+`b52ca86e094d19b58e2304417787e96b940e39c6`. This reuses the mature PC firmware
+implementation rather than attempting to recreate PCI enumeration, storage
+boot, ACPI, BIOS interrupts, and option-ROM handling from scratch. The build
+adds the `-AsterOS` firmware version suffix, does not patch upstream firmware
+runtime logic, and emits the BIOS ROM plus the exact corresponding source
+archive and license texts. It tries the canonical SeaBIOS Git host first, then
+the official `qemu/seabios` GitHub mirror with bounded retries; both sources
+must resolve to the pinned commit. The small compatibility patch changes only
+the host build probe to compile/link its alignment fixture as i386.
 
 Build it with:
 
@@ -51,8 +55,9 @@ physical PCs. No firmware binary is committed to the repository.
 
 ## Roadmap
 
-1. Keep the upstream base pinned and make the build/source/license artifacts
-   reproducible; add a dedicated CI job and QEMU boot test.
+1. Keep the exact upstream commit pinned and make the build/source/license
+   artifacts reproducible; retain the verified mirror fallback, dedicated CI
+   build, and QEMU boot test.
 2. Add the optional firmware selector to the v86 demo, with SeaBIOS selected
    by default and AsterBIOS only selectable when the Pages build contains its
    verified ROM. Keep the v86 VGA BIOS unchanged.

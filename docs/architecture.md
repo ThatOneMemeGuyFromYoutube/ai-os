@@ -11,6 +11,10 @@ AsterOS deliberately keeps the classic CP/M family separation visible:
 
 The project may grow a GUI, but the GUI is a client of the same service/process model rather than a replacement for it.
 
+## Current networking boundary
+
+The i386 kernel discovers the supported PCI RTL8029AS/NE2K adapter, registers it as `eth0`, and routes complete Ethernet II frames through the fixed-size network-interface registry. A small ARP responder can answer requests for the configured development address `192.0.2.2`; the deterministic QEMU peer target validates that frame path without depending on a host bridge. This does not yet provide IPv4 packet handling, routing, DHCP, UDP/TCP, a user-facing network configuration service, or a v86 host backend. The network driver remains polling-only and does not enable PCI bus mastering or interrupts.
+
 ## Beginner experience
 
 The intended workflow is:
