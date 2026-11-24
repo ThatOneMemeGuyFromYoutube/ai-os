@@ -17,7 +17,7 @@ class ElementStub {
     this.listeners = Object.create(null);
     this.disabled = false;
     this.textContent = "";
-    this.value = id === "network_device" ? "ne2k" : "";
+    this.value = id === "network_device" ? "ne2k" : id === "firmware_device" ? "seabios" : "";
     this.clientWidth = 480;
     this.style = {};
     this.width = isCanvas ? 720 : undefined;
@@ -39,7 +39,7 @@ class ElementStub {
 
 function createDemo({ api = "modern" } = {}) {
   const elements = Object.fromEntries(
-    ["screen_container", "status", "pause", "reset", "fullscreen", "mouse", "network_device"]
+    ["screen_container", "status", "pause", "reset", "fullscreen", "mouse", "network_device", "firmware_device"]
       .map((id) => [id, new ElementStub(id)]),
   );
   const documentListeners = Object.create(null);
@@ -102,6 +102,7 @@ test("uses the current v86 screen API and configures the selected NIC", () => {
   assert.equal(options.screen.use_graphical_text, false);
   assert.equal(Object.hasOwn(options, "screen_container"), false);
   assert.equal(options.net_device.type, "ne2k");
+  assert.equal(options.bios.url, "v86/seabios.bin", "SeaBIOS remains the default firmware");
   assert.equal(options.autostart, true);
   assert.equal(options.cdrom.url, "ai-os.iso");
   assert.equal(elements.pause.disabled, true, "controls stay disabled until v86 is ready");
@@ -111,6 +112,19 @@ test("uses the current v86 screen API and configures the selected NIC", () => {
   assert.match(elements.status.textContent, /NE2K device selected/);
   assert.match(elements.status.textContent, /RTL8029 driver included/);
   assert.match(elements.status.textContent, /IP\/backend not configured/);
+});
+
+
+test("keeps SeaBIOS selected when the optional firmware control is absent", () => {
+  const { instances } = createDemo();
+  assert.equal(instances[0].options.bios.url, "v86/seabios.bin");
+});
+
+test("disables firmware changes until the emulator is ready", () => {
+  const { elements, instances } = createDemo();
+  assert.equal(elements.firmware_device.disabled, true);
+  instances[0].emit("emulator-ready");
+  assert.equal(elements.firmware_device.disabled, false);
 });
 
 test("falls back to screen_container for legacy V86Starter bundles", () => {
@@ -148,12 +162,14 @@ test("reset recreates v86 with the newly selected network device", async () => {
   const { elements, instances } = createDemo();
   instances[0].emit("emulator-ready");
   elements.network_device.value = "virtio";
+  elements.firmware_device.value = "asterbios";
   elements.reset.dispatch("click");
   await tick();
   await tick();
   assert.equal(instances.length, 2);
   assert.deepEqual(instances[0].calls, ["stop", "destroy"]);
   assert.equal(instances[1].options.net_device.type, "virtio");
+  assert.equal(instances[1].options.bios.url, "v86/asterbios.bin");
   assert.equal(instances[1].options.screen.container, elements.screen_container);
 });
 
