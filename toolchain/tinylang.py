@@ -300,22 +300,30 @@ def compile_source_with_symbols(source: str, listing_entries=None) -> tuple[byte
 
         match = ADD_RE.match(line)
         if match:
-            register = match.group(1)
-            code = ("eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi").index(register)
-            out.append(0x05 if code == 0 else 0x81)
-            if code != 0:
-                out.append(0xC0 | code)  # ADD r32, imm32
-            emit_u32(out, parse_number(match.group(2), line_no))
+            out.append(0x05)  # ADD EAX, imm32
+            emit_u32(out, parse_number(match.group(1), line_no))
             record_listing_entry(listing_entries, line_no, statement_start, out, raw_line)
             continue
 
         match = SUB_RE.match(line)
         if match:
-            register = match.group(1)
-            code = ("eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi").index(register)
-            out.append(0x2D if code == 0 else 0x81)
-            if code != 0:
-                out.append(0xE8 | code)  # SUB r32, imm32
+            out.append(0x2D)  # SUB EAX, imm32
+            emit_u32(out, parse_number(match.group(1), line_no))
+            record_listing_entry(listing_entries, line_no, statement_start, out, raw_line)
+            continue
+
+        match = ADD_REG_RE.match(line)
+        if match:
+            code = ("eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi").index(match.group(1))
+            out.extend((0x81, 0xC0 | code))  # ADD r32, imm32
+            emit_u32(out, parse_number(match.group(2), line_no))
+            record_listing_entry(listing_entries, line_no, statement_start, out, raw_line)
+            continue
+
+        match = SUB_REG_RE.match(line)
+        if match:
+            code = ("eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi").index(match.group(1))
+            out.extend((0x81, 0xE8 | code))  # SUB r32, imm32
             emit_u32(out, parse_number(match.group(2), line_no))
             record_listing_entry(listing_entries, line_no, statement_start, out, raw_line)
             continue
