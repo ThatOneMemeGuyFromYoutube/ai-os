@@ -7,7 +7,7 @@ A small 32-bit x86 operating-system project inspired by the architecture and use
 - **CCP/M-like organization:** a resident kernel/BDOS-style service layer, a command processor (CCP), transient user programs, and a simple filesystem abstraction.
 - **32-bit x86:** i386 protected mode, intended for QEMU/Bochs and old PCs.
 - **Beginner friendly:** predictable commands, tiny source examples, readable C, and one-command build/run targets.
-- **Programs are first-class:** the repository includes TinyLang, a deliberately small compiler that can create flat `.COM`-style 32-bit program images.
+- **Programs are first-class:** TinyLang is a Lua-adjacent beginner scripting language compiled into flat `.COM`-style 32-bit program images; users write variables and expressions, not assembly.
 - **Self-hosting path:** TinyLang's output format is simple enough to be emitted by a future native AsterOS compiler without changing the kernel/CCP boundary.
 - **Lightweight GUI shell:** a VGA text-mode desktop-like shell provides an application menu and keyboard navigation without adding a windowing stack or framebuffer dependency.
 
@@ -69,7 +69,16 @@ TinyLang is the beginner entry point:
 python3 toolchain/tinylang.py my_program.tl build/my_program.com
 ```
 
-The language supports a deliberately small set of 32-bit x86 operations (`mov`, `add`, `sub`, `int`, `jmp`, labels, `db`, and `exit`). This is enough to make real executable byte images now while the native/self-hosting compiler path is developed. The `db` directive accepts numeric bytes and double-quoted ASCII strings with `\n`, `\r`, `\t`, `\0`, `\\`, `\"`, and `\xHH` escapes.
+TinyLang source is Lua-adjacent:
+
+```lua
+-- Variables and arithmetic, not assembly
+local answer = 42
+answer = answer + 1
+return
+```
+
+The first language slice supports local integer variables, assignments, self-updating `+`/`-` expressions, decimal/hex literals, `--` comments, and `return`. The compiler generates i386 instructions internally and preserves the existing flat `.COM`-style image boundary. This is not full Lua yet: strings, `print`, functions, tables, comparisons, `if`, and `while` are planned language features. Historical instruction-oriented examples remain accepted temporarily as a compatibility backend, but new source should use the Lua-like syntax. The guest IDE's F5 checker still needs migration to the new grammar; host `make check-source` is authoritative for the new syntax.
 
 ## Development checklist
 
@@ -90,6 +99,8 @@ The schedule has been reset on **October 8, 2026** to recover the development ti
   - [ ] Provide a coherent edit → validate/compile → inspect diagnostics → run workflow using existing program/service boundaries; explicitly report the unavailable guest compiler and transient loader rather than simulating success.
   - [x] Add host regression coverage for editor-buffer loading, bounds, cursor movement, RAM filesystem operations, IDE save/load, unsaved-change protection, and keyboard shortcuts.
   - [x] Add host regression coverage for TinyLang syntax, labels, byte strings, operand ranges, diagnostic line numbers, F5 scancode decoding, and editor navigation to the failing line.
+  - [x] Introduce a Lua-adjacent TinyLang source frontend with locals, assignments, integer arithmetic, Lua-style comments, and return; retain old instruction syntax only as a private compatibility backend.
+  - [ ] Port the guest F5 checker to the Lua-adjacent grammar so IDE validation matches host compiler diagnostics; remove assembly-oriented grammar from the beginner-facing path.
   - [x] Exercise the IDE event path against a test VGA surface: F5 diagnostics and line highlight, Save As, save, dirty-buffer refusal, and reopening a file.
   - [ ] Add direct QEMU desktop interaction coverage for F5, save/open, and dirty-buffer behavior.
   - [ ] Keep native/self-hosting compiler support incomplete until the compiler actually runs as an AsterOS program.
