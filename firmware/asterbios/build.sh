@@ -16,6 +16,8 @@ if [ ! -d "$SOURCE_DIR/.git" ]; then
   git clone --depth 1 --branch "$SEABIOS_TAG" "$SEABIOS_URL" "$SOURCE_DIR"
 fi
 
+git -C "$SOURCE_DIR" apply "$ROOT_DIR/firmware/asterbios/compat-test-link-i386.patch"
+
 actual_tag="$(git -C "$SOURCE_DIR" describe --tags --exact-match HEAD 2>/dev/null || true)"
 if [ "$actual_tag" != "$SEABIOS_TAG" ]; then
   echo "error: expected SeaBIOS $SEABIOS_TAG source, found ${actual_tag:-untagged checkout}" >&2
@@ -30,7 +32,8 @@ git -C "$SOURCE_DIR" archive --format=tar.gz --prefix="seabios-$SEABIOS_TAG/" "$
   -o "$OUTPUT_DIR/asterbios-source-$SEABIOS_TAG.tar.gz"
 cp "$SOURCE_DIR/COPYING" "$OUTPUT_DIR/SeaBIOS-COPYING"
 cp "$SOURCE_DIR/COPYING.LESSER" "$OUTPUT_DIR/SeaBIOS-COPYING.LESSER"
-printf "SeaBIOS tag: %s\\nSeaBIOS commit: %s\\nAsterBIOS suffix: -AsterOS\\n" "$SEABIOS_TAG" "$(git -C "$SOURCE_DIR" rev-parse HEAD)" > "$OUTPUT_DIR/asterbios-build-info.txt"
+cp "$ROOT_DIR/firmware/asterbios/compat-test-link-i386.patch" "$OUTPUT_DIR/asterbios-build.patch"
+printf "SeaBIOS tag: %s\\nSeaBIOS commit: %s\\nAsterBIOS suffix: -AsterOS\\nBuild patch: compat-test-link-i386.patch\\n" "$SEABIOS_TAG" "$(git -C "$SOURCE_DIR" rev-parse HEAD)" > "$OUTPUT_DIR/asterbios-build-info.txt"
 printf 'Built AsterBIOS from SeaBIOS %s\n' "$SEABIOS_TAG"
 printf 'ROM: %s\n' "$OUTPUT_DIR/asterbios.bin"
 printf 'Corresponding source: %s\n' "$OUTPUT_DIR/asterbios-source-$SEABIOS_TAG.tar.gz"
