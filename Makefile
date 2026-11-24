@@ -162,7 +162,7 @@ check-keyboard: build/test-keyboard
 build/kernel.bin: build/boot.o build/kernel.o build/gui.o build/editor.o build/tinylang_check.o build/fs.o build/ide_file.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o build/pci.o build/ne2k.o build/ata_pio.o linker.ld
 	$(LD) $(LDFLAGS) -o $@ build/boot.o build/kernel.o build/gui.o build/editor.o build/tinylang_check.o build/fs.o build/ide_file.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o build/pci.o build/ne2k.o build/ata_pio.o
 
-build/hello.com: toolchain/tinylang.py toolchain/examples/hello.tl | build
+build/hello.com: toolchain/tinylang.py toolchain/lua_frontend.py toolchain/examples/hello.tl | build
 	$(PYTHON) toolchain/tinylang.py toolchain/examples/hello.tl $@
 
 build/examples/%.com: toolchain/examples/%.tl toolchain/tinylang.py toolchain/lua_frontend.py | build
