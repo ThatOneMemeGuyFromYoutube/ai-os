@@ -18,10 +18,6 @@ static uint8_t initialized;
 static uint16_t read_be16(const uint8_t *bytes) {
     return (uint16_t)(((uint16_t)bytes[0] << 8) | bytes[1]);
 }
-static void write_be16(uint8_t *bytes, uint16_t value) {
-    bytes[0] = (uint8_t)(value >> 8);
-    bytes[1] = (uint8_t)value;
-}
 static uint8_t bytes_equal(const uint8_t *left, const uint8_t *right,
                            uint8_t length) {
     uint8_t index;
