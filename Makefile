@@ -162,21 +162,21 @@ check-keyboard: build/test-keyboard
 build/kernel.bin: build/boot.o build/kernel.o build/gui.o build/editor.o build/tinylang_check.o build/fs.o build/ide_file.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o build/pci.o build/ne2k.o build/ata_pio.o linker.ld
 	$(LD) $(LDFLAGS) -o $@ build/boot.o build/kernel.o build/gui.o build/editor.o build/tinylang_check.o build/fs.o build/ide_file.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o build/pci.o build/ne2k.o build/ata_pio.o
 
-build/hello.com: toolchain/tinylang.py toolchain/examples/hello.tl | build
+build/hello.com: toolchain/tinylang.py toolchain/lua_frontend.py toolchain/examples/hello.tl | build
 	$(PYTHON) toolchain/tinylang.py toolchain/examples/hello.tl $@
 
-build/examples/%.com: toolchain/examples/%.tl toolchain/tinylang.py | build
+build/examples/%.com: toolchain/examples/%.tl toolchain/tinylang.py toolchain/lua_frontend.py | build
 	mkdir -p $(dir $@)
 	$(PYTHON) toolchain/tinylang.py $< $@
 
 examples: $(TINYLANG_IMAGES)
 
 # Generate a source-correlated listing and matching image for every example.
-build/listings/%.com: toolchain/examples/%.tl toolchain/tinylang.py | build
+build/listings/%.com: toolchain/examples/%.tl toolchain/tinylang.py toolchain/lua_frontend.py | build
 	mkdir -p $(dir $@)
 	$(PYTHON) toolchain/tinylang.py $< $@
 
-build/listings/%.lst: toolchain/examples/%.tl build/listings/%.com build/examples/%.com toolchain/tinylang.py | build
+build/listings/%.lst: toolchain/examples/%.tl build/listings/%.com build/examples/%.com toolchain/tinylang.py toolchain/lua_frontend.py | build
 	$(PYTHON) toolchain/tinylang.py --listing $@ $< build/listings/$*.com
 	test -s "$@"
 	cmp build/examples/$*.com build/listings/$*.com
@@ -289,6 +289,7 @@ check-ata-iso: iso
 
 check: check-toolchain check-keyboard check-editor check-tinylang-check check-gui check-fs check-ide-file check-terminal check-desktop-input check-ps2-wait check-net check-pci check-ne2k check-ata-pio check-examples check-listings check-compile check-inspect check-source
 	PYTHONPATH=toolchain $(PYTHON) toolchain/test_tinylang.py
+	PYTHONPATH=toolchain $(PYTHON) toolchain/test_lua_frontend.py
 	$(MAKE) check-artifacts
 
 test: check

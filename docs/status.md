@@ -1,3 +1,24 @@
+## 2026-11-23 — Move TinyLang source toward a Lua-adjacent language
+
+The public TinyLang direction is now a small Lua-adjacent scripting language,
+not assembly. Added toolchain/lua_frontend.py with local integer declarations,
+assignments, self-updating addition/subtraction, decimal/hex literals,
+-- comments, optional trailing semicolons, and explicit/implicit return.
+The compiler lowers this source to its existing private flat-i386 backend;
+source authors no longer need to write mov/add/sub/db/exit. The backend now
+emits immediate arithmetic for the registers used by up to six locals.
+Rewrote the hello and arithmetic examples in the new style and added a
+dedicated frontend regression suite to make check.
+
+This is an intentionally small first language slice, not a claim of full Lua:
+strings, console output, functions, tables, conditions, loops, and runtime
+services remain future work. The legacy instruction grammar remains accepted
+temporarily for historical jump/data examples. The guest F5 checker still
+validates that old grammar and must be ported before the IDE can claim
+validation parity for new-style source. Host compiler validation is authoritative
+for the new syntax. This is an explicit priority adjustment inside the reopened
+IDE/developer-tooling work, ahead of the active networking peer exercise.
+
 ## 2026-11-23 — Add a bounded ATA PIO storage driver
 
 Added `kernel/ata_pio.c`/`kernel/ata_pio.h`, a freestanding primary-channel ATA PIO driver for LBA28 disks. It probes with IDENTIFY DEVICE, rejects absent devices, ATAPI signatures, disks without LBA support, and zero-capacity responses, and exposes bounded single-sector 512-byte reads/writes with CACHE FLUSH completion. All port access is injected through callbacks so host tests can exercise register programming, byte order, bounds, no-device/error/timeout paths, and write flushing without privileged I/O.

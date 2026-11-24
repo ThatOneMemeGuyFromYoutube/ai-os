@@ -1,23 +1,8 @@
-#!/usr/bin/env python3
-"""TinyLang: a deliberately small 32-bit x86 assembler/compiler for AsterOS.
+"""TinyLang compiles a Lua-adjacent beginner language to flat i386 images.
 
-TinyLang produces CP/M-inspired flat .COM-style images: the first byte maps to
-load offset 0x100. It is intentionally tiny so the format can later be emitted
-by a native AsterOS compiler without changing the CCP/program boundary.
-
-Supported statements:
-    mov eax, 123
-    add eax, 1
-    sub eax, 1
-    int 0x80
-    jmp label
-    label:
-    db "AsterOS", 0
-    exit
-
-Labels may stand alone or precede an instruction on the same line. Numbers may
-be decimal or hexadecimal (0x...). Double-quoted db strings contain ASCII bytes
-and support explicit escapes. Comments start with '#' or ';' outside strings.
+Public source uses local variables, assignments, integer expressions, Lua-style
+-- comments, and return. The instruction-oriented parser below is a private
+code-generation backend retained for compatibility with older examples.
 """
 
 from __future__ import annotations
@@ -44,7 +29,9 @@ REG_IMM = {
 JUMP_RE = re.compile(r"^jmp\s+([A-Za-z_][A-Za-z0-9_]*)$")
 MOV_RE = re.compile(r"^mov\s+(eax|ecx|edx|ebx|esp|ebp|esi|edi)\s*,\s*(.+)$")
 ADD_RE = re.compile(r"^add\s+eax\s*,\s*(.+)$")
+ADD_REG_RE = re.compile(r"^addi\s+(ecx|edx|ebx|esi|edi)\s*,\s*(.+)$")
 SUB_RE = re.compile(r"^sub\s+eax\s*,\s*(.+)$")
+SUB_REG_RE = re.compile(r"^subi\s+(ecx|edx|ebx|esi|edi)\s*,\s*(.+)$")
 INT_RE = re.compile(r"^int\s+(.+)$")
 DB_RE = re.compile(r"^db(?:\s+(.*))?$")
 
@@ -259,6 +246,10 @@ def record_listing_entry(entries, line_no: int, start: int, out: bytearray, raw_
 
 
 def compile_source_with_symbols(source: str, listing_entries=None) -> tuple[bytes, dict[str, int]]:
+    # Public .tl source is Lua-adjacent; the old instruction grammar is a private backend.
+    from lua_frontend import is_lua_source, lower_lua_source
+    if is_lua_source(source):
+        source = lower_lua_source(source)
     out = bytearray()
     labels: dict[str, int] = {}
     label_lines: dict[str, int] = {}
@@ -320,6 +311,22 @@ def compile_source_with_symbols(source: str, listing_entries=None) -> tuple[byte
         if match:
             out.append(0x2D)  # SUB EAX, imm32
             emit_u32(out, parse_number(match.group(1), line_no))
+            record_listing_entry(listing_entries, line_no, statement_start, out, raw_line)
+            continue
+
+        match = ADD_REG_RE.match(line)
+        if match:
+            code = ("eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi").index(match.group(1))
+            out.extend((0x81, 0xC0 | code))  # ADD r32, imm32
+            emit_u32(out, parse_number(match.group(2), line_no))
+            record_listing_entry(listing_entries, line_no, statement_start, out, raw_line)
+            continue
+
+        match = SUB_REG_RE.match(line)
+        if match:
+            code = ("eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi").index(match.group(1))
+            out.extend((0x81, 0xE8 | code))  # SUB r32, imm32
+            emit_u32(out, parse_number(match.group(2), line_no))
             record_listing_entry(listing_entries, line_no, statement_start, out, raw_line)
             continue
 

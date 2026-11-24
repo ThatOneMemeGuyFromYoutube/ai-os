@@ -1,5 +1,5 @@
-# Demonstrate decimal, hexadecimal, and EAX arithmetic.
-mov eax, 0008
-add eax, 0x10
-sub eax, 2
-exit
+-- Lua-style comments, locals, and familiar infix arithmetic.
+local total = 0008
+total = total + 0x10
+total = total - 2
+return
