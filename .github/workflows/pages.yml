@@ -47,6 +47,7 @@ jobs:
           make check
           make all
           make iso
+          make asterbios
           grub-file --is-x86-multiboot build/kernel.bin
           test -s build/ai-os.iso
 
@@ -55,6 +56,10 @@ jobs:
           mkdir -p site/v86
           cp docs/index.html docs/v86-demo.js docs/v86-demo.css docs/third-party.html site/
           cp build/ai-os.iso site/ai-os.iso
+          cp build/firmware/asterbios.bin site/v86/asterbios.bin
+          cp build/firmware/asterbios-source-rel-1.17.0.tar.gz site/v86/
+          cp build/firmware/SeaBIOS-COPYING site/v86/
+          cp build/firmware/SeaBIOS-COPYING.LESSER site/v86/
 
           # Pin v86's current generated runtime and BIOS assets so the demo is
           # reproducible instead of silently changing as upstream changes.
@@ -66,6 +71,8 @@ jobs:
           test -s site/v86/libv86.js
           test -s site/v86/v86.wasm
           test -s site/v86/seabios.bin
+          test -s site/v86/asterbios.bin
+          test -s site/v86/asterbios-source-rel-1.17.0.tar.gz
           test -s site/v86/vgabios.bin
           test -s site/ai-os.iso
           touch site/.nojekyll
