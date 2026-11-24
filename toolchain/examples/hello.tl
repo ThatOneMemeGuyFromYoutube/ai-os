@@ -1,4 +1,4 @@
-# TinyLang beginner example: put 42 in EAX, add 1, then halt.
-mov eax, 42
-add eax, 1
-exit
+# TinyLang: locals and arithmetic, without exposing machine instructions.
+local answer = 42
+answer = answer + 1
+return
