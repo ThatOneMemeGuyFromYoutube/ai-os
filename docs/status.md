@@ -1,3 +1,30 @@
+## 2026-11-23 — Reopen desktop work for a real graphical presentation
+
+Repository review confirms the current desktop is not pixel graphics: `kernel/gui.c`
+writes 80x25 VGA text cells directly at 0xB8000. Window borders, icons, taskbar,
+pointer, settings, and app content are all character/glyph composition. The
+desktop-input module models hit targets in text-cell coordinates. The existing
+work is valuable and should be retained as the interaction/state foundation,
+but marking the desktop milestone complete obscures the user's requested
+ASCII-to-GUI transition.
+
+README now reopens the window-system milestone with an ordered framebuffer
+backlog: first define and validate the GRUB linear-framebuffer handoff and safe
+text fallback; then add a freestanding clipped 2D renderer with host tests;
+then replace character-cell chrome and icons with pixel drawing and generated
+bitmap assets; then migrate pointer/hit-testing to pixel coordinates and verify
+multiple resolutions under QEMU; finally add richer composition and repaint
+behavior. Existing keyboard navigation, focus, taskbar, minimize/restore,
+context-menu semantics, and app state should survive the renderer migration.
+
+Pillow is suitable as a host-side asset pipeline, not a kernel dependency:
+author original icon art as PNG, convert deterministically to a compact
+documented pixel format during the build, and record provenance/licensing.
+Do not embed Pillow or runtime PNG decoding in the freestanding kernel. This
+reopened GUI work is now an explicit priority alongside the current milestone;
+avoid claiming the desktop is graphical until the framebuffer path is booted
+and exercised.
+
 ## 2026-11-23 — Add a bounded ATA PIO storage driver
 
 Added `kernel/ata_pio.c`/`kernel/ata_pio.h`, a freestanding primary-channel ATA PIO driver for LBA28 disks. It probes with IDENTIFY DEVICE, rejects absent devices, ATAPI signatures, disks without LBA support, and zero-capacity responses, and exposes bounded single-sector 512-byte reads/writes with CACHE FLUSH completion. All port access is injected through callbacks so host tests can exercise register programming, byte order, bounds, no-device/error/timeout paths, and write flushing without privileged I/O.
