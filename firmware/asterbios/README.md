@@ -42,6 +42,7 @@ Exercise the ROM with the AsterOS ISO:
 
 ```sh
 make check-asterbios-iso QEMU=qemu-system-i386
+make run-asterbios-iso QEMU=qemu-system-i386
 ```
 
 This bounded boot check demonstrates firmware-to-GRUB-to-kernel compatibility;
