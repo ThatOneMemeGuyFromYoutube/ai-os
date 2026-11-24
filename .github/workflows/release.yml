@@ -35,6 +35,7 @@ jobs:
           make check-iso QEMU=qemu-system-i386
           make check-ne2k-iso QEMU=qemu-system-i386
           make check-ata-iso QEMU=qemu-system-i386
+          make check-asterbios-iso QEMU=qemu-system-i386
           sha256sum build/kernel.bin build/hello.com build/ai-os.iso > build/SHA256SUMS
 
       - name: Publish GitHub release
@@ -50,6 +51,7 @@ jobs:
             - `make check-iso QEMU=qemu-system-i386`
             - `make check-ne2k-iso QEMU=qemu-system-i386`
             - `make check-ata-iso QEMU=qemu-system-i386`
+            - `make check-asterbios-iso QEMU=qemu-system-i386` (optional AsterBIOS ROM; SeaBIOS remains default)
           files: |
             build/kernel.bin
             build/hello.com
