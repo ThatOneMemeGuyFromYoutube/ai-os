@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""TinyLang: a deliberately small 32-bit x86 assembler/compiler for AsterOS.
+"""TinyLang: a Lua-adjacent scripting-language compiler for AsterOS.
 
 TinyLang produces CP/M-inspired flat .COM-style images: the first byte maps to
 load offset 0x100. It is intentionally tiny so the format can later be emitted
@@ -43,8 +43,8 @@ REG_IMM = {
 
 JUMP_RE = re.compile(r"^jmp\s+([A-Za-z_][A-Za-z0-9_]*)$")
 MOV_RE = re.compile(r"^mov\s+(eax|ecx|edx|ebx|esp|ebp|esi|edi)\s*,\s*(.+)$")
-ADD_RE = re.compile(r"^add\s+eax\s*,\s*(.+)$")
-SUB_RE = re.compile(r"^sub\s+eax\s*,\s*(.+)$")
+ADD_RE = re.compile(r"^add\s+(eax|ecx|edx|ebx|esi|edi)\s*,\s*(.+)$")
+SUB_RE = re.compile(r"^sub\s+(eax|ecx|edx|ebx|esi|edi)\s*,\s*(.+)$")
 INT_RE = re.compile(r"^int\s+(.+)$")
 DB_RE = re.compile(r"^db(?:\s+(.*))?$")
 
@@ -259,6 +259,10 @@ def record_listing_entry(entries, line_no: int, start: int, out: bytearray, raw_
 
 
 def compile_source_with_symbols(source: str, listing_entries=None) -> tuple[bytes, dict[str, int]]:
+    # Public .tl source is Lua-adjacent; the old instruction grammar is a private backend.
+    from lua_frontend import is_lua_source, lower_lua_source
+    if is_lua_source(source):
+        source = lower_lua_source(source)
     out = bytearray()
     labels: dict[str, int] = {}
     label_lines: dict[str, int] = {}
@@ -311,15 +315,23 @@ def compile_source_with_symbols(source: str, listing_entries=None) -> tuple[byte
 
         match = ADD_RE.match(line)
         if match:
-            out.append(0x05)  # ADD EAX, imm32
-            emit_u32(out, parse_number(match.group(1), line_no))
+            register = match.group(1)
+            code = ("eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi").index(register)
+            out.append(0x05 if code == 0 else 0x81)
+            if code != 0:
+                out.append(0xC0 | code)  # ADD r32, imm32
+            emit_u32(out, parse_number(match.group(2), line_no))
             record_listing_entry(listing_entries, line_no, statement_start, out, raw_line)
             continue
 
         match = SUB_RE.match(line)
         if match:
-            out.append(0x2D)  # SUB EAX, imm32
-            emit_u32(out, parse_number(match.group(1), line_no))
+            register = match.group(1)
+            code = ("eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi").index(register)
+            out.append(0x2D if code == 0 else 0x81)
+            if code != 0:
+                out.append(0xE8 | code)  # SUB r32, imm32
+            emit_u32(out, parse_number(match.group(2), line_no))
             record_listing_entry(listing_entries, line_no, statement_start, out, raw_line)
             continue
 
