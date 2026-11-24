@@ -16,7 +16,15 @@ if [ ! -d "$SOURCE_DIR/.git" ]; then
   git clone --depth 1 --branch "$SEABIOS_TAG" "$SEABIOS_URL" "$SOURCE_DIR"
 fi
 
-git -C "$SOURCE_DIR" apply "$ROOT_DIR/firmware/asterbios/compat-test-link-i386.patch"
+PATCH_FILE="$ROOT_DIR/firmware/asterbios/compat-test-link-i386.patch"
+if git -C "$SOURCE_DIR" apply --check "$PATCH_FILE"; then
+  git -C "$SOURCE_DIR" apply "$PATCH_FILE"
+elif git -C "$SOURCE_DIR" apply --reverse --check "$PATCH_FILE"; then
+  echo "SeaBIOS i386 linker-probe patch is already applied"
+else
+  echo "error: cannot apply AsterBIOS compatibility patch to the pinned SeaBIOS source" >&2
+  exit 1
+fi
 
 actual_tag="$(git -C "$SOURCE_DIR" describe --tags --exact-match HEAD 2>/dev/null || true)"
 if [ "$actual_tag" != "$SEABIOS_TAG" ]; then
