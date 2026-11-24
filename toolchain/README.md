@@ -1,67 +1,59 @@
 # TinyLang toolchain
 
-TinyLang is the first concrete program-building tool for AsterOS. It is intentionally small and host-buildable today so beginners can experiment without first needing to build a complete cross-compiler.
-
-The guest VGA desktop also includes an experimental IDE editor with a bounded 1,024-byte TinyLang buffer, a volatile RAM-filesystem save/open path, and an F5 syntax/label checker with source-line diagnostics. The checker is freestanding C linked into the i386 kernel and does not allocate memory or generate machine code. Files are lost on reboot. A guest code generator/compiler and transient-program loader are still absent, so the IDE cannot build or run a `.COM` image. Use the host `make check-source` and `make compile` commands for real compilation and image generation.
+TinyLang is AsterOS's beginner scripting language. Its source is **Lua-adjacent,
+not assembly**: users write local variables, assignments, integer arithmetic,
+Lua-style comments, and return statements. The compiler lowers that source to
+the project's existing flat 32-bit i386 program image.
 
 ## Try it
 
-From the repository root:
-
 ```sh
 make program
+make check-source SOURCE=toolchain/examples/hello.tl
+make compile SOURCE=toolchain/examples/hello.tl OUTPUT=build/hello.com
 ```
 
-That creates `build/hello.com`, a flat 32-bit x86 program image. To compile the complete example collection, run `make examples`; the resulting images are written to `build/examples/`. `make check` builds and verifies every example as part of the regression suite. Run `make listings` to create a source-correlated `.lst` and matching `.com` image for every bundled example under `build/listings/`; `make check` also verifies that those images match the normal example builds. These are host-generated images only: AsterOS does not yet have a transient-program loader.
+A source file looks like this:
 
-For your own source, validate it before building without creating an image:
-
-```sh
-make check-source SOURCE=my_program.tl
-# or: python3 toolchain/tinylang.py --check my_program.tl
+```lua
+-- A small AsterOS program
+local answer = 42
+answer = answer + 1
+return
 ```
 
-A successful check confirms syntax, numeric operands, and label fixups and reports
-the resulting image size. It does not write or replace a `.com` file. Then use
-the Make target and choose the output path:
+The first supported language slice includes `local name = integer`,
+assignments to declared locals, self-updating `name = name + integer` and
+`name = name - integer`, optional trailing semicolons, `--` comments, and
+`return`. Decimal and `0x` hexadecimal literals are accepted. Up to six
+locals are supported. Programs without an explicit return receive an implicit
+one.
 
-```sh
-make compile SOURCE=my_program.tl OUTPUT=build/my_program.com
-# optionally emit label addresses and image offsets
-make compile SOURCE=my_program.tl OUTPUT=build/my_program.com MAP=build/my_program.map
-```
+This is not full Lua yet. Strings, `print`, function calls, tables, boolean
+values, comparisons, `if`, `while`, and user-defined functions are future
+language work. The current kernel has no stable console BDOS ABI, so a `print`
+builtin would be misleading today.
 
-The destination directory is created automatically. If `OUTPUT` is omitted, Make derives `build/<source-name>.com` from `SOURCE`. The compiler rejects output or map destinations that refer to the source file or to each other, including existing symlink and hard-link aliases, so a mistaken path cannot replace the source. The optional `MAP` variable writes a deterministic symbol map sorted by load address and label name; addresses use the current 0x100 load base, and offsets are relative to the beginning of the flat image. `LISTING=build/my_program.lst` adds a source-correlated listing with source line numbers, load addresses, and final emitted bytes after jump fixups; label-only lines are included with an empty byte column. `MAP` and `LISTING` may be used together. Neither sidecar changes the `.com` bytes. To create the executable and both inspection sidecars with one Make command, use `make inspect SOURCE=my_program.tl`; it writes `build/inspect/my_program.com`, `.map`, and `.lst`. Set `INSPECT_DIR=...` to select another destination directory. `make check` verifies that the inspection target creates all three files and preserves the normal executable bytes. The lower-level compiler command remains available when you want to invoke the tool directly:
+## Compilation boundary
 
-```sh
-python3 toolchain/tinylang.py my_program.tl build/my_program.com
-# include a source-correlated byte listing
-python3 toolchain/tinylang.py --listing build/my_program.lst my_program.tl build/my_program.com
-```
+The public language is parsed by `toolchain/lua_frontend.py`. It lowers to a
+private code-generation representation consumed by `toolchain/tinylang.py`.
+That backend emits the existing flat i386 image; source authors do not write
+or maintain the generated instruction representation. The output format and
+future CCP loader boundary remain unchanged.
 
-A TinyLang program can use `mov`, `add`, `sub`, `int`, `jmp`, labels, `db`, and `exit`. The `db` directive accepts comma-separated numeric bytes and double-quoted ASCII strings, including mixtures such as `db "Hello, AsterOS!", 0`. Strings support the escapes `\n`, `\r`, `\t`, `\0`, `\\`, `\"`, and `\xHH`; non-ASCII source characters must be written as explicit byte escapes. Comments begin with `#` or `;` outside quoted strings. Labels may be on their own line or share a line with an instruction:
+The historical instruction syntax remains temporarily accepted for legacy
+jump/data examples and regression fixtures. New examples must use the Lua-like
+surface syntax. The guest IDE's F5 checker still understands the old grammar;
+porting it to the new language is a tracked follow-up, so host validation is
+authoritative for Lua-adjacent source at this stage.
 
-```text
-start: mov eax, 1
-       jmp done
-       db 0x90
-done:  exit
-```
+## Tests
 
-Numeric operands are unsigned decimal or `0x`-prefixed hexadecimal. Leading zeroes remain decimal, so `mov eax, 0008` means eight; binary prefixes, underscores, and signed values are rejected rather than inheriting Python's host-language syntax. Values must fit in 32 bits, while `db` bytes and `int` vectors have their narrower instruction-specific limits.
+`make check` runs both the historical backend tests and the new language
+frontend tests. They verify emitted i386 bytes, local-variable register
+allocation, arithmetic updates, comments, implicit/explicit return, and
+source-line diagnostics for invalid declarations and assignments.
 
-Undefined jump targets, duplicate labels (reported with both the duplicate line and first-definition line), empty `db` statements, malformed numeric operands, and missing byte-list items (for example, `db 1,,2` or a trailing comma) are reported with the source line number instead of silently changing the emitted image. See `examples/hello.tl` for the smallest example. Recognized instructions with missing or malformed operands also show their expected form; unsupported `mov` registers are listed explicitly, and `add`/`sub` explain that only EAX is currently supported.
-
-## Why this exists
-
-The output is a simple CP/M-inspired `.COM`-style image intended for the future CCP transient-program loader. Keeping the program format simple gives AsterOS a clear path from a host compiler to a compiler that runs as an AsterOS transient program, without changing the kernel/BDOS/CCP boundary.
-
-## Roadmap
-
-1. TinyLang source language and flat program format (current)
-2. Load TinyLang `.com` images through the CCP/program loader
-3. Add more useful language features and BDOS service calls
-4. Port the compiler to AsterOS as a transient program
-5. Bootstrap the native compiler from its own source
-
-TinyLang is a development tool today; it is not yet a self-hosting compiler.
+TinyLang is host-compiled today. A guest-side compiler and transient-program
+loader are still absent; do not claim in-OS compile/run or self-hosting.
