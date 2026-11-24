@@ -33,7 +33,8 @@ typedef uint8_t (*asteros_net_transmit_fn)(void *driver_context,
                                             const uint8_t *frame,
                                             uint16_t length);
 typedef void (*asteros_net_ethertype_handler_fn)(
-    struct asteros_netif *interface, const uint8_t *payload,
+    struct asteros_netif *interface, const uint8_t *source_mac,
+    const uint8_t *destination_mac, const uint8_t *payload,
     uint16_t payload_length, void *handler_context);
 
 typedef struct asteros_netif {

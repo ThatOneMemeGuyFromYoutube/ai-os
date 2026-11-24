@@ -114,6 +114,10 @@ static void test_configuration_and_reply(void) {
     assert(asteros_arp_configure(&interface, local_ip) == ASTEROS_ARP_OK);
 
     make_request(frame, peer_mac, peer_ip, local_ip);
+    frame[6] ^= 0x02u; /* Ethernet source must match the ARP sender hardware address. */
+    expect_no_reply(&interface, &capture, frame, sizeof frame);
+
+    make_request(frame, peer_mac, peer_ip, local_ip);
     assert(asteros_netif_receive_frame(&interface, frame, sizeof frame) ==
            ASTEROS_NET_OK);
     assert(capture.calls == 1u);

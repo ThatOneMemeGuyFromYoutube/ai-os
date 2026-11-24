@@ -41,7 +41,7 @@
   function runningMessage() {
     if (!activeNetworkType) return "AsterOS is running · no network device selected";
     if (activeNetworkType === "ne2k") {
-      return "AsterOS is running · NE2K device selected (RTL8029 driver included; IP/backend not configured)";
+      return "AsterOS is running · NE2K selected (static 192.0.2.2, ARP + ICMP echo; browser backend not configured)";
     }
     return "AsterOS is running · VirtIO device selected (guest driver/backend not configured)";
   }

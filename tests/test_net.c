@@ -15,6 +15,8 @@ typedef struct {
 typedef struct {
     uint8_t calls;
     asteros_netif_t *interface;
+    uint8_t source_mac[6];
+    uint8_t destination_mac[6];
     uint16_t payload_length;
     uint8_t payload[8];
 } mock_protocol_t;
@@ -30,11 +32,15 @@ static uint8_t mock_transmit(void *context, const uint8_t *frame,
 }
 
 static void mock_ipv4_handler(asteros_netif_t *interface,
+                              const uint8_t *source_mac,
+                              const uint8_t *destination_mac,
                               const uint8_t *payload, uint16_t length,
                               void *context) {
     mock_protocol_t *protocol = (mock_protocol_t *)context;
     protocol->calls++;
     protocol->interface = interface;
+    memcpy(protocol->source_mac, source_mac, 6u);
+    memcpy(protocol->destination_mac, destination_mac, 6u);
     protocol->payload_length = length;
     if (length <= sizeof protocol->payload)
         memcpy(protocol->payload, payload, length);
@@ -62,8 +68,9 @@ static void prepare_interface(asteros_netif_t *interface, const char *name,
 
 static void make_ipv4_frame(uint8_t frame[TEST_FRAME_SIZE]) {
     memset(frame, 0, TEST_FRAME_SIZE);
-    frame[0] = 0xFF; /* Broadcast destination is valid for receive tests. */
+    memset(frame, 0xFF, 6u); /* Broadcast destination is valid for receive tests. */
     frame[6] = 0x02;
+    frame[11] = 0x44;
     frame[12] = 0x08;
     frame[13] = 0x00;
     frame[14] = 0x45;
@@ -210,7 +217,7 @@ static void test_link_state_and_frame_transmit(void) {
 static void test_receive_validates_and_dispatches_ethernet_ii(void) {
     asteros_netif_t interface;
     mock_driver_t driver = {1, 0, 0, {0}};
-    mock_protocol_t protocol = {0, 0, 0, {0}};
+    mock_protocol_t protocol = {0};
     uint8_t frame[TEST_FRAME_SIZE];
     uint8_t short_frame[ASTEROS_ETHERNET_HEADER_SIZE - 1u];
     uint8_t oversized[ASTEROS_ETHERNET_MTU_MAX +
@@ -256,6 +263,8 @@ static void test_receive_validates_and_dispatches_ethernet_ii(void) {
            ASTEROS_NET_OK);
     assert(protocol.calls == 1);
     assert(protocol.interface == &interface);
+    assert(memcmp(protocol.source_mac, frame + 6u, 6u) == 0);
+    assert(memcmp(protocol.destination_mac, frame, 6u) == 0);
     assert(protocol.payload_length == 4);
     assert(memcmp(protocol.payload, frame + ASTEROS_ETHERNET_HEADER_SIZE, 4) == 0);
 

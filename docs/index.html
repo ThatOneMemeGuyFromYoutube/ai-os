@@ -43,7 +43,7 @@
         <canvas style="display: none"></canvas>
       </div>
 
-      <p class="hint">SeaBIOS is the default system firmware. Choose experimental AsterBIOS before Reset to try the separately built AsterOS-branded SeaBIOS derivative; use SeaBIOS if it fails. The VGA BIOS is unchanged. Choose NE2K or VirtIO before Reset to control which virtual NIC v86 presents to AsterOS. AsterOS includes a polling RTL8029/NE2K guest driver for Ethernet frames; VirtIO support is not implemented yet. End-to-end connectivity still needs a guest protocol stack and a configured v86 network backend. Click the emulator to focus the keyboard and capture the mouse. Press Esc to release the pointer.</p>
+      <p class="hint">SeaBIOS is the default system firmware. Choose experimental AsterBIOS before Reset to try the separately built AsterOS-branded SeaBIOS derivative; use SeaBIOS if it fails. The VGA BIOS is unchanged. Choose NE2K or VirtIO before Reset to control which virtual NIC v86 presents to AsterOS. AsterOS includes a polling RTL8029/NE2K driver, a static local IPv4 address, ARP replies, and ICMP echo replies for a directly connected peer; VirtIO support is not implemented yet. The browser demo still has no configured v86 network backend, so it does not provide host or Internet connectivity. Click the emulator to focus the keyboard and capture the mouse. Press Esc to release the pointer.</p>
     </section>
 
     <section class="notes">

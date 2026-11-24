@@ -13,7 +13,7 @@ The project may grow a GUI, but the GUI is a client of the same service/process 
 
 ## Current networking boundary
 
-The i386 kernel discovers the supported PCI RTL8029AS/NE2K adapter, registers it as `eth0`, and routes complete Ethernet II frames through the fixed-size network-interface registry. A small ARP responder can answer requests for the configured development address `192.0.2.2`; the deterministic QEMU peer target validates that frame path without depending on a host bridge. This does not yet provide IPv4 packet handling, routing, DHCP, UDP/TCP, a user-facing network configuration service, or a v86 host backend. The network driver remains polling-only and does not enable PCI bus mastering or interrupts.
+The i386 kernel discovers the supported PCI RTL8029AS/NE2K adapter, registers it as `eth0`, and routes complete Ethernet II frames through the fixed-size network-interface registry. The ARP responder validates both Ethernet and ARP sender addresses and answers requests for the configured development address `192.0.2.2`. A bounded IPv4 layer validates complete unfragmented packets and dispatches through a fixed protocol table; its ICMPv4 consumer answers valid echo requests using the incoming Ethernet source MAC. The deterministic QEMU socket peer now verifies ARP resolution followed by an IPv4 ICMP echo request/reply through the actual NIC receive/transmit path. This is direct-peer connectivity only: there is no subnet mask, gateway, routing, ARP cache, DHCP, UDP/TCP, user-facing network configuration service, or v86 host backend. The network driver remains polling-only and does not enable PCI bus mastering or interrupts.
 
 ## Beginner experience
 

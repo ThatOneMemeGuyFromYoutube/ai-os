@@ -47,11 +47,11 @@ jobs:
             AsterOS 32-bit x86 weekly release.
 
             Validation:
-            - `make check`
+            - `make check` (including IPv4 parser and ICMP echo host regressions)
             - `make iso`
             - `make check-iso QEMU=qemu-system-i386`
             - `make check-ne2k-iso QEMU=qemu-system-i386`
-            - `make check-ne2k-peer-iso QEMU=qemu-system-i386` (guest ARP receive/transmit through a deterministic QEMU socket peer)
+            - `make check-ne2k-peer-iso QEMU=qemu-system-i386` (guest ARP resolution and IPv4 ICMP echo request/reply through a deterministic QEMU socket peer)
             - `make check-ata-iso QEMU=qemu-system-i386`
             - `make check-asterbios-iso QEMU=qemu-system-i386` (optional AsterBIOS ROM; SeaBIOS remains default)
             - AsterBIOS ROM, exact corresponding SeaBIOS source archive, build metadata, and upstream license texts are included as optional firmware artifacts.
