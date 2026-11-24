@@ -28,8 +28,10 @@ REG_IMM = {
 
 JUMP_RE = re.compile(r"^jmp\s+([A-Za-z_][A-Za-z0-9_]*)$")
 MOV_RE = re.compile(r"^mov\s+(eax|ecx|edx|ebx|esp|ebp|esi|edi)\s*,\s*(.+)$")
-ADD_RE = re.compile(r"^add\s+(eax|ecx|edx|ebx|esi|edi)\s*,\s*(.+)$")
-SUB_RE = re.compile(r"^sub\s+(eax|ecx|edx|ebx|esi|edi)\s*,\s*(.+)$")
+ADD_RE = re.compile(r"^add\s+eax\s*,\s*(.+)$")
+ADD_REG_RE = re.compile(r"^addi\s+(ecx|edx|ebx|esi|edi)\s*,\s*(.+)$")
+SUB_RE = re.compile(r"^sub\s+eax\s*,\s*(.+)$")
+SUB_REG_RE = re.compile(r"^subi\s+(ecx|edx|ebx|esi|edi)\s*,\s*(.+)$")
 INT_RE = re.compile(r"^int\s+(.+)$")
 DB_RE = re.compile(r"^db(?:\s+(.*))?$")
 
