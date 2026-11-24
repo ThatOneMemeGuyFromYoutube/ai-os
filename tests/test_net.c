@@ -217,7 +217,7 @@ static void test_link_state_and_frame_transmit(void) {
 static void test_receive_validates_and_dispatches_ethernet_ii(void) {
     asteros_netif_t interface;
     mock_driver_t driver = {1, 0, 0, {0}};
-    mock_protocol_t protocol = {0, 0, 0, {0}};
+    mock_protocol_t protocol = {0};
     uint8_t frame[TEST_FRAME_SIZE];
     uint8_t short_frame[ASTEROS_ETHERNET_HEADER_SIZE - 1u];
     uint8_t oversized[ASTEROS_ETHERNET_MTU_MAX +
