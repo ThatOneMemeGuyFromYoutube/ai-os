@@ -22,6 +22,9 @@ static void handler(asteros_netif_t *i,const uint8_t *sm,const uint8_t *dm,
  v->payload_length=n;if(n<=sizeof v->payload)memcpy(v->payload,p,n);
 }
 static void put16(uint8_t *p,uint16_t v){p[0]=(uint8_t)(v>>8);p[1]=(uint8_t)v;}
+static void rechecksum(uint8_t *frame,uint16_t header_length){
+ frame[24]=0;frame[25]=0;put16(frame+24,asteros_ipv4_checksum(frame+14,header_length));
+}
 static void prepare(uint8_t f[FRAME_SIZE],uint8_t ihl,uint8_t proto){
  uint8_t *ip;uint16_t h=(uint16_t)(ihl*4u);memset(f,0,FRAME_SIZE);
  memcpy(f,local_mac,6);memcpy(f+6,peer_mac,6);f[12]=8;f[13]=0;ip=f+14;
@@ -50,7 +53,7 @@ int main(void){
  assert(memcmp(c.source_ip,peer_ip,4)==0&&memcmp(c.destination_ip,local_ip,4)==0);
  assert(asteros_netif_receive_frame(&i,f,sizeof f)==ASTEROS_NET_OK);
  assert(c.calls==2&&c.payload_length==4);
- prepare(f,6,TEST_PROTOCOL);f[34]=1;put16(f+24,asteros_ipv4_checksum(f+14,24));
+ prepare(f,6,TEST_PROTOCOL);f[34]=1;rechecksum(f,24);
  assert(receive(&i,f,28)==ASTEROS_IPV4_OK&&c.calls==3);
  prepare(f,5,TEST_PROTOCOL);assert(receive(&i,f,19)==ASTEROS_IPV4_PACKET_TOO_SHORT);
  prepare(f,5,TEST_PROTOCOL);f[14]=0x65;assert(receive(&i,f,24)==ASTEROS_IPV4_INVALID_VERSION);
@@ -59,7 +62,7 @@ int main(void){
  prepare(f,5,TEST_PROTOCOL);put16(f+16,25);assert(receive(&i,f,24)==ASTEROS_IPV4_INVALID_TOTAL_LENGTH);
  prepare(f,5,TEST_PROTOCOL);f[24]^=1;assert(receive(&i,f,24)==ASTEROS_IPV4_INVALID_CHECKSUM);
  prepare(f,5,TEST_PROTOCOL);f[22]=0;assert(receive(&i,f,24)==ASTEROS_IPV4_INVALID_TTL);
- prepare(f,5,TEST_PROTOCOL);put16(f+20,0x2000);put16(f+24,asteros_ipv4_checksum(f+14,20));
+ prepare(f,5,TEST_PROTOCOL);put16(f+20,0x2000);rechecksum(f,20);
  assert(receive(&i,f,24)==ASTEROS_IPV4_FRAGMENTED_PACKET);
  prepare(f,5,TEST_PROTOCOL);memcpy(f+30,other,4);put16(f+24,asteros_ipv4_checksum(f+14,20));
  assert(receive(&i,f,24)==ASTEROS_IPV4_WRONG_DESTINATION);
