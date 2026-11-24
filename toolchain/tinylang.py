@@ -1,24 +1,5 @@
 #!/usr/bin/env python3
-"""TinyLang: a Lua-adjacent scripting-language compiler for AsterOS.
-
-TinyLang produces CP/M-inspired flat .COM-style images: the first byte maps to
-load offset 0x100. It is intentionally tiny so the format can later be emitted
-by a native AsterOS compiler without changing the CCP/program boundary.
-
-Supported statements:
-    mov eax, 123
-    add eax, 1
-    sub eax, 1
-    int 0x80
-    jmp label
-    label:
-    db "AsterOS", 0
-    exit
-
-Labels may stand alone or precede an instruction on the same line. Numbers may
-be decimal or hexadecimal (0x...). Double-quoted db strings contain ASCII bytes
-and support explicit escapes. Comments start with '#' or ';' outside strings.
-"""
+"""TinyLang compiles a Lua-adjacent beginner language to flat i386 images.\n\nPublic source uses local variables, assignments, integer expressions, Lua-style\n-- comments, and return. The instruction-oriented parser below is a private\ncode-generation backend retained for compatibility with older examples.\n"""
 
 from __future__ import annotations
 
