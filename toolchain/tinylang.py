@@ -1,4 +1,8 @@
-#!/usr/bin/env python3
+"""TinyLang compiles a Lua-adjacent beginner language to flat i386 images.
+
+Public source uses local variables, assignments, integer expressions, Lua-style
+-- comments, and return. The instruction-oriented parser below is a private
+code-generation backend retained for compatibility with older examples.
 """TinyLang compiles a Lua-adjacent beginner language to flat i386 images.\n\nPublic source uses local variables, assignments, integer expressions, Lua-style\n-- comments, and return. The instruction-oriented parser below is a private\ncode-generation backend retained for compatibility with older examples.\n"""
 
 from __future__ import annotations
