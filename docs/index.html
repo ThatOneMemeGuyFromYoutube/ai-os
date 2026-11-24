@@ -18,6 +18,12 @@
       <div class="toolbar">
         <div id="status" class="status" aria-live="polite">Preparing emulator…</div>
         <div class="controls">
+          <label class="device-control" for="firmware_device">System BIOS
+            <select id="firmware_device">
+              <option value="seabios" selected>SeaBIOS (default)</option>
+              <option value="asterbios">AsterBIOS (experimental)</option>
+            </select>
+          </label>
           <label class="device-control" for="network_device">Network device
             <select id="network_device">
               <option value="none">None</option>
@@ -37,12 +43,12 @@
         <canvas style="display: none"></canvas>
       </div>
 
-      <p class="hint">Choose NE2K or VirtIO before Reset to control which virtual NIC v86 presents to AsterOS. AsterOS includes a polling RTL8029/NE2K guest driver for Ethernet frames; VirtIO support is not implemented yet. End-to-end connectivity still needs a guest protocol stack and a configured v86 network backend. Click the emulator to focus the keyboard and capture the mouse. Press Esc to release the pointer.</p>
+      <p class="hint">SeaBIOS is the default system firmware. Choose experimental AsterBIOS before Reset to try the separately built AsterOS-branded SeaBIOS derivative; use SeaBIOS if it fails. The VGA BIOS is unchanged. Choose NE2K or VirtIO before Reset to control which virtual NIC v86 presents to AsterOS. AsterOS includes a polling RTL8029/NE2K guest driver for Ethernet frames; VirtIO support is not implemented yet. End-to-end connectivity still needs a guest protocol stack and a configured v86 network backend. Click the emulator to focus the keyboard and capture the mouse. Press Esc to release the pointer.</p>
     </section>
 
     <section class="notes">
       <h2>About this demo</h2>
-      <p>The browser build downloads v86's generated browser runtime and BIOS assets during the Pages deployment and builds a fresh AsterOS ISO from this repository. v86 provides an x86 PC environment directly in the browser.</p>
+      <p>The browser build downloads v86's generated browser runtime and default BIOS assets, builds the optional AsterBIOS ROM and corresponding source archive, and builds a fresh AsterOS ISO from this repository. v86 provides an x86 PC environment directly in the browser.</p>
       <p>Third-party licensing details are documented in <a href="third-party.html">Third-party notices</a>.</p>
     </section>
   </main>
