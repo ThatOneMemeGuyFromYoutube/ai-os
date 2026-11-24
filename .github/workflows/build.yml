@@ -64,7 +64,7 @@ jobs:
         run: |
           make QEMU=qemu-system-i386 QEMU_TIMEOUT=8 check-ne2k-iso
 
-      - name: Exchange ARP frames with a deterministic NE2K peer
+      - name: Exchange ARP and IPv4 ICMP echo frames with a deterministic NE2K peer
         run: |
           make QEMU=qemu-system-i386 NE2K_PEER_TIMEOUT=20 check-ne2k-peer-iso
 
@@ -106,7 +106,8 @@ jobs:
           - TinyLang regression tests passed.
           - 32-bit i386 cross-compiler, linker, and assembler checks passed.
           - Kernel and `.COM` program artifacts were generated and verified non-empty.
-          - Bootable ISO was boot-tested under `qemu-system-i386` with the default SeaBIOS firmware, an emulated RTL8029/NE2K PCI NIC, a deterministic socket peer that exchanged ARP frames, a disposable primary-master IDE disk, and the optional AsterBIOS system ROM.
+          - Host regression tests cover bounded IPv4 receive validation/dispatch and ICMPv4 echo response construction.
+          - Bootable ISO was boot-tested under `qemu-system-i386` with the default SeaBIOS firmware, an emulated RTL8029/NE2K PCI NIC, a deterministic socket peer that exchanged ARP and IPv4 ICMP echo frames, a disposable primary-master IDE disk, and the optional AsterBIOS system ROM.
           - GitHub Actions was forced through the Node 24 compatibility path with `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true`.
           - SHA-256 checksums are included in `SHA256SUMS`.
           EOF

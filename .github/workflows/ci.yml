@@ -49,7 +49,7 @@ jobs:
       - name: Boot-test ISO with emulated RTL8029 NE2K
         run: make QEMU=qemu-system-i386 QEMU_TIMEOUT=8 check-ne2k-iso
 
-      - name: Exchange ARP frames with a deterministic NE2K peer
+      - name: Exchange ARP and IPv4 ICMP echo frames with a deterministic NE2K peer
         run: make QEMU=qemu-system-i386 NE2K_PEER_TIMEOUT=20 check-ne2k-peer-iso
 
       - name: Boot-test ISO with disposable ATA disk
