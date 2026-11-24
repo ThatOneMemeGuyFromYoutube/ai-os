@@ -71,12 +71,12 @@ jobs:
 
       - name: Generate checksums
         run: |
-          sha256sum build/kernel.bin build/hello.com build/ai-os.iso > build/SHA256SUMS
+          sha256sum build/kernel.bin build/hello.com build/ai-os.iso build/firmware/asterbios.bin build/firmware/asterbios-source-rel-1.17.0.tar.gz > build/SHA256SUMS
           cat build/SHA256SUMS
 
       - name: Package validated outputs
         run: |
-          tar -C build -czf ai-os-${GITHUB_SHA}.tar.gz kernel.bin hello.com ai-os.iso SHA256SUMS
+          tar -C build -czf ai-os-${GITHUB_SHA}.tar.gz kernel.bin hello.com ai-os.iso SHA256SUMS firmware/asterbios.bin firmware/asterbios-source-rel-1.17.0.tar.gz firmware/asterbios-build-info.txt firmware/SeaBIOS-COPYING firmware/SeaBIOS-COPYING.LESSER
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v7
@@ -85,6 +85,11 @@ jobs:
           path: |
             ai-os-${{ github.sha }}.tar.gz
             build/ai-os.iso
+            build/firmware/asterbios.bin
+            build/firmware/asterbios-source-rel-1.17.0.tar.gz
+            build/firmware/asterbios-build-info.txt
+            build/firmware/SeaBIOS-COPYING
+            build/firmware/SeaBIOS-COPYING.LESSER
             build/SHA256SUMS
 
       - name: Prepare release notes
