@@ -11,6 +11,7 @@ GRUB_MKRESCUE ?= grub-mkrescue
 GRUB_FILE ?= grub-file
 QEMU ?= qemu-system-i386
 QEMU_TIMEOUT ?= 8
+NE2K_PEER_TIMEOUT ?= 20
 CFLAGS ?= -m32 -ffreestanding -fno-pie -fno-stack-protector -O2 -Wall -Wextra
 LDFLAGS ?= -m elf_i386 -T linker.ld
 
@@ -39,7 +40,7 @@ build:
 build/boot.o: boot/boot.S | build
 	$(AS) --32 $< -o $@
 
-build/kernel.o: kernel/kernel.c kernel/fs.h kernel/gui.h kernel/keyboard.h kernel/desktop_input.h kernel/ps2_wait.h kernel/net.h kernel/pci.h kernel/ne2k.h kernel/ata_pio.h | build
+build/kernel.o: kernel/kernel.c kernel/fs.h kernel/gui.h kernel/keyboard.h kernel/desktop_input.h kernel/ps2_wait.h kernel/net.h kernel/arp.h kernel/pci.h kernel/ne2k.h kernel/ata_pio.h | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
 build/gui.o: kernel/gui.c kernel/gui.h kernel/fs.h kernel/ide_file.h kernel/terminal.h kernel/desktop_input.h kernel/editor.h kernel/tinylang_check.h | build
@@ -70,6 +71,9 @@ build/ps2_wait.o: kernel/ps2_wait.c kernel/ps2_wait.h | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
 build/net.o: kernel/net.c kernel/net.h | build
+	$(CC) $(CFLAGS) -c $< -o $@
+
+build/arp.o: kernel/arp.c kernel/arp.h kernel/net.h | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
 build/pci.o: kernel/pci.c kernel/pci.h | build
@@ -129,6 +133,12 @@ build/test-net: kernel/net.c kernel/net.h tests/test_net.c | build
 check-net: build/test-net
 	./build/test-net
 
+build/test-arp: kernel/arp.c kernel/arp.h kernel/net.c kernel/net.h tests/test_arp.c | build
+	$(HOSTCC) $(HOSTCFLAGS) -Ikernel kernel/arp.c kernel/net.c tests/test_arp.c -o $@
+
+check-arp: build/test-arp
+	./build/test-arp
+
 build/test-pci: kernel/pci.c kernel/pci.h tests/test_pci.c | build
 	$(HOSTCC) $(HOSTCFLAGS) -Ikernel kernel/pci.c tests/test_pci.c -o $@
 
@@ -159,8 +169,8 @@ build/test-keyboard: kernel/keyboard.c kernel/keyboard.h tests/test_keyboard.c |
 check-keyboard: build/test-keyboard
 	./build/test-keyboard
 
-build/kernel.bin: build/boot.o build/kernel.o build/gui.o build/editor.o build/tinylang_check.o build/fs.o build/ide_file.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o build/pci.o build/ne2k.o build/ata_pio.o linker.ld
-	$(LD) $(LDFLAGS) -o $@ build/boot.o build/kernel.o build/gui.o build/editor.o build/tinylang_check.o build/fs.o build/ide_file.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o build/pci.o build/ne2k.o build/ata_pio.o
+build/kernel.bin: build/boot.o build/kernel.o build/gui.o build/editor.o build/tinylang_check.o build/fs.o build/ide_file.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o build/arp.o build/pci.o build/ne2k.o build/ata_pio.o linker.ld
+	$(LD) $(LDFLAGS) -o $@ build/boot.o build/kernel.o build/gui.o build/editor.o build/tinylang_check.o build/fs.o build/ide_file.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o build/arp.o build/pci.o build/ne2k.o build/ata_pio.o
 
 build/hello.com: toolchain/tinylang.py toolchain/examples/hello.tl | build
 	$(PYTHON) toolchain/tinylang.py toolchain/examples/hello.tl $@
@@ -286,6 +296,12 @@ check-ne2k-iso: iso
 	@command -v $(QEMU) >/dev/null || (echo "error: missing QEMU binary $(QEMU)" >&2; exit 1)
 	@QEMU="$(QEMU)" QEMU_TIMEOUT="$(QEMU_TIMEOUT)" bash scripts/qemu-smoke.sh -cdrom build/ai-os.iso -display none -serial stdio -no-reboot -no-shutdown -netdev user,id=net0 -device ne2k_pci,netdev=net0
 
+# Exchange an ARP request/reply with a deterministic host peer over QEMU's
+# length-prefixed TCP socket backend; this exercises guest RX and TX paths.
+check-ne2k-peer-iso: iso
+	@command -v $(QEMU) >/dev/null || (echo "error: missing QEMU binary $(QEMU)" >&2; exit 1)
+	$(PYTHON) scripts/ne2k-peer-smoke.py --qemu "$(QEMU)" --iso build/ai-os.iso --timeout "$(NE2K_PEER_TIMEOUT)"
+
 # Launch the ISO interactively with the optional AsterBIOS system ROM.
 run-asterbios-iso: iso build/firmware/asterbios.bin
 	$(QEMU) -bios build/firmware/asterbios.bin -cdrom build/ai-os.iso -no-reboot -no-shutdown
@@ -302,7 +318,7 @@ check-ata-iso: iso
 	@truncate -s 16M build/asteros-ata-test.img
 	@QEMU="$(QEMU)" QEMU_TIMEOUT="$(QEMU_TIMEOUT)" bash scripts/qemu-smoke.sh -drive file=build/asteros-ata-test.img,format=raw,if=ide,index=0 -cdrom build/ai-os.iso -boot order=d -display none -serial stdio -no-reboot -no-shutdown
 
-check: check-toolchain check-keyboard check-editor check-tinylang-check check-gui check-fs check-ide-file check-terminal check-desktop-input check-ps2-wait check-net check-pci check-ne2k check-ata-pio check-examples check-listings check-compile check-inspect check-source
+check: check-toolchain check-keyboard check-editor check-tinylang-check check-gui check-fs check-ide-file check-terminal check-desktop-input check-ps2-wait check-net check-arp check-pci check-ne2k check-ata-pio check-examples check-listings check-compile check-inspect check-source
 	PYTHONPATH=toolchain $(PYTHON) toolchain/test_tinylang.py
 	$(MAKE) check-artifacts
 
@@ -320,4 +336,4 @@ run-iso: build/ai-os.iso
 clean:
 	rm -rf build
 
-.PHONY: all check check-artifacts asterbios run-asterbios-iso check-iso check-ne2k-iso check-asterbios-iso check-ata-iso check-ata-pio check-keyboard check-editor check-tinylang-check check-gui check-fs check-ide-file check-terminal check-desktop-input check-ps2-wait check-net check-pci check-ne2k check-toolchain check-examples check-listings check-compile check-inspect examples listings compile inspect check-source clean iso package-release program run run-iso test
+.PHONY: all check check-artifacts asterbios run-asterbios-iso check-iso check-ne2k-iso check-ne2k-peer-iso check-asterbios-iso check-ata-iso check-ata-pio check-keyboard check-editor check-tinylang-check check-gui check-fs check-ide-file check-terminal check-desktop-input check-ps2-wait check-net check-arp check-pci check-ne2k check-toolchain check-examples check-listings check-compile check-inspect examples listings compile inspect check-source clean iso package-release program run run-iso test

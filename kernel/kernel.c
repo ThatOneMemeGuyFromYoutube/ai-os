@@ -4,6 +4,7 @@
 #include "keyboard.h"
 #include "ps2_wait.h"
 #include "net.h"
+#include "arp.h"
 #include "pci.h"
 #include "ne2k.h"
 #include "fs.h"
@@ -22,6 +23,8 @@ static const asteros_ata_io_t ata_io = {
     0, ata_in8, ata_in16, ata_out8, ata_out16
 };
 static asteros_ata_device_t ata_primary_master;
+/* RFC 5737 documentation address reserved for the initial ARP peer test. */
+static const uint8_t network_ipv4_address[4] = {192u, 0u, 2u, 2u};
 
 /* Use the PIT as a polled monotonic clock; the kernel currently has no IRQ
    timer path. Channel 0 runs at the standard 1.193182 MHz input clock. */
@@ -122,6 +125,11 @@ void kmain(void){
     asteros_net_init();
     asteros_pci_init();
     asteros_ne2k_init_default();
+    if (asteros_arp_init() == ASTEROS_ARP_OK &&
+        asteros_netif_count() != 0u) {
+        (void)asteros_arp_configure(asteros_netif_at(0),
+                                    network_ipv4_address);
+    }
     asteros_fs_init();
     /* Probe only: no sector is written until a validated AsterOS volume exists. */
     (void)asteros_ata_pio_probe(&ata_primary_master, &ata_io,
