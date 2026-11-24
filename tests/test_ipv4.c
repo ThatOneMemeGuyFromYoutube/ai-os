@@ -64,9 +64,9 @@ int main(void){
  prepare(f,5,TEST_PROTOCOL);f[22]=0;assert(receive(&i,f,24)==ASTEROS_IPV4_INVALID_TTL);
  prepare(f,5,TEST_PROTOCOL);put16(f+20,0x2000);rechecksum(f,20);
  assert(receive(&i,f,24)==ASTEROS_IPV4_FRAGMENTED_PACKET);
- prepare(f,5,TEST_PROTOCOL);memcpy(f+30,other,4);put16(f+24,asteros_ipv4_checksum(f+14,20));
+ prepare(f,5,TEST_PROTOCOL);memcpy(f+30,other,4);rechecksum(f,20);
  assert(receive(&i,f,24)==ASTEROS_IPV4_WRONG_DESTINATION);
- prepare(f,5,TEST_PROTOCOL);memset(f+26,0,4);put16(f+24,asteros_ipv4_checksum(f+14,20));
+ prepare(f,5,TEST_PROTOCOL);memset(f+26,0,4);rechecksum(f,20);
  assert(receive(&i,f,24)==ASTEROS_IPV4_INVALID_SOURCE);
  prepare(f,5,TEST_PROTOCOL);memcpy(f+6,badmac,6);
  assert(receive(&i,f,24)==ASTEROS_IPV4_INVALID_SOURCE);
