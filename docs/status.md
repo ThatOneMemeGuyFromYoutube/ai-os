@@ -1,3 +1,11 @@
+## 2026-11-25 — Add read-only AsterOS volume discovery
+
+Advanced the reopened IDE/storage milestone without risking an arbitrary disk. Added `kernel/volume.c`/`kernel/volume.h`, a fixed-buffer, callback-driven read-only probe that recognizes exactly one non-overlapping primary MBR partition of the AsterOS-reserved type `0x7F`, checks LBA28/disk bounds and boot flags, then validates an `ASTEROS1` v1 descriptor (partition geometry, reserved fields, sector size, and CRC-32). It reports the reserved data extent but does not format, mount, or write it. The Files app now distinguishes a detected ATA disk from a recognized AsterOS volume while continuing to identify all files as volatile RAM files.
+
+Added host regressions for valid/absent volumes, malformed MBRs, duplicate/overlapping/out-of-range partitions, descriptor version/geometry/reserved-field/CRC failures, and ATA read errors. Added `scripts/create-volume-image.py` and `make check-volume-iso` for a disposable QEMU disk image; CI and release validation now boot the ISO with that explicitly tagged image. The MBR and descriptor probe are deliberately read-only; a versioned filesystem and safe commit/recovery path remain future work.
+
+Validation is pending the PR's host, i386, ISO, and QEMU workflows.
+
 ## 2026-11-24 — Add bounded IPv4/ICMP echo networking
 
 Completed the active November 16–29 networking milestone early. Added a fixed-capacity IPv4 receive/dispatch layer with a per-interface static address and eight protocol slots. It validates IPv4 version, IHL and total-length bounds, header checksum, TTL, source/destination, and Ethernet destination; it rejects reserved/MF/fragment-offset flags rather than attempting unsafe reassembly. Added an ICMPv4 echo consumer that validates request checksums and sends replies directly to the incoming Ethernet source MAC, preserving the echo identifier, sequence, and data.

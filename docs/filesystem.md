@@ -10,6 +10,17 @@ The current filesystem service is a small, kernel-internal RAM filesystem. It pr
 - Names are canonicalized to uppercase. Accepted characters are letters, digits, underscore, and hyphen; path separators, directories, and multiple dots are rejected.
 - File contents are volatile and are discarded on reboot.
 
+## Read-only AsterOS volume discovery
+
+The kernel now distinguishes an arbitrary ATA disk from an explicitly prepared AsterOS volume before any future filesystem code is allowed to write. `kernel/volume.c` performs a read-only probe through an injected single-sector reader:
+
+- The disk must have a valid 512-byte MBR signature (`0x55AA`).
+- Exactly one primary partition must use the AsterOS-reserved MBR type `0x7F`; the entry must have a valid boot flag, nonzero LBA/count, fit the detected LBA28 disk capacity, and not overlap another nonempty primary partition.
+- The partition's first sector must contain the `ASTEROS1` v1 descriptor. Its fixed 36-byte header records version, sector size, flags, partition start/count, data offset, reserved field, and CRC-32 (IEEE) over bytes 0–31. The remaining bytes in the descriptor sector must be zero.
+- The descriptor reserves the first partition sector and reports the remaining sectors as a future data region. It is not yet a filesystem, and the kernel does not format, mount, read file contents from, or write to that region.
+
+`make check-volume` exercises malformed MBRs, missing/duplicate/overlapping/out-of-range partitions, descriptor version/geometry/CRC failures, and read errors. `scripts/create-volume-image.py` creates a disposable empty descriptor image for `make check-volume-iso`; the QEMU target exercises ATA reads during boot. The Files app reports whether a descriptor was recognized but continues to label all current files as volatile RAM files.
+
 ## Kernel API
 
 `kernel/fs.h` exposes:

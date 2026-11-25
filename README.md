@@ -115,7 +115,7 @@ The schedule has been reset on **October 8, 2026** to recover the development ti
   - [x] Add save/load through a kernel file service with 8.3 filename prompts, Files-app listing, useful errors, and dirty-buffer protection. The current backend is an eight-slot RAM filesystem; it is session-only and is not disk persistence or a user-mode BDOS ABI.
   - [ ] Add a disk-backed storage layer and mount/boot-time file recovery without removing the RAM filesystem's bounded testable interface.
   - [x] Add a bounded polling ATA PIO driver for primary-channel LBA28 disks, including IDENTIFY, single-sector reads/writes, cache flush, host-injected I/O tests, and a disposable-disk QEMU boot check. Kernel startup only probes the primary master; it does not write to a disk.
-  - [ ] Define and validate an explicit AsterOS volume/partition before any filesystem write; never treat an arbitrary primary disk as safe storage.
+  - [x] Define and validate an explicit AsterOS volume/partition before any filesystem write; never treat an arbitrary primary disk as safe storage. A read-only probe accepts exactly one non-overlapping primary MBR partition of type `0x7F` with an `ASTEROS1` v1 descriptor whose geometry and CRC match; it never formats or writes the disk.
   - [ ] Add a versioned, checksummed, crash-recoverable filesystem image with failure-safe mount and commit tests.
   - [ ] Connect IDE save/load to the mounted volume, preserving RAM-only behavior when no supported volume is present.
   - [ ] Extend guest-side validation into actual TinyLang code generation/compiler integration with actionable compiler diagnostics; F5 currently checks syntax and labels only and emits no program image.

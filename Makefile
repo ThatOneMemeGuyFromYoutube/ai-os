@@ -40,7 +40,7 @@ build:
 build/boot.o: boot/boot.S | build
 	$(AS) --32 $< -o $@
 
-build/kernel.o: kernel/kernel.c kernel/fs.h kernel/gui.h kernel/keyboard.h kernel/desktop_input.h kernel/ps2_wait.h kernel/net.h kernel/arp.h kernel/ipv4.h kernel/icmp.h kernel/pci.h kernel/ne2k.h kernel/ata_pio.h | build
+build/kernel.o: kernel/kernel.c kernel/fs.h kernel/gui.h kernel/keyboard.h kernel/desktop_input.h kernel/ps2_wait.h kernel/net.h kernel/arp.h kernel/ipv4.h kernel/icmp.h kernel/pci.h kernel/ne2k.h kernel/ata_pio.h kernel/volume.h | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
 build/gui.o: kernel/gui.c kernel/gui.h kernel/fs.h kernel/ide_file.h kernel/terminal.h kernel/desktop_input.h kernel/editor.h kernel/tinylang_check.h | build
@@ -90,6 +90,15 @@ build/ne2k.o: kernel/ne2k.c kernel/ne2k.h kernel/net.h kernel/pci.h | build
 
 build/ata_pio.o: kernel/ata_pio.c kernel/ata_pio.h | build
 	$(CC) $(CFLAGS) -c $< -o $@
+
+build/volume.o: kernel/volume.c kernel/volume.h | build
+	$(CC) $(CFLAGS) -c $< -o $@
+
+build/test-volume: kernel/volume.c kernel/volume.h tests/test_volume.c | build
+	$(HOSTCC) $(HOSTCFLAGS) -Ikernel kernel/volume.c tests/test_volume.c -o $@
+
+check-volume: build/test-volume
+	./build/test-volume
 
 build/test-editor: kernel/editor.c kernel/editor.h tests/test_editor.c | build
 	$(HOSTCC) $(HOSTCFLAGS) -Ikernel kernel/editor.c tests/test_editor.c -o $@
@@ -187,8 +196,8 @@ build/test-keyboard: kernel/keyboard.c kernel/keyboard.h tests/test_keyboard.c |
 check-keyboard: build/test-keyboard
 	./build/test-keyboard
 
-build/kernel.bin: build/boot.o build/kernel.o build/gui.o build/editor.o build/tinylang_check.o build/fs.o build/ide_file.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o build/arp.o build/ipv4.o build/icmp.o build/pci.o build/ne2k.o build/ata_pio.o linker.ld
-	$(LD) $(LDFLAGS) -o $@ build/boot.o build/kernel.o build/gui.o build/editor.o build/tinylang_check.o build/fs.o build/ide_file.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o build/arp.o build/ipv4.o build/icmp.o build/pci.o build/ne2k.o build/ata_pio.o
+build/kernel.bin: build/boot.o build/kernel.o build/gui.o build/editor.o build/tinylang_check.o build/fs.o build/ide_file.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o build/arp.o build/ipv4.o build/icmp.o build/pci.o build/ne2k.o build/ata_pio.o build/volume.o linker.ld
+	$(LD) $(LDFLAGS) -o $@ build/boot.o build/kernel.o build/gui.o build/editor.o build/tinylang_check.o build/fs.o build/ide_file.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o build/arp.o build/ipv4.o build/icmp.o build/pci.o build/ne2k.o build/ata_pio.o build/volume.o
 
 build/hello.com: toolchain/tinylang.py toolchain/examples/hello.tl | build
 	$(PYTHON) toolchain/tinylang.py toolchain/examples/hello.tl $@
@@ -336,7 +345,15 @@ check-ata-iso: iso
 	@truncate -s 16M build/asteros-ata-test.img
 	@QEMU="$(QEMU)" QEMU_TIMEOUT="$(QEMU_TIMEOUT)" bash scripts/qemu-smoke.sh -drive file=build/asteros-ata-test.img,format=raw,if=ide,index=0 -cdrom build/ai-os.iso -boot order=d -display none -serial stdio -no-reboot -no-shutdown
 
-check: check-toolchain check-keyboard check-editor check-tinylang-check check-gui check-fs check-ide-file check-terminal check-desktop-input check-ps2-wait check-net check-arp check-ipv4 check-icmp check-pci check-ne2k check-ata-pio check-examples check-listings check-compile check-inspect check-source
+# Boot with an explicitly tagged, empty AsterOS volume descriptor. The guest
+# discovers it read-only; this target does not test filesystem writes.
+check-volume-iso: iso scripts/create-volume-image.py
+	@command -v $(QEMU) >/dev/null || (echo "error: missing QEMU binary $(QEMU)" >&2; exit 1)
+	@rm -f build/asteros-volume-test.img
+	$(PYTHON) scripts/create-volume-image.py --output build/asteros-volume-test.img
+	@QEMU="$(QEMU)" QEMU_TIMEOUT="$(QEMU_TIMEOUT)" bash scripts/qemu-smoke.sh -drive file=build/asteros-volume-test.img,format=raw,if=ide,index=0 -cdrom build/ai-os.iso -boot order=d -display none -serial stdio -no-reboot -no-shutdown
+
+check: check-toolchain check-keyboard check-editor check-tinylang-check check-gui check-fs check-ide-file check-terminal check-desktop-input check-ps2-wait check-net check-arp check-ipv4 check-icmp check-pci check-ne2k check-ata-pio check-volume check-examples check-listings check-compile check-inspect check-source
 	PYTHONPATH=toolchain $(PYTHON) toolchain/test_tinylang.py
 	$(MAKE) check-artifacts
 
@@ -354,4 +371,4 @@ run-iso: build/ai-os.iso
 clean:
 	rm -rf build
 
-.PHONY: all check check-artifacts asterbios run-asterbios-iso check-iso check-ne2k-iso check-ne2k-peer-iso check-asterbios-iso check-ata-iso check-ata-pio check-keyboard check-editor check-tinylang-check check-gui check-fs check-ide-file check-terminal check-desktop-input check-ps2-wait check-net check-arp check-ipv4 check-icmp check-pci check-ne2k check-toolchain check-examples check-listings check-compile check-inspect examples listings compile inspect check-source clean iso package-release program run run-iso test
+.PHONY: all check check-artifacts asterbios run-asterbios-iso check-iso check-ne2k-iso check-ne2k-peer-iso check-asterbios-iso check-ata-iso check-volume-iso check-ata-pio check-volume check-keyboard check-editor check-tinylang-check check-gui check-fs check-ide-file check-terminal check-desktop-input check-ps2-wait check-net check-arp check-ipv4 check-icmp check-pci check-ne2k check-toolchain check-examples check-listings check-compile check-inspect examples listings compile inspect check-source clean iso package-release program run run-iso test

@@ -11,6 +11,7 @@
 #include "ne2k.h"
 #include "fs.h"
 #include "ata_pio.h"
+#include "volume.h"
 enum { SVC_CONSOLE = 1, SVC_FILES = 2, SVC_PROCESS = 3 };
 #define PS2_WAIT_ATTEMPTS 100000u
 static uint8_t inb(uint16_t port) { uint8_t value; __asm__ volatile ("inb %1, %0" : "=a"(value) : "Nd"(port)); return value; }
@@ -25,6 +26,11 @@ static const asteros_ata_io_t ata_io = {
     0, ata_in8, ata_in16, ata_out8, ata_out16
 };
 static asteros_ata_device_t ata_primary_master;
+static asteros_volume_t primary_asteros_volume;
+static uint8_t ata_read_sector(void *context, uint32_t lba, uint8_t *sector) {
+    const asteros_ata_device_t *device = (const asteros_ata_device_t *)context;
+    return (uint8_t)(asteros_ata_pio_read(device, lba, sector) == ASTEROS_ATA_OK);
+}
 /* RFC 5737 documentation address reserved for the initial ARP peer test. */
 static const uint8_t network_ipv4_address[4] = {192u, 0u, 2u, 2u};
 
@@ -140,8 +146,14 @@ void kmain(void){
     /* Probe only: no sector is written until a validated AsterOS volume exists. */
     (void)asteros_ata_pio_probe(&ata_primary_master, &ata_io,
                                 0x1F0u, 0x3F6u, 0u);
+    if (ata_primary_master.present) {
+        (void)asteros_volume_probe(ata_read_sector, &ata_primary_master,
+                                   ata_primary_master.sectors,
+                                   &primary_asteros_volume);
+    }
     gui_init();
     gui_set_ata_disk_present(ata_primary_master.present);
+    gui_set_asteros_volume_present(primary_asteros_volume.present);
     mouse_available=mouse_init();
     timer_init();
     keyboard_reset_state();
