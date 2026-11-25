@@ -4,7 +4,7 @@ Advanced the reopened IDE/storage milestone without risking an arbitrary disk. A
 
 Added host regressions for valid/absent volumes, malformed MBRs, duplicate/overlapping/out-of-range partitions, descriptor version/geometry/reserved-field/CRC failures, and ATA read errors. Added `scripts/create-volume-image.py` and `make check-volume-iso` for a disposable QEMU disk image; CI and release validation now boot the ISO with that explicitly tagged image. The MBR and descriptor probe are deliberately read-only; a versioned filesystem and safe commit/recovery path remain future work.
 
-Validation is pending the PR's host, i386, ISO, and QEMU workflows.
+Validation passed on PR [#50](https://github.com/ThatOneMemeGuyFromYoutube/ai-os/pull/50) and merged main commit `f35b9a282f3f8819feda82057d93e9fb0b719019`: `make check` (including the volume parser/CRC regressions), the 32-bit i386 kernel and ISO builds, default SeaBIOS QEMU boot, NE2K boot and deterministic ARP/ICMP peer exchange, disposable ATA-disk boot, explicitly tagged AsterOS-volume boot, and AsterBIOS build/boot all passed. The browser-demo regression and GitHub Pages deployment also passed. CI forced `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true`. Published as [AsterOS v0.1.96](https://github.com/ThatOneMemeGuyFromYoutube/ai-os/releases/tag/v0.1.96) on 2026-11-25.
 
 ## 2026-11-24 — Add bounded IPv4/ICMP echo networking
 
