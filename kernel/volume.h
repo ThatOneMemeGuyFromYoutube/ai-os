@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #define ASTEROS_VOLUME_SECTOR_SIZE 512u
+/* Project-private prototype code; the ASTEROS1 descriptor is also required. */
 #define ASTEROS_VOLUME_PARTITION_TYPE 0x7Fu
 #define ASTEROS_VOLUME_HEADER_SIZE 36u
 #define ASTEROS_VOLUME_DATA_OFFSET_SECTORS 1u

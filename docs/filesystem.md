@@ -15,7 +15,7 @@ The current filesystem service is a small, kernel-internal RAM filesystem. It pr
 The kernel now distinguishes an arbitrary ATA disk from an explicitly prepared AsterOS volume before any future filesystem code is allowed to write. `kernel/volume.c` performs a read-only probe through an injected single-sector reader:
 
 - The disk must have a valid 512-byte MBR signature (`0x55AA`).
-- Exactly one primary partition must use the AsterOS-reserved MBR type `0x7F`; the entry must have a valid boot flag, nonzero LBA/count, fit the detected LBA28 disk capacity, and not overlap another nonempty primary partition.
+- Exactly one primary partition must use the project-private MBR type `0x7F` (not a globally assigned partition identifier); the entry must have a valid boot flag, nonzero LBA/count, fit the detected LBA28 disk capacity, and not overlap another nonempty primary partition.
 - The partition's first sector must contain the `ASTEROS1` v1 descriptor. Its fixed 36-byte header records version, sector size, flags, partition start/count, data offset, reserved field, and CRC-32 (IEEE) over bytes 0–31. The remaining bytes in the descriptor sector must be zero.
 - The descriptor reserves the first partition sector and reports the remaining sectors as a future data region. It is not yet a filesystem, and the kernel does not format, mount, read file contents from, or write to that region.
 
