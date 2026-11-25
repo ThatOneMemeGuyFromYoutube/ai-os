@@ -143,7 +143,7 @@ void kmain(void){
                                      network_ipv4_address);
     }
     asteros_fs_init();
-    /* Probe only: no sector is written until a validated AsterOS volume exists. */
+    /* Discovery is read-only; a descriptor is not a mounted filesystem. */
     (void)asteros_ata_pio_probe(&ata_primary_master, &ata_io,
                                 0x1F0u, 0x3F6u, 0u);
     if (ata_primary_master.present) {

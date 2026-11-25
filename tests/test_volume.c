@@ -252,6 +252,8 @@ static void test_io_and_arguments(void) {
            ASTEROS_VOLUME_INVALID_ARGUMENT);
     assert(asteros_volume_probe(fake_read_sector, &disk, 0u, &volume) ==
            ASTEROS_VOLUME_INVALID_ARGUMENT);
+    assert(asteros_volume_probe(fake_read_sector, &disk, 0x10000001u,
+                                &volume) == ASTEROS_VOLUME_INVALID_ARGUMENT);
     assert(asteros_volume_probe(fake_read_sector, &disk, TEST_DISK_SECTORS,
                                 0) == ASTEROS_VOLUME_INVALID_ARGUMENT);
     assert(strcmp(asteros_volume_status_message(ASTEROS_VOLUME_OK),
