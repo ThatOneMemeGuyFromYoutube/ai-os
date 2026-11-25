@@ -12,6 +12,7 @@ make TARGET="$TARGET" check
 make TARGET="$TARGET" iso
 make TARGET="$TARGET" check-ne2k-iso
 make TARGET="$TARGET" check-ne2k-peer-iso
+make TARGET="$TARGET" check-volume-iso
 
 timeout 8s "$QEMU" -cdrom build/ai-os.iso -display none -serial stdio -no-reboot -no-shutdown \
   || test "$?" -eq 124
