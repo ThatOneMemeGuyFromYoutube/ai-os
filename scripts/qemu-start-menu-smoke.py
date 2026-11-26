@@ -55,7 +55,7 @@ def connect_monitor(path, process, timeout):
 def read_vga(monitor, destination):
     destination.unlink(missing_ok=True)
     response = monitor.command(
-        f"pmemsave {VGA_ADDRESS} {VGA_BYTES} {destination.as_posix()}"
+        f'pmemsave {VGA_ADDRESS} {VGA_BYTES} "{destination.as_posix()}"'
     )
     if "Error" in response or not destination.is_file():
         raise RuntimeError(f"QEMU could not save VGA memory: {response.strip()}")
