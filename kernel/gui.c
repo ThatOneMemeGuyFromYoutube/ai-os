@@ -656,6 +656,7 @@ void gui_handle_key(char key){
             run_status[0]='\0';
         }else{
             start_menu_open=(uint8_t)!start_menu_open;
+            if(start_menu_open)start_menu_selection=0;
         }
         gui_draw();
         return;
