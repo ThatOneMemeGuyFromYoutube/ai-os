@@ -60,6 +60,10 @@ jobs:
         run: |
           make QEMU=qemu-system-i386 QEMU_TIMEOUT=8 check-iso
 
+      - name: Exercise Start menu, Run dialog, and taskbar switching in QEMU
+        run: |
+          make QEMU=qemu-system-i386 QEMU_TIMEOUT=12 check-start-menu-iso
+
       - name: Boot-test ISO with emulated RTL8029 NE2K
         run: |
           make QEMU=qemu-system-i386 QEMU_TIMEOUT=8 check-ne2k-iso
