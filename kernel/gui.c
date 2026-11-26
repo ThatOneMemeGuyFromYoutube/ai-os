@@ -48,6 +48,12 @@ static uint8_t cursor_color;
 static uint8_t keyboard_click_enabled;
 static uint8_t context_menu_open;
 static uint8_t context_menu_selection;
+static uint8_t start_menu_open;
+static uint8_t start_menu_selection;
+static uint8_t run_dialog_open;
+static uint8_t run_length;
+static char run_buffer[TERM_INPUT_MAX + 1];
+static char run_status[TERM_INPUT_MAX + 1];
 static uint8_t context_menu_x;
 static uint8_t context_menu_y;
 static int8_t context_menu_target;
@@ -73,6 +79,13 @@ static uint8_t asteros_volume_present;
 static const char editor_default_source[] =
     "# TinyLang source editor\nmov eax, 42\nadd eax, 1\nexit";
 static const char *items[] = {"Terminal", "Files", "Programs", "About", "Settings", "IDE"};
+static const char *start_menu_items[] = {
+    "Terminal", "Files", "Programs", "IDE", "Settings", "About", "Run..."
+};
+static const uint8_t start_menu_apps[] = {
+    ASTEROS_APP_TERMINAL, ASTEROS_APP_FILES, ASTEROS_APP_PROGRAMS,
+    ASTEROS_APP_IDE, ASTEROS_APP_SETTINGS, ASTEROS_APP_ABOUT
+};
 
 enum { TERM_READY = 0, TERM_HELP, TERM_APPS, TERM_INFO, TERM_VER, TERM_ECHO, TERM_PWD, TERM_HISTORY, TERM_UNAME, TERM_UNKNOWN };
 
@@ -527,8 +540,23 @@ static void activate_app(uint8_t app){
     if(app>=ASTEROS_APP_COUNT)return;
     /* Terminal buffers are persistent app state, not scratch state for the
        currently focused window. Only explicitly closing Terminal clears it. */
+    start_menu_open=0;
+    run_dialog_open=0;
+    run_length=0;
+    run_buffer[0]='\0';
     selected=app;
     active_app=(int8_t)app;
+}
+static void start_menu_execute(uint8_t item){
+    if(item<ASTEROS_START_MENU_ITEM_RUN){
+        activate_app(start_menu_apps[item]);
+    }else if(item==ASTEROS_START_MENU_ITEM_RUN){
+        start_menu_open=0;
+        run_dialog_open=1;
+        run_length=0;
+        run_buffer[0]='\0';
+        set_short_status(run_status,"Enter a built-in application name");
+    }
 }
 static void context_menu_execute(int8_t choice){
     if(choice==ASTEROS_CONTEXT_MENU_OPEN){
@@ -561,6 +589,35 @@ static void draw_taskbar(void){
     text(2,24,active_app<0?"Desktop ready":"Window active",ATTR_TASK);
     text(67,24,"i386 PM",ATTR_TASK);
 }
+static void draw_start_menu(void){
+    uint8_t row;
+    if(!start_menu_open)return;
+    fill(ASTEROS_START_MENU_X,ASTEROS_START_MENU_Y,
+         ASTEROS_START_MENU_WIDTH,ASTEROS_START_MENU_HEIGHT,' ',ATTR_PANEL);
+    border(ASTEROS_START_MENU_X,ASTEROS_START_MENU_Y,
+           ASTEROS_START_MENU_WIDTH,ASTEROS_START_MENU_HEIGHT);
+    text((uint8_t)(ASTEROS_START_MENU_X+2u),
+         (uint8_t)(ASTEROS_START_MENU_Y+1u),"AsterOS Start",ATTR_TITLE);
+    for(row=0;row<ASTEROS_START_MENU_ITEM_COUNT;row++){
+        uint8_t y=(uint8_t)(ASTEROS_START_MENU_Y+2u+row);
+        uint8_t attribute=row==start_menu_selection?ATTR_SELECT:ATTR_PANEL;
+        fill((uint8_t)(ASTEROS_START_MENU_X+1u),y,
+             (uint8_t)(ASTEROS_START_MENU_WIDTH-2u),1,' ',attribute);
+        text((uint8_t)(ASTEROS_START_MENU_X+3u),y,start_menu_items[row],attribute);
+    }
+}
+static void draw_run_dialog(void){
+    if(!run_dialog_open)return;
+    fill(20,8,42,8,' ',ATTR_PANEL);
+    border(20,8,42,8);
+    text(22,9,"Run AsterOS application",ATTR_TITLE);
+    text(22,11,"Open:",ATTR_NORMAL);
+    text_n(29,11,run_buffer,ATTR_STATUS,31);
+    text(22,12,"Built-in application name:",ATTR_NORMAL);
+    text_n(22,13,run_buffer,ATTR_STATUS,38);
+    if(run_status[0])text_n(22,14,run_status,ATTR_STATUS,38);
+    else text(22,14,"No arbitrary program loader is available.",ATTR_NORMAL);
+}
 static void draw_selected_app(void){
     fill(21,4,57,18,' ',ATTR_NORMAL);
     if(active_app<0){
@@ -571,6 +628,8 @@ static void draw_selected_app(void){
         text(22,12,"[T] Terminal   [F] Files",ATTR_NORMAL);
         text(22,13,"[P] Programs  [A] About",ATTR_NORMAL);
         text(22,14,"[C] Cursor Settings  [I] IDE",ATTR_NORMAL);
+        text(22,16,"Ctrl+Esc or click Start opens the Start menu.",ATTR_NORMAL);
+        text(22,17,"Run opens built-in apps by name only.",ATTR_NORMAL);
     }else{
         fill(21,4,57,2,' ',ATTR_TITLE);
         text(23,4,items[(uint8_t)active_app],ATTR_TITLE);
@@ -583,25 +642,48 @@ static void draw_selected_app(void){
         else draw_editor();
     }
 }
-void gui_draw(void){cursor_clear();fill(0,0,WIDTH,HEIGHT,' ',ATTR_NORMAL);fill(0,0,WIDTH,1,' ',ATTR_TITLE);text(2,0,"AsterOS",ATTR_TITLE);text(68,0,"Desktop",ATTR_TITLE);border(1,2,18,19);text(3,3,"Applications",ATTR_PANEL);for(uint8_t i=0;i<ASTEROS_APP_COUNT;i++)text(3,(uint8_t)(5+i*2),items[i],i==selected?ATTR_SELECT:ATTR_PANEL);draw_desktop_surface();border(20,2,59,19);text(22,3,"Welcome to AsterOS",ATTR_NORMAL);draw_selected_app();draw_taskbar();draw_context_menu();cursor_draw();}
-void gui_init(void){ata_disk_present=0;asteros_volume_present=0;selected=0;keyboard_click_enabled=1;context_menu_open=0;context_menu_selection=ASTEROS_CONTEXT_MENU_OPEN;context_menu_target=ASTEROS_HIT_NONE;active_app=-1;mouse_x=WIDTH*2;mouse_y=HEIGHT*2;cursor_active=0;cursor_visible=1;cursor_speed=1;cursor_shape=0;cursor_color=0;terminal_result=TERM_READY;terminal_output[0]='\0';terminal_history_clear(&terminal_history_state);terminal_history_output[0]='\0';terminal_reset_input();editor_prompt_mode=EDITOR_PROMPT_NONE;editor_prompt_length=0;editor_status[0]='\0';asteros_ide_file_init(&editor_file,"HELLO.TL");set_short_status(files_status,"RAM files are volatile");files_selected=0;(void)asteros_fs_write(editor_file.name,(const uint8_t *)editor_default_source,(uint16_t)(sizeof editor_default_source-1u));asteros_editor_init(&editor_state,editor_default_source);editor_scroll_line=0;gui_draw();}
+void gui_draw(void){cursor_clear();fill(0,0,WIDTH,HEIGHT,' ',ATTR_NORMAL);fill(0,0,WIDTH,1,' ',ATTR_TITLE);text(2,0,"AsterOS",ATTR_TITLE);text(68,0,"Desktop",ATTR_TITLE);border(1,2,18,19);text(3,3,"Applications",ATTR_PANEL);for(uint8_t i=0;i<ASTEROS_APP_COUNT;i++)text(3,(uint8_t)(5+i*2),items[i],i==selected?ATTR_SELECT:ATTR_PANEL);draw_desktop_surface();border(20,2,59,19);text(22,3,"Welcome to AsterOS",ATTR_NORMAL);draw_selected_app();draw_taskbar();draw_start_menu();draw_run_dialog();draw_context_menu();cursor_draw();}
+void gui_init(void){ata_disk_present=0;asteros_volume_present=0;selected=0;keyboard_click_enabled=1;start_menu_open=0;start_menu_selection=0;run_dialog_open=0;run_length=0;run_buffer[0]='\0';run_status[0]='\0';context_menu_open=0;context_menu_selection=ASTEROS_CONTEXT_MENU_OPEN;context_menu_target=ASTEROS_HIT_NONE;active_app=-1;mouse_x=WIDTH*2;mouse_y=HEIGHT*2;cursor_active=0;cursor_visible=1;cursor_speed=1;cursor_shape=0;cursor_color=0;terminal_result=TERM_READY;terminal_output[0]='\0';terminal_history_clear(&terminal_history_state);terminal_history_output[0]='\0';terminal_reset_input();editor_prompt_mode=EDITOR_PROMPT_NONE;editor_prompt_length=0;editor_status[0]='\0';asteros_ide_file_init(&editor_file,"HELLO.TL");set_short_status(files_status,"RAM files are volatile");files_selected=0;(void)asteros_fs_write(editor_file.name,(const uint8_t *)editor_default_source,(uint16_t)(sizeof editor_default_source-1u));asteros_editor_init(&editor_state,editor_default_source);editor_scroll_line=0;gui_draw();}
 void gui_set_ata_disk_present(uint8_t present){ata_disk_present=(uint8_t)(present!=0);}
 void gui_set_asteros_volume_present(uint8_t present){asteros_volume_present=(uint8_t)(present!=0);}
 void gui_handle_key(char key){
     uint8_t event=(uint8_t)key;
+    if(event==ASTEROS_KEY_START_MENU){
+        context_menu_open=0;
+        if(run_dialog_open){
+            run_dialog_open=0;
+            run_length=0;
+            run_buffer[0]='\0';
+        }else{
+            start_menu_open=(uint8_t)!start_menu_open;
+        }
+        gui_draw();
+        return;
+    }
     if(event==ASTEROS_KEY_CLOSE_APP){
         context_menu_open=0;
-        if(active_app>=0)close_active_app();
+        if(run_dialog_open){
+            run_dialog_open=0;
+            run_length=0;
+            run_buffer[0]='\0';
+        }else if(start_menu_open){
+            start_menu_open=0;
+        }else if(active_app>=0){
+            close_active_app();
+        }
         gui_draw();
         return;
     }
     if(event==ASTEROS_KEY_HOVER_LEFT_CLICK){
+        if(run_dialog_open)return;
         if(active_app==ASTEROS_APP_IDE&&editor_prompt_mode!=EDITOR_PROMPT_NONE)return;
         if(keyboard_click_enabled){gui_handle_mouse(0,0,0);gui_handle_mouse(0,0,1);gui_handle_mouse(0,0,0);}
         return;
     }
     if(event==ASTEROS_KEY_HOVER_RIGHT_CLICK){
+        if(run_dialog_open)return;
         if(active_app==ASTEROS_APP_IDE&&editor_prompt_mode!=EDITOR_PROMPT_NONE)return;
+        start_menu_open=0;
         context_menu_open=1;
         context_menu_selection=ASTEROS_CONTEXT_MENU_OPEN;
         context_menu_x=(uint8_t)(mouse_x/4);
@@ -635,6 +717,48 @@ void gui_handle_key(char key){
             gui_draw();
             return;
         }
+        return;
+    }
+    if(run_dialog_open){
+        if(key==27){
+            run_dialog_open=0;
+            run_length=0;
+            run_buffer[0]='\0';
+            run_status[0]='\0';
+        }else if(key=='\b'){
+            if(run_length){
+                run_length--;
+                run_buffer[run_length]='\0';
+            }
+        }else if(key=='\r'||key=='\n'){
+            int8_t app=asteros_app_resolve_command(run_buffer);
+            if(app>=ASTEROS_APP_TERMINAL&&app<ASTEROS_APP_COUNT){
+                activate_app((uint8_t)app);
+            }else{
+                set_short_status(run_status,"Unknown app; try terminal, files, IDE or settings");
+            }
+        }else if(key>=32&&key<=126){
+            if(run_length<TERM_INPUT_MAX){
+                run_buffer[run_length++]=key;
+                run_buffer[run_length]='\0';
+            }
+        }else return;
+        gui_draw();
+        return;
+    }
+    if(start_menu_open){
+        if(key==27){
+            start_menu_open=0;
+        }else if(event==KEY_UP||key=='w'||key=='W'){
+            start_menu_selection=asteros_start_menu_move_selection(
+                start_menu_selection,-1);
+        }else if(event==KEY_DOWN||key=='s'||key=='S'){
+            start_menu_selection=asteros_start_menu_move_selection(
+                start_menu_selection,1);
+        }else if(key=='\r'||key=='\n'||key==' '){
+            start_menu_execute(start_menu_selection);
+        }else return;
+        gui_draw();
         return;
     }
     if(active_app==ASTEROS_APP_SETTINGS&&(key=='b'||key=='B')){
@@ -763,7 +887,9 @@ void gui_handle_mouse(int8_t dx,int8_t dy,uint8_t buttons){
     uint8_t cell_x;
     uint8_t cell_y;
     int8_t target;
+    int8_t menu_choice;
     uint8_t redraw=0;
+    uint8_t menu_handled=0;
     uint8_t pressed=(uint8_t)(buttons&0x07);
     uint8_t context_was_open=context_menu_open;
     static uint8_t previous_buttons;
@@ -779,6 +905,12 @@ void gui_handle_mouse(int8_t dx,int8_t dy,uint8_t buttons){
     cell_y=(uint8_t)(mouse_y/4);
     target=asteros_desktop_hit_test(active_app,cell_x,cell_y);
     right_edge=(uint8_t)((pressed&2u)&&!(previous_buttons&2u));
+    if(run_dialog_open){
+        previous_buttons=pressed;
+        cursor_draw();
+        return;
+    }
+    if(right_edge&&start_menu_open)start_menu_open=0;
     if(right_edge){
         context_menu_open=1;
         context_menu_selection=ASTEROS_CONTEXT_MENU_OPEN;
@@ -796,13 +928,34 @@ void gui_handle_mouse(int8_t dx,int8_t dy,uint8_t buttons){
         /* Clicking the border or elsewhere only dismisses the menu. */
         redraw=1;
     }
-    if(active_app<0&&target>=0&&target<ASTEROS_APP_COUNT&&selected!=(uint8_t)target){
+    if(!right_edge&&!context_was_open&&!context_menu_open&&start_menu_open){
+        menu_choice=asteros_start_menu_hit_test(cell_x,cell_y);
+        if(menu_choice>=0){
+            if(start_menu_selection!=(uint8_t)menu_choice){
+                start_menu_selection=(uint8_t)menu_choice;
+                redraw=1;
+            }
+            if(asteros_mouse_activation_edge(previous_buttons,pressed)){
+                start_menu_execute((uint8_t)menu_choice);
+                redraw=1;
+                menu_handled=1;
+            }
+        }else if(asteros_mouse_activation_edge(previous_buttons,pressed)){
+            start_menu_open=0;
+            redraw=1;
+            if(target==ASTEROS_HIT_START)menu_handled=1;
+        }
+    }
+    if(!start_menu_open&&active_app<0&&target>=0&&
+       target<ASTEROS_APP_COUNT&&selected!=(uint8_t)target){
         selected=(uint8_t)target;
         redraw=1;
     }
-    if(!right_edge&&!context_was_open&&!context_menu_open&&asteros_mouse_activation_edge(previous_buttons,pressed)){
+    if(!right_edge&&!context_was_open&&!context_menu_open&&!menu_handled&&
+       asteros_mouse_activation_edge(previous_buttons,pressed)){
         if(target==ASTEROS_HIT_START){
-            active_app=-1;
+            start_menu_open=1;
+            start_menu_selection=0;
             redraw=1;
         }else if(target==ASTEROS_HIT_CLOSE){
             close_active_app();
