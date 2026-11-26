@@ -47,6 +47,10 @@ jobs:
           body: |
             AsterOS 32-bit x86 weekly release.
 
+            Desktop update:
+            - The VGA text-mode desktop now has a Start menu opened by clicking Start or pressing Ctrl+Esc, with keyboard/mouse navigation and shortcuts for the built-in applications.
+            - The Run dialog resolves only known built-in application names/aliases and rejects unknown commands; arbitrary transient program execution is not claimed.
+
             Validation:
             - `make check` (including IPv4 parser and ICMP echo host regressions)
             - `make iso`
