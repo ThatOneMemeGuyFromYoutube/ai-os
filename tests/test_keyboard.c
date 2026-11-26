@@ -55,7 +55,15 @@ int main(void) {
     expect_ignored(0xBA);
     expect_key(0x1E, 'a');
 
-    expect_key(0x01, 27);
+    expect_key(0x01, 27); /* Escape remains Escape without Ctrl. */
+    expect_ignored(0x1D); /* Left Ctrl down. */
+    expect_key(0x01, (char)ASTEROS_KEY_START_MENU);
+    expect_ignored(0x9D); /* Left Ctrl up. */
+    expect_ignored(0xE0);
+    expect_ignored(0x1D); /* Right Ctrl down. */
+    expect_key(0x01, (char)ASTEROS_KEY_START_MENU);
+    expect_ignored(0xE0);
+    expect_ignored(0x9D); /* Right Ctrl up. */
     expect_key(0x0F, '\t');
     expect_key(0x1C, '\r');
     expect_key(0x0E, '\b');
