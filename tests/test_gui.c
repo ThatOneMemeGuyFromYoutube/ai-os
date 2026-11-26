@@ -163,6 +163,8 @@ int main(void) {
     test_f5_diagnostic_and_cursor_navigation();
     test_save_dirty_guard_and_open_round_trip();
     test_volume_presence_is_reported_without_claiming_persistence();
+    test_start_menu_keyboard_and_run_dialog();
+    test_start_button_mouse_and_menu_item();
     puts("gui: IDE validation and file workflow tests passed");
     return 0;
 }
