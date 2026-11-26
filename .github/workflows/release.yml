@@ -33,6 +33,7 @@ jobs:
           make check
           make iso
           make check-iso QEMU=qemu-system-i386
+          make check-start-menu-iso QEMU=qemu-system-i386 QEMU_TIMEOUT=12
           make check-ne2k-iso QEMU=qemu-system-i386
           make check-ne2k-peer-iso QEMU=qemu-system-i386
           make check-ata-iso QEMU=qemu-system-i386
