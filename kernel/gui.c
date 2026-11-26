@@ -611,12 +611,11 @@ static void draw_run_dialog(void){
     fill(20,8,42,8,' ',ATTR_PANEL);
     border(20,8,42,8);
     text(22,9,"Run AsterOS application",ATTR_TITLE);
-    text(22,11,"Open:",ATTR_NORMAL);
-    text_n(29,11,run_buffer,ATTR_STATUS,31);
-    text(22,12,"Built-in application name:",ATTR_NORMAL);
-    text_n(22,13,run_buffer,ATTR_STATUS,38);
+    text(22,11,"Application:",ATTR_NORMAL);
+    text_n(35,11,run_buffer,ATTR_STATUS,25);
+    text(22,13,"Built-in apps only; no program loader.",ATTR_NORMAL);
     if(run_status[0])text_n(22,14,run_status,ATTR_STATUS,38);
-    else text(22,14,"No arbitrary program loader is available.",ATTR_NORMAL);
+    else text(22,14,"Examples: terminal, files, IDE, settings.",ATTR_NORMAL);
 }
 static void draw_selected_app(void){
     fill(21,4,57,18,' ',ATTR_NORMAL);
@@ -654,6 +653,7 @@ void gui_handle_key(char key){
             run_dialog_open=0;
             run_length=0;
             run_buffer[0]='\0';
+            run_status[0]='\0';
         }else{
             start_menu_open=(uint8_t)!start_menu_open;
         }
@@ -730,6 +730,7 @@ void gui_handle_key(char key){
                 run_length--;
                 run_buffer[run_length]='\0';
             }
+            run_status[0]='\0';
         }else if(key=='\r'||key=='\n'){
             int8_t app=asteros_app_resolve_command(run_buffer);
             if(app>=ASTEROS_APP_TERMINAL&&app<ASTEROS_APP_COUNT){
@@ -741,6 +742,7 @@ void gui_handle_key(char key){
             if(run_length<TERM_INPUT_MAX){
                 run_buffer[run_length++]=key;
                 run_buffer[run_length]='\0';
+                run_status[0]='\0';
             }
         }else return;
         gui_draw();
