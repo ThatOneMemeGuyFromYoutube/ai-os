@@ -175,14 +175,14 @@ uint8_t asteros_start_menu_move_selection(uint8_t selection, int8_t delta) {
 }
 
 static uint8_t command_equals(const char *command, const char *expected) {
-    while (*command == ' ' || *command == '\\t') command++;
+    while (*command == ' ' || *command == '\t') command++;
     while (*expected) {
         if (!*command || ascii_lower(*command) != *expected) return 0u;
         command++;
         expected++;
     }
-    while (*command == ' ' || *command == '\\t') command++;
-    return (uint8_t)(*command == '\\0');
+    while (*command == ' ' || *command == '\t') command++;
+    return (uint8_t)(*command == '\0');
 }
 
 int8_t asteros_app_resolve_command(const char *command) {
