@@ -318,6 +318,11 @@ check-iso: iso
 	@command -v $(QEMU) >/dev/null || (echo "error: missing QEMU binary $(QEMU)" >&2; exit 1)
 	@QEMU="$(QEMU)" QEMU_TIMEOUT="$(QEMU_TIMEOUT)" bash scripts/qemu-smoke.sh -cdrom build/ai-os.iso -display none -serial stdio -no-reboot -no-shutdown
 
+# Exercise Ctrl+Esc, Start-menu navigation, Run cancellation/launch, and Tab
+# switching against the actual VGA text buffer of a running QEMU guest.
+check-start-menu-iso: iso scripts/qemu-start-menu-smoke.py
+	$(PYTHON) scripts/qemu-start-menu-smoke.py --qemu "$(QEMU)" --iso build/ai-os.iso --timeout "$(QEMU_TIMEOUT)"
+
 # Boot with the same PCI RTL8029-compatible NE2000 device used by the v86 selector.
 check-ne2k-iso: iso
 	@command -v $(QEMU) >/dev/null || (echo "error: missing QEMU binary $(QEMU)" >&2; exit 1)
@@ -371,4 +376,4 @@ run-iso: build/ai-os.iso
 clean:
 	rm -rf build
 
-.PHONY: all check check-artifacts asterbios run-asterbios-iso check-iso check-ne2k-iso check-ne2k-peer-iso check-asterbios-iso check-ata-iso check-volume-iso check-ata-pio check-volume check-keyboard check-editor check-tinylang-check check-gui check-fs check-ide-file check-terminal check-desktop-input check-ps2-wait check-net check-arp check-ipv4 check-icmp check-pci check-ne2k check-toolchain check-examples check-listings check-compile check-inspect examples listings compile inspect check-source clean iso package-release program run run-iso test
+.PHONY: all check check-artifacts asterbios run-asterbios-iso check-iso check-start-menu-iso check-ne2k-iso check-ne2k-peer-iso check-asterbios-iso check-ata-iso check-volume-iso check-ata-pio check-volume check-keyboard check-editor check-tinylang-check check-gui check-fs check-ide-file check-terminal check-desktop-input check-ps2-wait check-net check-arp check-ipv4 check-icmp check-pci check-ne2k check-toolchain check-examples check-listings check-compile check-inspect examples listings compile inspect check-source clean iso package-release program run run-iso test

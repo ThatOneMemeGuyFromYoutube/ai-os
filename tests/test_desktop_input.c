@@ -258,6 +258,46 @@ static void test_context_menu_hit_testing(void) {
     assert(asteros_context_menu_hit_test(64, 20, 66, 23) == ASTEROS_CONTEXT_MENU_CLOSE);
 }
 
+static void test_start_menu_hit_testing_and_navigation(void) {
+    assert(asteros_start_menu_hit_test(2, 15) ==
+           ASTEROS_START_MENU_ITEM_TERMINAL);
+    assert(asteros_start_menu_hit_test(23, 21) ==
+           ASTEROS_START_MENU_ITEM_RUN);
+    assert(asteros_start_menu_hit_test(1, 15) == ASTEROS_HIT_NONE);
+    assert(asteros_start_menu_hit_test(24, 15) == ASTEROS_HIT_NONE);
+    assert(asteros_start_menu_hit_test(2, 14) == ASTEROS_HIT_NONE);
+    assert(asteros_start_menu_hit_test(2, 22) == ASTEROS_HIT_NONE);
+    assert(asteros_start_menu_hit_test(2, 23) == ASTEROS_HIT_NONE);
+
+    assert(asteros_start_menu_move_selection(0, -1) ==
+           ASTEROS_START_MENU_ITEM_RUN);
+    assert(asteros_start_menu_move_selection(
+        ASTEROS_START_MENU_ITEM_RUN, 1) == 0);
+    assert(asteros_start_menu_move_selection(2, 1) == 3);
+    assert(asteros_start_menu_move_selection(3, -1) == 2);
+    assert(asteros_start_menu_move_selection(99, 0) == 0);
+}
+
+static void test_run_command_resolution(void) {
+    assert(asteros_app_resolve_command("terminal") == ASTEROS_APP_TERMINAL);
+    assert(asteros_app_resolve_command(" TERM ") == ASTEROS_APP_TERMINAL);
+    assert(asteros_app_resolve_command("console") == ASTEROS_APP_TERMINAL);
+    assert(asteros_app_resolve_command("Files") == ASTEROS_APP_FILES);
+    assert(asteros_app_resolve_command("computer") == ASTEROS_APP_FILES);
+    assert(asteros_app_resolve_command("programs") == ASTEROS_APP_PROGRAMS);
+    assert(asteros_app_resolve_command("apps") == ASTEROS_APP_PROGRAMS);
+    assert(asteros_app_resolve_command("IDE") == ASTEROS_APP_IDE);
+    assert(asteros_app_resolve_command("editor") == ASTEROS_APP_IDE);
+    assert(asteros_app_resolve_command("settings") == ASTEROS_APP_SETTINGS);
+    assert(asteros_app_resolve_command("control panel") == ASTEROS_APP_SETTINGS);
+    assert(asteros_app_resolve_command("help") == ASTEROS_APP_ABOUT);
+    assert(asteros_app_resolve_command("about") == ASTEROS_APP_ABOUT);
+    assert(asteros_app_resolve_command("") == ASTEROS_HIT_NONE);
+    assert(asteros_app_resolve_command("ide --run") == ASTEROS_HIT_NONE);
+    assert(asteros_app_resolve_command("kernel") == ASTEROS_HIT_NONE);
+    assert(asteros_app_resolve_command(0) == ASTEROS_HIT_NONE);
+}
+
 int main(void) {
     test_touchpad_double_tap_coalescing();
     test_alternate_mouse_activation();
@@ -272,6 +312,8 @@ int main(void) {
     test_context_menu_placement();
     test_context_menu_hit_testing();
     test_context_menu_keyboard_selection();
+    test_start_menu_hit_testing_and_navigation();
+    test_run_command_resolution();
     puts("desktop input: tests passed");
     return 0;
 }

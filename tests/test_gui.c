@@ -3,6 +3,7 @@
 #include <string.h>
 #include "gui.h"
 #include "keyboard.h"
+#include "desktop_input.h"
 #include "fs.h"
 
 static void row_text(uint8_t row, char output[81]) {
@@ -104,12 +105,67 @@ static void test_volume_presence_is_reported_without_claiming_persistence(void) 
     assert(row_contains(6, "volatile"));
 }
 
+static void test_start_menu_keyboard_and_run_dialog(void) {
+    uint8_t index;
+
+    gui_init();
+    gui_handle_key((char)ASTEROS_KEY_START_MENU);
+    assert(row_contains(14, "AsterOS Start"));
+    assert(row_contains(15, "Terminal"));
+    assert(row_contains(21, "Run..."));
+
+    /* Up wraps from the first app to Run; Escape cancels without launching. */
+    gui_handle_key((char)ASTEROS_KEY_UP);
+    gui_handle_key('\r');
+    assert(row_contains(9, "Run AsterOS application"));
+    type_text("not-an-app");
+    gui_handle_key('\r');
+    assert(row_contains(14, "Unknown app"));
+    gui_handle_key(27);
+    assert(row_contains(5, "Select an application"));
+
+    /* Run accepts only a known built-in app and switches to its real window. */
+    gui_handle_key((char)ASTEROS_KEY_START_MENU);
+    for(index=0;index<ASTEROS_START_MENU_ITEM_RUN;index++)
+        gui_handle_key((char)ASTEROS_KEY_DOWN);
+    gui_handle_key('\r');
+    type_text("  FILES  ");
+    gui_handle_key('\r');
+    assert(row_contains(4, "Files"));
+
+    /* Cancelling Run preserves the current foreground application. */
+    gui_handle_key((char)ASTEROS_KEY_START_MENU);
+    for(index=0;index<ASTEROS_START_MENU_ITEM_RUN;index++)
+        gui_handle_key((char)ASTEROS_KEY_DOWN);
+    gui_handle_key('\r');
+    gui_handle_key(27);
+    assert(row_contains(4, "Files"));
+}
+
+static void test_start_button_mouse_and_menu_item(void) {
+    gui_init();
+    /* Initial pointer is at cell (40,12); move to the Start taskbar button. */
+    gui_handle_mouse(-128,-42,0);
+    gui_handle_mouse(-28,0,0);
+    gui_handle_mouse(0,0,0);
+    gui_handle_mouse(0,0,1);
+    assert(row_contains(14, "AsterOS Start"));
+
+    /* Select the IDE row with the mouse and launch it. */
+    gui_handle_mouse(0,0,0);
+    gui_handle_mouse(28,20,0);
+    gui_handle_mouse(0,0,1);
+    assert(row_contains(4, "IDE"));
+}
+
 int main(void) {
     asteros_fs_init();
     gui_init();
     test_f5_diagnostic_and_cursor_navigation();
     test_save_dirty_guard_and_open_round_trip();
     test_volume_presence_is_reported_without_claiming_persistence();
+    test_start_menu_keyboard_and_run_dialog();
+    test_start_button_mouse_and_menu_item();
     puts("gui: IDE validation and file workflow tests passed");
     return 0;
 }

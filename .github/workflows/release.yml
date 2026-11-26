@@ -33,6 +33,7 @@ jobs:
           make check
           make iso
           make check-iso QEMU=qemu-system-i386
+          make check-start-menu-iso QEMU=qemu-system-i386 QEMU_TIMEOUT=12
           make check-ne2k-iso QEMU=qemu-system-i386
           make check-ne2k-peer-iso QEMU=qemu-system-i386
           make check-ata-iso QEMU=qemu-system-i386
@@ -47,10 +48,15 @@ jobs:
           body: |
             AsterOS 32-bit x86 weekly release.
 
+            Desktop update:
+            - The VGA text-mode desktop now has a Start menu opened by clicking Start or pressing Ctrl+Esc, with keyboard/mouse navigation and shortcuts for the built-in applications.
+            - The Run dialog resolves only known built-in application names/aliases and rejects unknown commands; arbitrary transient program execution is not claimed.
+
             Validation:
-            - `make check` (including IPv4 parser and ICMP echo host regressions)
+            - `make check` (including IPv4/ICMP, keyboard, desktop-input, and GUI host regressions)
             - `make iso`
             - `make check-iso QEMU=qemu-system-i386`
+            - `make check-start-menu-iso QEMU=qemu-system-i386 QEMU_TIMEOUT=12` (Ctrl+Esc, Run rejection/cancellation, Files launch, and Tab switching in the actual guest)
             - `make check-ne2k-iso QEMU=qemu-system-i386`
             - `make check-ne2k-peer-iso QEMU=qemu-system-i386` (guest ARP resolution and IPv4 ICMP echo request/reply through a deterministic QEMU socket peer)
             - `make check-ata-iso QEMU=qemu-system-i386`
