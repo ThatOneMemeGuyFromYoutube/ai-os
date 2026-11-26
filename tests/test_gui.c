@@ -3,6 +3,7 @@
 #include <string.h>
 #include "gui.h"
 #include "keyboard.h"
+#include "desktop_input.h"
 #include "fs.h"
 
 static void row_text(uint8_t row, char output[81]) {
