@@ -107,7 +107,9 @@ jobs:
           - TinyLang regression tests passed.
           - 32-bit i386 cross-compiler, linker, and assembler checks passed.
           - Kernel and `.COM` program artifacts were generated and verified non-empty.
-          - Host regression tests cover bounded IPv4 receive validation/dispatch and ICMPv4 echo response construction.
+          - Host regression tests cover bounded IPv4 receive validation/dispatch, ICMPv4 echo response construction, Start-menu hit testing/navigation, Ctrl+Esc decoding, and built-in Run command resolution.
+          - The VGA text-mode desktop now opens a keyboard/mouse-accessible Start menu from the taskbar or Ctrl+Esc; its Run dialog launches only existing built-in apps and rejects unknown commands rather than implying a transient-program loader.
+          - GUI host regressions exercise Start-menu opening, keyboard selection, Run success/cancellation, unknown-command rejection, and mouse launch of the IDE.
           - Bootable ISO was boot-tested under `qemu-system-i386` with the default SeaBIOS firmware, an emulated RTL8029/NE2K PCI NIC, a deterministic socket peer that exchanged ARP and IPv4 ICMP echo frames, a disposable primary-master IDE disk, an explicitly tagged AsterOS volume image (read-only discovery), and the optional AsterBIOS system ROM.
           - GitHub Actions was forced through the Node 24 compatibility path with `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true`.
           - SHA-256 checksums are included in `SHA256SUMS`.
