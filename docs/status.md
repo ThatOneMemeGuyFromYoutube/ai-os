@@ -4,7 +4,14 @@ Advanced the next scheduled Windows-98-inspired user-environment milestone after
 
 Added a bounded Run dialog that accepts case-insensitive names and aliases for existing built-in applications only. Unknown commands are rejected; the dialog does not pretend to execute arbitrary files or `.COM` images because the transient-program loader is still absent. Ctrl+Esc is decoded as a dedicated Start-menu event while plain Escape retains its existing close/dismiss behavior. Host regressions cover menu geometry/selection, app resolution, Ctrl+Esc on either Ctrl key, keyboard launch/cancel, mouse Start activation, and mouse launch of the IDE.
 
-Validation is pending the branch CI run: `make check` (keyboard, desktop-input, and GUI regressions), i386 kernel/ISO build, and QEMU boot smoke tests. The change is intentionally confined to the existing VGA text-mode desktop and does not claim a framebuffer GUI or process loader.
+Validation passed on branch commit `b02afea6acbcb0800fee6d34feda5cff7eaf5243`:
+- `make check` passed, including keyboard Ctrl+Esc, Start-menu geometry/navigation, Run alias/rejection, and GUI mouse/keyboard launch/cancel regressions.
+- The 32-bit i386 kernel and bootable ISO built successfully.
+- The QEMU monitor-driven guest test verified Ctrl+Esc menu opening, unknown Run command rejection, Run cancellation, Files launch, and Tab switching by reading the real guest VGA text buffer.
+- Default SeaBIOS boot, RTL8029/NE2K boot, deterministic ARP/IPv4 ICMP peer exchange, disposable ATA disk, tagged AsterOS volume, and AsterBIOS boot all passed.
+- Browser demo regression tests and the forced GitHub Actions Node 24 path passed.
+
+See [Build AI-OS run](https://github.com/ThatOneMemeGuyFromYoutube/ai-os/actions/runs/45897487075) and [AsterOS CI run](https://github.com/ThatOneMemeGuyFromYoutube/ai-os/actions/runs/45897480405). The change remains confined to the existing VGA text-mode desktop and does not claim a framebuffer GUI or process loader.
 
 ## 2026-11-25 — Add read-only AsterOS volume discovery
 
