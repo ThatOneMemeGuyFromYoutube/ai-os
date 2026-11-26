@@ -312,6 +312,8 @@ int main(void) {
     test_context_menu_placement();
     test_context_menu_hit_testing();
     test_context_menu_keyboard_selection();
+    test_start_menu_hit_testing_and_navigation();
+    test_run_command_resolution();
     puts("desktop input: tests passed");
     return 0;
 }
