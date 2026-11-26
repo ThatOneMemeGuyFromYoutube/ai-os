@@ -22,6 +22,22 @@ enum {
     ASTEROS_CONTEXT_MENU_CLOSE = 3
 };
 
+/* The Start menu overlays the lower-left desktop and leaves the taskbar visible. */
+enum {
+    ASTEROS_START_MENU_X = 1,
+    ASTEROS_START_MENU_Y = 13,
+    ASTEROS_START_MENU_WIDTH = 24,
+    ASTEROS_START_MENU_HEIGHT = 10,
+    ASTEROS_START_MENU_ITEM_COUNT = 7,
+    ASTEROS_START_MENU_ITEM_TERMINAL = 0,
+    ASTEROS_START_MENU_ITEM_FILES = 1,
+    ASTEROS_START_MENU_ITEM_PROGRAMS = 2,
+    ASTEROS_START_MENU_ITEM_IDE = 3,
+    ASTEROS_START_MENU_ITEM_SETTINGS = 4,
+    ASTEROS_START_MENU_ITEM_ABOUT = 5,
+    ASTEROS_START_MENU_ITEM_RUN = 6
+};
+
 enum {
     ASTEROS_HIT_START = -1,
     ASTEROS_HIT_CLOSE = -2,
@@ -37,6 +53,16 @@ enum {
    Taskbar controls stay available while a window is open. Window contents
    take precedence over desktop icons behind them. */
 int8_t asteros_desktop_hit_test(int8_t active_app, uint8_t x, uint8_t y);
+
+/* Return a Start-menu item index, or ASTEROS_HIT_NONE outside an item row. */
+int8_t asteros_start_menu_hit_test(uint8_t x, uint8_t y);
+
+/* Move through Start-menu items, wrapping at either end. */
+uint8_t asteros_start_menu_move_selection(uint8_t selection, int8_t delta);
+
+/* Resolve a built-in application command for the Run dialog. Unknown names
+   return ASTEROS_HIT_NONE; this is not a transient-program loader. */
+int8_t asteros_app_resolve_command(const char *command);
 
 /* Resolve the object beneath a context-menu request. A click inside the
    foreground window targets that window even where ordinary activation hit
