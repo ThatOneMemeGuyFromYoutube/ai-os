@@ -1,3 +1,11 @@
+## 2026-11-26 — Add a usable Start menu and bounded Run dialog
+
+Advanced the next scheduled Windows-98-inspired user-environment milestone after the November 16–29 networking foundation completed early on November 24. The taskbar's previous \`[ START ]\` hit target only returned to the desktop; it did not open a menu. It now opens an actual menu of Terminal, Files, Programs, IDE, Settings, About, and Run. The menu is keyboard- and mouse-navigable, wraps selection, and preserves the foreground app when dismissed.
+
+Added a bounded Run dialog that accepts case-insensitive names and aliases for existing built-in applications only. Unknown commands are rejected; the dialog does not pretend to execute arbitrary files or \`.COM\` images because the transient-program loader is still absent. Ctrl+Esc is decoded as a dedicated Start-menu event while plain Escape retains its existing close/dismiss behavior. Host regressions cover menu geometry/selection, app resolution, Ctrl+Esc on either Ctrl key, keyboard launch/cancel, mouse Start activation, and mouse launch of the IDE.
+
+Validation is pending the branch CI run: \`make check\` (keyboard, desktop-input, and GUI regressions), i386 kernel/ISO build, and QEMU boot smoke tests. The change is intentionally confined to the existing VGA text-mode desktop and does not claim a framebuffer GUI or process loader.
+
 ## 2026-11-25 — Add read-only AsterOS volume discovery
 
 Advanced the reopened IDE/storage milestone without risking an arbitrary disk. Added `kernel/volume.c`/`kernel/volume.h`, a fixed-buffer, callback-driven read-only probe that recognizes exactly one non-overlapping primary MBR partition of the project-private type `0x7F`, checks LBA28/disk bounds and boot flags, then validates an `ASTEROS1` v1 descriptor (partition geometry, reserved fields, sector size, and CRC-32). It reports the reserved data extent but does not format, mount, or write it. The Files app now distinguishes a detected ATA disk from a recognized AsterOS volume while continuing to identify all files as volatile RAM files.
