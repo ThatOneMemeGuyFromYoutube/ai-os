@@ -144,6 +144,31 @@ uint8_t asteros_context_menu_move_selection(uint8_t selection, int8_t delta) {
     return selection;
 }
 
+int8_t asteros_start_menu_hit_test(uint8_t x, uint8_t y) {
+    uint8_t first_item_y = ASTEROS_START_MENU_Y + 2u;
+    uint8_t last_item_y = (uint8_t)(first_item_y +
+                                    ASTEROS_START_MENU_ITEM_COUNT - 1u);
+    if (x <= ASTEROS_START_MENU_X ||
+        x >= ASTEROS_START_MENU_X + ASTEROS_START_MENU_WIDTH - 1u ||
+        y < first_item_y || y > last_item_y)
+        return ASTEROS_HIT_NONE;
+    return (int8_t)(y - first_item_y);
+}
+
+uint8_t asteros_start_menu_move_selection(uint8_t selection, int8_t delta) {
+    if (selection >= ASTEROS_START_MENU_ITEM_COUNT) selection = 0u;
+    if (delta < 0) {
+        return selection == 0u
+            ? (uint8_t)(ASTEROS_START_MENU_ITEM_COUNT - 1u)
+            : (uint8_t)(selection - 1u);
+    }
+    if (delta > 0) {
+        return selection + 1u >= ASTEROS_START_MENU_ITEM_COUNT
+            ? 0u : (uint8_t)(selection + 1u);
+    }
+    return selection;
+}
+
 int8_t asteros_app_resolve_command(const char *command) {
     return asteros_app_catalog_resolve_command(command);
 }
