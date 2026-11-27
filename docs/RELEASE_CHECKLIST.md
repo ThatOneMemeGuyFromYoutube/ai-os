@@ -12,7 +12,7 @@ make iso
 make check-asterbios-iso QEMU=qemu-system-i386
 ```
 
-`make check` runs the host regression suites for TinyLang, the guest TinyLang syntax checker, keyboard decoding, the editor buffer, the shared application catalog, the desktop IDE event path, desktop input, PS/2 waits, Ethernet, ARP, PCI, the NE2K driver, and read-only AsterOS volume discovery, then verifies generated program examples and artifacts. `make all` builds the i386 kernel; `make iso` assembles the bootable GRUB image.
+`make check` runs the host regression suites for TinyLang, the guest TinyLang syntax checker, keyboard decoding, the editor buffer, the shared application catalog, the desktop IDE event path, desktop input, PS/2 waits, Ethernet, ARP, PCI, the NE2K driver, read-only AsterOS volume discovery, and volume-scoped block-device bounds/I/O behavior, then verifies generated program examples and artifacts. `make all` builds the i386 kernel; `make iso` assembles the bootable GRUB image.
 
 ## Smoke test
 
@@ -25,7 +25,7 @@ make check-ne2k-peer-iso QEMU=qemu-system-i386
 make check-volume-iso QEMU=qemu-system-i386
 ```
 
-`make check-volume-iso` boots with a disposable image containing one explicitly tagged AsterOS volume descriptor; this validates the ATA read path and boot stability, not filesystem mounting or disk writes.
+`make check-volume-iso` boots with a disposable image containing one explicitly tagged AsterOS volume descriptor; this validates the ATA read path, post-validation block-device initialization, and boot stability, not filesystem mounting or disk writes.
 
 Run `make check-start-menu-iso QEMU=qemu-system-i386` to verify Terminal's `help files`/`help ide` topics, the `apps` inventory, Start/Run, and taskbar switching through actual guest keyboard input and VGA memory. For the IDE itself, open it from the launcher or desktop icon, edit the sample source, press F5, and verify that valid input reports success while an invalid instruction or jump moves the cursor to its 1-based diagnostic line. Also verify save/open and dirty-buffer protection. Do not treat the syntax checker as code generation, and do not treat a QEMU boot-only smoke test as proof of keyboard-driven IDE behavior.
 

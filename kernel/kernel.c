@@ -12,6 +12,7 @@
 #include "fs.h"
 #include "ata_pio.h"
 #include "volume.h"
+#include "blockdev.h"
 enum { SVC_CONSOLE = 1, SVC_FILES = 2, SVC_PROCESS = 3 };
 #define PS2_WAIT_ATTEMPTS 100000u
 static uint8_t inb(uint16_t port) { uint8_t value; __asm__ volatile ("inb %1, %0" : "=a"(value) : "Nd"(port)); return value; }
@@ -27,9 +28,14 @@ static const asteros_ata_io_t ata_io = {
 };
 static asteros_ata_device_t ata_primary_master;
 static asteros_volume_t primary_asteros_volume;
+static asteros_blockdev_t primary_asteros_blockdev;
 static uint8_t ata_read_sector(void *context, uint32_t lba, uint8_t *sector) {
     const asteros_ata_device_t *device = (const asteros_ata_device_t *)context;
     return (uint8_t)(asteros_ata_pio_read(device, lba, sector) == ASTEROS_ATA_OK);
+}
+static uint8_t ata_write_sector(void *context, uint32_t lba, const uint8_t *sector) {
+    const asteros_ata_device_t *device = (const asteros_ata_device_t *)context;
+    return (uint8_t)(asteros_ata_pio_write(device, lba, sector) == ASTEROS_ATA_OK);
 }
 /* RFC 5737 documentation address reserved for the initial ARP peer test. */
 static const uint8_t network_ipv4_address[4] = {192u, 0u, 2u, 2u};
@@ -146,14 +152,20 @@ void kmain(void){
     /* Discovery is read-only; a descriptor is not a mounted filesystem. */
     (void)asteros_ata_pio_probe(&ata_primary_master, &ata_io,
                                 0x1F0u, 0x3F6u, 0u);
-    if (ata_primary_master.present) {
-        (void)asteros_volume_probe(ata_read_sector, &ata_primary_master,
-                                   ata_primary_master.sectors,
-                                   &primary_asteros_volume);
+    if (ata_primary_master.present &&
+        asteros_volume_probe(ata_read_sector, &ata_primary_master,
+                             ata_primary_master.sectors,
+                             &primary_asteros_volume) == ASTEROS_VOLUME_OK) {
+        /* The relative block device is created only after the read-only
+           ASTEROS1 probe has validated the partition and descriptor. */
+        (void)asteros_blockdev_init(&primary_asteros_blockdev,
+            &primary_asteros_volume, &ata_primary_master,
+            ata_read_sector, ata_write_sector);
     }
     gui_init();
     gui_set_ata_disk_present(ata_primary_master.present);
     gui_set_asteros_volume_present(primary_asteros_volume.present);
+    gui_set_asteros_block_device_present(primary_asteros_blockdev.present);
     mouse_available=mouse_init();
     timer_init();
     keyboard_reset_state();

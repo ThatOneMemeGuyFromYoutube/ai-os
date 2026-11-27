@@ -21,6 +21,17 @@ The kernel now distinguishes an arbitrary ATA disk from an explicitly prepared A
 
 `make check-volume` exercises malformed MBRs, missing/duplicate/overlapping/out-of-range partitions, descriptor version/geometry/CRC failures, and read errors. `scripts/create-volume-image.py` creates a disposable empty descriptor image for `make check-volume-iso`; the QEMU target exercises ATA reads during boot. The Files app reports whether a descriptor was recognized but continues to label all current files as volatile RAM files.
 
+## Volume-scoped block-device service
+
+`kernel/blockdev.h` exposes a small sector API over the data region of a previously validated `asteros_volume_t`:
+
+- Call `asteros_blockdev_init()` only after `asteros_volume_probe()` succeeds. The initializer rechecks the partition geometry and LBA28 bounds before setting the device present.
+- Callers address sectors relative to the volume data region. The MBR and the `ASTEROS1` descriptor sector are not addressable, including through writes.
+- A missing write callback creates a read-only device. The kernel's ATA PIO write callback uses the existing cache-flushed single-sector operation and reports success only after the flush completes.
+- `make check-blockdev` injects host read/write callbacks and covers LBA translation, first/last-sector access, out-of-range rejection without I/O, read-only mode, I/O failures, and malformed/overflowing volume geometry.
+
+The kernel creates this block device during startup only after read-only volume discovery succeeds. It does not format or mount a filesystem and performs no boot-time disk writes. The Files app reports that the data region is ready while continuing to label editor files as volatile RAM files.
+
 ## Kernel API
 
 `kernel/fs.h` exposes:
@@ -53,9 +64,10 @@ Run `make check-fs` for filesystem boundary tests and `make check-ide-file` for 
 
 Next steps, in dependency order:
 
-1. Add a block-device abstraction and a disk-backed filesystem or simple persistent volume while retaining the RAM service for scratch files and tests.
-2. Define the user-mode BDOS file ABI and connect CCP/Files/IDE through that stable boundary.
-3. Extend the guest F5 syntax/label checker into TinyLang code generation and compiler diagnostics, keeping host-compiler parity tests.
-4. Implement the transient-program loader before advertising an in-OS build/run workflow.
+1. Add a versioned, checksummed disk filesystem on the volume-scoped block device, with failure-safe mount and commit tests plus boot-time recovery; never autoformat an unrecognized or blank volume.
+2. Connect IDE save/load and the Files app to the mounted volume while retaining the RAM filesystem as a bounded scratch/fallback service.
+3. Define the user-mode BDOS file ABI and connect CCP/Files/IDE through that stable boundary.
+4. Extend the guest F5 syntax/label checker into TinyLang code generation and compiler diagnostics, keeping host-compiler parity tests.
+5. Implement the transient-program loader before advertising an in-OS build/run workflow.
 
 Do not describe the current RAM filesystem as persistent storage or claim that the IDE can compile/run guest programs.

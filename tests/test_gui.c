@@ -92,6 +92,15 @@ static void test_volume_presence_is_reported_without_claiming_persistence(void) 
 
     gui_init();
     gui_set_ata_disk_present(1);
+    gui_set_asteros_volume_present(1);
+    gui_set_asteros_block_device_present(1);
+    gui_handle_key('f');
+    assert(row_contains(6, "disk region ready"));
+    assert(row_contains(6, "no filesystem"));
+    assert(row_contains(6, "volatile"));
+
+    gui_init();
+    gui_set_ata_disk_present(1);
     gui_set_asteros_volume_present(0);
     gui_handle_key('f');
     assert(row_contains(6, "no AsterOS volume"));

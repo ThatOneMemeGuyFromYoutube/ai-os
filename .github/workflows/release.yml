@@ -52,6 +52,9 @@ jobs:
             - The VGA text-mode desktop now has a Start menu opened by clicking Start or pressing Ctrl+Esc, with keyboard/mouse navigation and shortcuts for the built-in applications.
             - The Run dialog resolves only known built-in application names/aliases and rejects unknown commands; arbitrary transient program execution is not claimed.
 
+            Storage update:
+            - The kernel creates a volume-relative block-device API only after a valid `ASTEROS1` descriptor. Bounds checks exclude the MBR and descriptor sector; ATA writes wait for cache flush. No filesystem is mounted and IDE files remain volatile RAM.
+
             Validation:
             - `make check` (including IPv4/ICMP, keyboard, desktop-input, and GUI host regressions)
             - `make iso`
