@@ -90,9 +90,12 @@ def send_key(monitor, key, hold_ms=100):
 
 def send_text(monitor, text):
     for character in text:
-        if not character.isascii() or not character.isalpha():
+        if character == " ":
+            send_key(monitor, "spc", 80)
+        elif character.isascii() and character.isalpha():
+            send_key(monitor, character.lower(), 80)
+        else:
             raise ValueError(f"unsupported QEMU test character: {character!r}")
-        send_key(monitor, character.lower(), 80)
 
 
 def run(args):
@@ -126,6 +129,35 @@ def run(args):
                 lambda rows: "AsterOS" in rows[0],
                 "the AsterOS desktop", args.timeout,
             )
+
+            # Exercise app help from the actual running guest.
+            send_key(monitor, "t")
+            wait_for_screen(monitor, screen_path, process,
+                lambda rows: "AsterOS terminal" in rows[5],
+                "the Terminal application", 3.0)
+            send_text(monitor, "help files")
+            send_key(monitor, "ret")
+            wait_for_screen(monitor, screen_path, process,
+                lambda rows: "Browse and open files" in rows[10] and
+                             "no disk mount" in rows[13],
+                "Files help and storage limitations", 3.0)
+            send_text(monitor, "help ide")
+            send_key(monitor, "ret")
+            wait_for_screen(monitor, screen_path, process,
+                lambda rows: "Edit TinyLang source" in rows[10] and
+                             "F5 does not compile" in rows[13],
+                "IDE help and compiler limitations", 3.0)
+            send_text(monitor, "apps")
+            send_key(monitor, "ret")
+            wait_for_screen(monitor, screen_path, process,
+                lambda rows: all(name in " ".join(rows[9:15]) for name in
+                    ("Terminal","Files","Programs","About","Settings","IDE")),
+                "the complete shell application inventory", 3.0)
+            send_text(monitor, "menu")
+            send_key(monitor, "ret")
+            wait_for_screen(monitor, screen_path, process,
+                lambda rows: "Select an application" in rows[5],
+                "return from Terminal to desktop", 3.0)
 
             # Exercise the actual Set-1 Ctrl+Esc path and menu renderer.
             send_key(monitor, "ctrl-esc")
@@ -182,7 +214,7 @@ def run(args):
                 lambda rows: "Programs" in rows[4],
                 "taskbar-style application switching with Tab", 3.0,
             )
-            print("qemu start-menu smoke: Start, Run rejection/cancel, Files launch, and Tab switching passed")
+            print("qemu desktop smoke: shell help/catalog, Start, Run rejection/cancel, Files launch, and Tab switching passed")
         finally:
             if monitor is not None:
                 monitor.connection.close()

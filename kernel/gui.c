@@ -6,6 +6,7 @@
 #include "fs.h"
 #include "ide_file.h"
 #include "tinylang_check.h"
+#include "app_catalog.h"
 #ifdef ASTEROS_GUI_TEST
 volatile uint16_t asteros_gui_test_vga[80u * 25u];
 #define VGA asteros_gui_test_vga
@@ -35,6 +36,8 @@ volatile uint16_t asteros_gui_test_vga[80u * 25u];
 
 static uint8_t selected;
 static uint8_t terminal_result;
+static int8_t terminal_help_app;
+static uint8_t terminal_help_requested;
 static uint8_t terminal_length;
 static int8_t active_app;
 static int16_t mouse_x;
@@ -137,6 +140,8 @@ static void terminal_execute(void){
 
     terminal_output[0]='\0';
     terminal_history_output[0]='\0';
+    terminal_help_app=ASTEROS_HIT_NONE;
+    terminal_help_requested=0;
     trim_leading_spaces(&command);
     parsed=terminal_parse_command(command,&arguments);
 
@@ -173,7 +178,13 @@ static void terminal_execute(void){
         terminal_history_record(&terminal_history_state,command);
 
     switch(parsed){
-        case ASTEROS_COMMAND_HELP: terminal_result=TERM_HELP; break;
+        case ASTEROS_COMMAND_HELP:
+            if(*arguments){
+                terminal_help_requested=1;
+                terminal_help_app=asteros_app_resolve_command(arguments);
+            }
+            terminal_result=TERM_HELP;
+            break;
         case ASTEROS_COMMAND_CLEAR: terminal_result=TERM_READY; break;
         case ASTEROS_COMMAND_APPS: terminal_result=TERM_APPS; break;
         case ASTEROS_COMMAND_INFO: terminal_result=TERM_INFO; break;
@@ -196,20 +207,42 @@ static void terminal_execute(void){
 static void draw_terminal_result(void){
     switch(terminal_result){
         case TERM_HELP:
-            text(22,9,"help clear/cls apps/ls info/about ver uname pwd",ATTR_NORMAL);
-            text(22,10,"echo history/history clear menu/exit",ATTR_NORMAL);
-            text(22,11,"Commands are case-insensitive; extra args rejected.",ATTR_NORMAL);
-            text(22,12,"echo accepts repeated spaces before text.",ATTR_NORMAL);
-            text(22,13,"!! repeats the previous command.",ATTR_NORMAL);
-            text(22,14,"history shows the previous command.",ATTR_NORMAL);
-            text(22,15,"history clear forgets the previous command.",ATTR_NORMAL);
-            text(22,16,"pwd is a placeholder (no directory service yet).",ATTR_NORMAL);
-            text(22,17,"apps/ls lists apps; use Files for volatile RAM files.",ATTR_NORMAL);
-            text(22,18,"uname reports i386; menu/exit returns to launcher.",ATTR_NORMAL);
+            if(terminal_help_requested){
+                const asteros_app_info_t *info=asteros_app_catalog_by_id(terminal_help_app);
+                if(info){
+                    text_n(22,9,info->name,ATTR_STATUS,57);
+                    text_n(22,10,info->summary,ATTR_NORMAL,57);
+                    text_n(22,11,info->usage,ATTR_NORMAL,57);
+                    text_n(22,12,info->aliases,ATTR_NORMAL,57);
+                    text_n(22,13,info->limitations,ATTR_STATUS,57);
+                }else{
+                    text(22,9,"Unknown application topic.",ATTR_STATUS);
+                    text(22,11,"Try: help terminal, help files, help ide.",ATTR_NORMAL);
+                    text(22,12,"Type apps to list every built-in application.",ATTR_NORMAL);
+                }
+            }else{
+                text(22,9,"help [app] shows application purpose and limits.",ATTR_NORMAL);
+                text(22,10,"Try: help terminal, help files, help programs.",ATTR_NORMAL);
+                text(22,11,"Also: help about, help settings, help ide.",ATTR_NORMAL);
+                text(22,12,"apps lists the same catalog as the Programs window.",ATTR_NORMAL);
+                text(22,14,"Commands: clear, echo, info, ver, uname, pwd.",ATTR_NORMAL);
+                text(22,15,"history, history clear, !!, menu/exit.",ATTR_NORMAL);
+                text(22,17,"No transient-program loader is available yet.",ATTR_STATUS);
+            }
             break;
-        case TERM_APPS:
-            text(22,9,"Terminal Files Programs About Settings",ATTR_NORMAL);
+        case TERM_APPS: {
+            uint8_t index;
+            text(22,8,"BUILT-IN APPLICATIONS",ATTR_STATUS);
+            for(index=0;index<asteros_app_catalog_count();index++){
+                const asteros_app_info_t *info=asteros_app_catalog_at(index);
+                uint8_t y=(uint8_t)(9u+index);
+                if(!info)continue;
+                text_n(22,y,info->name,ATTR_NORMAL,11);
+                text_n(34,y,info->summary,ATTR_NORMAL,44);
+            }
+            text(22,17,"Type help <app> for usage, aliases and limitations.",ATTR_STATUS);
             break;
+        }
         case TERM_INFO:
             text(22,9,"AsterOS 0.1 - 32-bit x86 protected mode",ATTR_NORMAL);
             text(22,10,"Console: VGA text buffer 80x25",ATTR_NORMAL);
@@ -481,7 +514,21 @@ static void draw_files(void){
     if(files_status[0])text_n(22,18,files_status,ATTR_STATUS,TERM_INPUT_MAX);
     text(22,19,"Up/Down select | Enter open in IDE | Esc close",ATTR_NORMAL);
 }
-static void draw_programs(void){text(22,5,"Programs",ATTR_STATUS);text(22,7,"BUILT-IN GUI APPLICATIONS",ATTR_NORMAL);text(22,8,"Terminal   interactive command view",ATTR_NORMAL);text(22,9,"Files      volatile RAM filesystem",ATTR_NORMAL);text(22,10,"Programs   application inventory",ATTR_NORMAL);text(22,11,"About      OS/runtime information",ATTR_NORMAL);text(22,12,"IDE        TinyLang editor with RAM file I/O",ATTR_NORMAL);text(22,14,"Q, X, Esc or Alt+F4 closes this window.",ATTR_NORMAL);text(22,15,"No disk persistence or transient loader yet.",ATTR_NORMAL);}
+static void draw_programs(void){
+    uint8_t index;
+    text(22,5,"Programs",ATTR_STATUS);
+    text(22,7,"BUILT-IN APPLICATIONS",ATTR_STATUS);
+    for(index=0;index<asteros_app_catalog_count();index++){
+        const asteros_app_info_t *info=asteros_app_catalog_at(index);
+        uint8_t y=(uint8_t)(8u+index);
+        if(!info)continue;
+        text_n(22,y,info->name,ATTR_NORMAL,11);
+        text_n(34,y,info->summary,ATTR_NORMAL,44);
+    }
+    text(22,16,"Terminal: type help <app> for details and limitations.",ATTR_STATUS);
+    text(22,18,"No arbitrary transient programs can be launched.",ATTR_NORMAL);
+    text(22,19,"Q, X, Esc or Alt+F4 closes this window.",ATTR_NORMAL);
+}
 static void draw_about(void){text(22,5,"About AsterOS",ATTR_STATUS);text(22,7,"32-bit x86 experimental operating system",ATTR_NORMAL);text(22,8,"GUI shell over the CCP/BDOS direction",ATTR_NORMAL);text(22,10,"Enter opens the selected app.",ATTR_NORMAL);text(22,11,"Arrow keys or W/S navigate.",ATTR_NORMAL);text(22,12,"1-6 or T/F/P/A/C/I launches apps directly.",ATTR_NORMAL);text(22,13,"Q, X, Esc or Alt+F4 closes this window.",ATTR_NORMAL);}
 static void draw_cursor_settings(void){
     text(22,5,"Accessibility and cursor settings",ATTR_STATUS);

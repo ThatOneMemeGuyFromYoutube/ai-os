@@ -43,7 +43,7 @@ build/boot.o: boot/boot.S | build
 build/kernel.o: kernel/kernel.c kernel/fs.h kernel/gui.h kernel/keyboard.h kernel/desktop_input.h kernel/ps2_wait.h kernel/net.h kernel/arp.h kernel/ipv4.h kernel/icmp.h kernel/pci.h kernel/ne2k.h kernel/ata_pio.h kernel/volume.h | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
-build/gui.o: kernel/gui.c kernel/gui.h kernel/fs.h kernel/ide_file.h kernel/terminal.h kernel/desktop_input.h kernel/editor.h kernel/tinylang_check.h | build
+build/gui.o: kernel/gui.c kernel/gui.h kernel/fs.h kernel/ide_file.h kernel/terminal.h kernel/desktop_input.h kernel/app_catalog.h kernel/editor.h kernel/tinylang_check.h | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
 build/editor.o: kernel/editor.c kernel/editor.h | build
@@ -61,7 +61,10 @@ build/ide_file.o: kernel/ide_file.c kernel/ide_file.h kernel/editor.h kernel/fs.
 build/keyboard.o: kernel/keyboard.c kernel/keyboard.h | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
-build/desktop_input.o: kernel/desktop_input.c kernel/desktop_input.h | build
+build/desktop_input.o: kernel/desktop_input.c kernel/desktop_input.h kernel/app_catalog.h | build
+	$(CC) $(CFLAGS) -c $< -o $@
+
+build/app_catalog.o: kernel/app_catalog.c kernel/app_catalog.h kernel/desktop_input.h | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
 build/terminal.o: kernel/terminal.c kernel/terminal.h | build
@@ -112,8 +115,8 @@ build/test-tinylang-check: kernel/tinylang_check.c kernel/tinylang_check.h tests
 check-tinylang-check: build/test-tinylang-check
 	./build/test-tinylang-check
 
-build/test-gui: kernel/gui.c kernel/gui.h kernel/editor.c kernel/editor.h kernel/tinylang_check.c kernel/tinylang_check.h kernel/fs.c kernel/fs.h kernel/ide_file.c kernel/ide_file.h kernel/keyboard.c kernel/keyboard.h kernel/desktop_input.c kernel/desktop_input.h kernel/terminal.c kernel/terminal.h tests/test_gui.c | build
-	$(HOSTCC) $(HOSTCFLAGS) -DASTEROS_GUI_TEST -Ikernel kernel/gui.c kernel/editor.c kernel/tinylang_check.c kernel/fs.c kernel/ide_file.c kernel/keyboard.c kernel/desktop_input.c kernel/terminal.c tests/test_gui.c -o $@
+build/test-gui: kernel/gui.c kernel/gui.h kernel/editor.c kernel/editor.h kernel/tinylang_check.c kernel/tinylang_check.h kernel/fs.c kernel/fs.h kernel/ide_file.c kernel/ide_file.h kernel/keyboard.c kernel/keyboard.h kernel/desktop_input.c kernel/desktop_input.h kernel/app_catalog.c kernel/app_catalog.h kernel/terminal.c kernel/terminal.h tests/test_gui.c | build
+	$(HOSTCC) $(HOSTCFLAGS) -DASTEROS_GUI_TEST -Ikernel kernel/gui.c kernel/editor.c kernel/tinylang_check.c kernel/fs.c kernel/ide_file.c kernel/keyboard.c kernel/desktop_input.c kernel/app_catalog.c kernel/terminal.c tests/test_gui.c -o $@
 
 check-gui: build/test-gui
 	./build/test-gui
@@ -184,11 +187,17 @@ build/test-ata-pio: kernel/ata_pio.c kernel/ata_pio.h tests/test_ata_pio.c | bui
 check-ata-pio: build/test-ata-pio
 	./build/test-ata-pio
 
-build/test-desktop-input: kernel/desktop_input.c kernel/desktop_input.h tests/test_desktop_input.c | build
-	$(HOSTCC) $(HOSTCFLAGS) -Ikernel kernel/desktop_input.c tests/test_desktop_input.c -o $@
+build/test-desktop-input: kernel/desktop_input.c kernel/desktop_input.h kernel/app_catalog.c kernel/app_catalog.h tests/test_desktop_input.c | build
+	$(HOSTCC) $(HOSTCFLAGS) -Ikernel kernel/desktop_input.c kernel/app_catalog.c tests/test_desktop_input.c -o $@
 
 check-desktop-input: build/test-desktop-input
 	./build/test-desktop-input
+
+build/test-app-catalog: kernel/app_catalog.c kernel/app_catalog.h kernel/desktop_input.h tests/test_app_catalog.c | build
+	$(HOSTCC) $(HOSTCFLAGS) -Ikernel kernel/app_catalog.c tests/test_app_catalog.c -o $@
+
+check-app-catalog: build/test-app-catalog
+	./build/test-app-catalog
 
 build/test-keyboard: kernel/keyboard.c kernel/keyboard.h tests/test_keyboard.c | build
 	$(HOSTCC) $(HOSTCFLAGS) -Ikernel kernel/keyboard.c tests/test_keyboard.c -o $@
@@ -196,8 +205,8 @@ build/test-keyboard: kernel/keyboard.c kernel/keyboard.h tests/test_keyboard.c |
 check-keyboard: build/test-keyboard
 	./build/test-keyboard
 
-build/kernel.bin: build/boot.o build/kernel.o build/gui.o build/editor.o build/tinylang_check.o build/fs.o build/ide_file.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o build/arp.o build/ipv4.o build/icmp.o build/pci.o build/ne2k.o build/ata_pio.o build/volume.o linker.ld
-	$(LD) $(LDFLAGS) -o $@ build/boot.o build/kernel.o build/gui.o build/editor.o build/tinylang_check.o build/fs.o build/ide_file.o build/keyboard.o build/desktop_input.o build/terminal.o build/ps2_wait.o build/net.o build/arp.o build/ipv4.o build/icmp.o build/pci.o build/ne2k.o build/ata_pio.o build/volume.o
+build/kernel.bin: build/boot.o build/kernel.o build/gui.o build/editor.o build/tinylang_check.o build/fs.o build/ide_file.o build/keyboard.o build/desktop_input.o build/app_catalog.o build/terminal.o build/ps2_wait.o build/net.o build/arp.o build/ipv4.o build/icmp.o build/pci.o build/ne2k.o build/ata_pio.o build/volume.o linker.ld
+	$(LD) $(LDFLAGS) -o $@ build/boot.o build/kernel.o build/gui.o build/editor.o build/tinylang_check.o build/fs.o build/ide_file.o build/keyboard.o build/desktop_input.o build/app_catalog.o build/terminal.o build/ps2_wait.o build/net.o build/arp.o build/ipv4.o build/icmp.o build/pci.o build/ne2k.o build/ata_pio.o build/volume.o
 
 build/hello.com: toolchain/tinylang.py toolchain/examples/hello.tl | build
 	$(PYTHON) toolchain/tinylang.py toolchain/examples/hello.tl $@
@@ -358,7 +367,7 @@ check-volume-iso: iso scripts/create-volume-image.py
 	$(PYTHON) scripts/create-volume-image.py --output build/asteros-volume-test.img
 	@QEMU="$(QEMU)" QEMU_TIMEOUT="$(QEMU_TIMEOUT)" bash scripts/qemu-smoke.sh -drive file=build/asteros-volume-test.img,format=raw,if=ide,index=0 -cdrom build/ai-os.iso -boot order=d -display none -serial stdio -no-reboot -no-shutdown
 
-check: check-toolchain check-keyboard check-editor check-tinylang-check check-gui check-fs check-ide-file check-terminal check-desktop-input check-ps2-wait check-net check-arp check-ipv4 check-icmp check-pci check-ne2k check-ata-pio check-volume check-examples check-listings check-compile check-inspect check-source
+check: check-toolchain check-keyboard check-editor check-tinylang-check check-app-catalog check-gui check-fs check-ide-file check-terminal check-desktop-input check-ps2-wait check-net check-arp check-ipv4 check-icmp check-pci check-ne2k check-ata-pio check-volume check-examples check-listings check-compile check-inspect check-source
 	PYTHONPATH=toolchain $(PYTHON) toolchain/test_tinylang.py
 	$(MAKE) check-artifacts
 
@@ -376,4 +385,4 @@ run-iso: build/ai-os.iso
 clean:
 	rm -rf build
 
-.PHONY: all check check-artifacts asterbios run-asterbios-iso check-iso check-start-menu-iso check-ne2k-iso check-ne2k-peer-iso check-asterbios-iso check-ata-iso check-volume-iso check-ata-pio check-volume check-keyboard check-editor check-tinylang-check check-gui check-fs check-ide-file check-terminal check-desktop-input check-ps2-wait check-net check-arp check-ipv4 check-icmp check-pci check-ne2k check-toolchain check-examples check-listings check-compile check-inspect examples listings compile inspect check-source clean iso package-release program run run-iso test
+.PHONY: all check check-artifacts asterbios run-asterbios-iso check-iso check-start-menu-iso check-ne2k-iso check-ne2k-peer-iso check-asterbios-iso check-ata-iso check-volume-iso check-ata-pio check-volume check-app-catalog check-keyboard check-editor check-tinylang-check check-gui check-fs check-ide-file check-terminal check-desktop-input check-ps2-wait check-net check-arp check-ipv4 check-icmp check-pci check-ne2k check-toolchain check-examples check-listings check-compile check-inspect examples listings compile inspect check-source clean iso package-release program run run-iso test

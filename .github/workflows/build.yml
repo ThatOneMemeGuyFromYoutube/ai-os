@@ -60,7 +60,7 @@ jobs:
         run: |
           make QEMU=qemu-system-i386 QEMU_TIMEOUT=8 check-iso
 
-      - name: Exercise Start menu, Run dialog, and taskbar switching in QEMU
+      - name: Exercise shell application help, Start/Run dialog, and taskbar switching in QEMU
         run: |
           make QEMU=qemu-system-i386 QEMU_TIMEOUT=12 check-start-menu-iso
 
@@ -111,11 +111,12 @@ jobs:
           - TinyLang regression tests passed.
           - 32-bit i386 cross-compiler, linker, and assembler checks passed.
           - Kernel and `.COM` program artifacts were generated and verified non-empty.
-          - Host regression tests cover bounded IPv4 receive validation/dispatch, ICMPv4 echo response construction, Start-menu hit testing/navigation, Ctrl+Esc decoding, and built-in Run command resolution.
+          - Host regression tests cover bounded IPv4 receive validation/dispatch, ICMPv4 echo response construction, the shared built-in application catalog/Run aliases, topic-aware shell help, Start-menu hit testing/navigation, and Ctrl+Esc decoding.
           - The VGA text-mode desktop now opens a keyboard/mouse-accessible Start menu from the taskbar or Ctrl+Esc; its Run dialog launches only existing built-in apps and rejects unknown commands rather than implying a transient-program loader.
-          - GUI host regressions exercise Start-menu opening, keyboard selection, Run success/cancellation, unknown-command rejection, and mouse launch of the IDE.
+          - Terminal now provides `help [app]` and `apps`, backed by the same built-in catalog used by Run and Programs; help explains each app's purpose, controls, aliases, and actual storage/compiler/process-loader limitations.
+          - GUI host regressions exercise topic help for Files/IDE/Settings, unknown-topic rejection, the shared `apps`/Programs inventory, Start-menu opening, keyboard selection, Run success/cancellation, unknown-command rejection, and mouse launch of the IDE.
           - Bootable ISO was boot-tested under `qemu-system-i386` with the default SeaBIOS firmware, an emulated RTL8029/NE2K PCI NIC, a deterministic socket peer that exchanged ARP and IPv4 ICMP echo frames, a disposable primary-master IDE disk, an explicitly tagged AsterOS volume image (read-only discovery), and the optional AsterBIOS system ROM.
-          - A QEMU monitor-driven desktop interaction test verified Ctrl+Esc Start-menu opening, Run dialog unknown-command rejection and cancellation, Files app launch, and Tab taskbar switching against the guest VGA text buffer.
+          - A QEMU monitor-driven desktop interaction test verified Terminal `help files` and `help ide` limitations, the six-app `apps` inventory, return to desktop, Ctrl+Esc Start-menu opening, Run dialog rejection/cancellation, Files launch, and Tab taskbar switching against the guest VGA text buffer.
           - GitHub Actions was forced through the Node 24 compatibility path with `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true`.
           - SHA-256 checksums are included in `SHA256SUMS`.
           EOF

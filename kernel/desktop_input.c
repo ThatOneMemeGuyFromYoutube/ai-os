@@ -1,4 +1,5 @@
 #include "desktop_input.h"
+#include "app_catalog.h"
 
 uint8_t asteros_mouse_click_filter_update(asteros_mouse_click_filter_t *filter,
                                            uint8_t left_down, uint32_t now) {
@@ -143,12 +144,6 @@ uint8_t asteros_context_menu_move_selection(uint8_t selection, int8_t delta) {
     return selection;
 }
 
-static char ascii_lower(char value) {
-    if (value >= 'A' && value <= 'Z')
-        return (char)(value - ('A' - 'a'));
-    return value;
-}
-
 int8_t asteros_start_menu_hit_test(uint8_t x, uint8_t y) {
     uint8_t first_item_y = ASTEROS_START_MENU_Y + 2u;
     uint8_t last_item_y = (uint8_t)(first_item_y +
@@ -174,39 +169,6 @@ uint8_t asteros_start_menu_move_selection(uint8_t selection, int8_t delta) {
     return selection;
 }
 
-static uint8_t command_equals(const char *command, const char *expected) {
-    while (*command == ' ' || *command == '\t') command++;
-    while (*expected) {
-        if (!*command || ascii_lower(*command) != *expected) return 0u;
-        command++;
-        expected++;
-    }
-    while (*command == ' ' || *command == '\t') command++;
-    return (uint8_t)(*command == '\0');
-}
-
 int8_t asteros_app_resolve_command(const char *command) {
-    if (!command) return ASTEROS_HIT_NONE;
-    if (command_equals(command, "terminal") ||
-        command_equals(command, "term") ||
-        command_equals(command, "console"))
-        return ASTEROS_APP_TERMINAL;
-    if (command_equals(command, "files") ||
-        command_equals(command, "file") ||
-        command_equals(command, "computer") ||
-        command_equals(command, "explorer"))
-        return ASTEROS_APP_FILES;
-    if (command_equals(command, "programs") ||
-        command_equals(command, "apps"))
-        return ASTEROS_APP_PROGRAMS;
-    if (command_equals(command, "ide") ||
-        command_equals(command, "editor"))
-        return ASTEROS_APP_IDE;
-    if (command_equals(command, "settings") ||
-        command_equals(command, "control panel"))
-        return ASTEROS_APP_SETTINGS;
-    if (command_equals(command, "about") ||
-        command_equals(command, "help"))
-        return ASTEROS_APP_ABOUT;
-    return ASTEROS_HIT_NONE;
+    return asteros_app_catalog_resolve_command(command);
 }

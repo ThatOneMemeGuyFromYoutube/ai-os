@@ -158,6 +158,48 @@ static void test_start_button_mouse_and_menu_item(void) {
     assert(row_contains(4, "IDE"));
 }
 
+static void test_application_help_and_shared_program_catalog(void) {
+    uint8_t index;
+    const char *names[] = {"Terminal","Files","Programs","About","Settings","IDE"};
+
+    gui_init();
+    gui_handle_key('t');
+    assert(row_contains(5,"AsterOS terminal"));
+    type_text("help files");
+    gui_handle_key('\r');
+    assert(row_contains(9,"Files"));
+    assert(row_contains(10,"Browse and open files"));
+    assert(row_contains(13,"no disk mount"));
+
+    type_text("help ide");
+    gui_handle_key('\r');
+    assert(row_contains(9,"IDE"));
+    assert(row_contains(10,"Edit TinyLang source"));
+    assert(row_contains(13,"F5 does not compile"));
+
+    type_text("help control panel");
+    gui_handle_key('\r');
+    assert(row_contains(9,"Settings"));
+    assert(row_contains(11,"V visibility"));
+
+    type_text("help unknown");
+    gui_handle_key('\r');
+    assert(row_contains(9,"Unknown application topic"));
+
+    type_text("apps");
+    gui_handle_key('\r');
+    for(index=0;index<ASTEROS_APP_COUNT;index++)
+        assert(row_contains((uint8_t)(9u+index),names[index]));
+    assert(row_contains(17,"help <app>"));
+
+    type_text("menu");
+    gui_handle_key('\r');
+    gui_handle_key('p');
+    assert(row_contains(7,"BUILT-IN APPLICATIONS"));
+    for(index=0;index<ASTEROS_APP_COUNT;index++)
+        assert(row_contains((uint8_t)(8u+index),names[index]));
+    assert(row_contains(16,"help <app>"));
+}
 int main(void) {
     asteros_fs_init();
     gui_init();
@@ -166,6 +208,7 @@ int main(void) {
     test_volume_presence_is_reported_without_claiming_persistence();
     test_start_menu_keyboard_and_run_dialog();
     test_start_button_mouse_and_menu_item();
-    puts("gui: IDE validation and file workflow tests passed");
+    test_application_help_and_shared_program_catalog();
+    puts("gui: IDE, application help, and file workflow tests passed");
     return 0;
 }

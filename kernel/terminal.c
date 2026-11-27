@@ -64,10 +64,13 @@ asteros_command_t terminal_parse_command(const char *line, const char **argument
         return ASTEROS_COMMAND_UNKNOWN;
     }
 
-    /* Every command other than echo and history takes no arguments. */
+    /* help accepts an optional topic, validated by the shared app catalog. */
+    if (token_equals(start, length, "help")) {
+        if (arguments) *arguments = tail;
+        return ASTEROS_COMMAND_HELP;
+    }
+    /* Every command other than echo, history, and help takes no arguments. */
     if (*tail) return ASTEROS_COMMAND_UNKNOWN;
-
-    if (token_equals(start, length, "help")) return ASTEROS_COMMAND_HELP;
     if (token_equals(start, length, "clear") || token_equals(start, length, "cls"))
         return ASTEROS_COMMAND_CLEAR;
     if (token_equals(start, length, "apps") || token_equals(start, length, "ls"))
