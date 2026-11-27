@@ -291,6 +291,7 @@ static void test_run_command_resolution(void) {
     assert(asteros_app_resolve_command("settings") == ASTEROS_APP_SETTINGS);
     assert(asteros_app_resolve_command("control panel") == ASTEROS_APP_SETTINGS);
     assert(asteros_app_resolve_command("help") == ASTEROS_APP_ABOUT);
+    assert(asteros_app_resolve_command(" CONTROL PANEL ") == ASTEROS_APP_SETTINGS);
     assert(asteros_app_resolve_command("about") == ASTEROS_APP_ABOUT);
     assert(asteros_app_resolve_command("") == ASTEROS_HIT_NONE);
     assert(asteros_app_resolve_command("ide --run") == ASTEROS_HIT_NONE);

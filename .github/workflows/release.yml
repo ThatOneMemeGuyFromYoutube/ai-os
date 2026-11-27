@@ -56,7 +56,7 @@ jobs:
             - `make check` (including IPv4/ICMP, keyboard, desktop-input, and GUI host regressions)
             - `make iso`
             - `make check-iso QEMU=qemu-system-i386`
-            - `make check-start-menu-iso QEMU=qemu-system-i386 QEMU_TIMEOUT=12` (Ctrl+Esc, Run rejection/cancellation, Files launch, and Tab switching in the actual guest)
+            - `make check-start-menu-iso QEMU=qemu-system-i386 QEMU_TIMEOUT=12` (Terminal `help files`/`help ide`, `apps` inventory, Ctrl+Esc, Run rejection/cancellation, Files launch, and Tab switching in the actual guest)
             - `make check-ne2k-iso QEMU=qemu-system-i386`
             - `make check-ne2k-peer-iso QEMU=qemu-system-i386` (guest ARP resolution and IPv4 ICMP echo request/reply through a deterministic QEMU socket peer)
             - `make check-ata-iso QEMU=qemu-system-i386`

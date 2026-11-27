@@ -48,6 +48,9 @@ int main(void) {
     expect_command("", ASTEROS_COMMAND_EMPTY, "");
     expect_command(" \t  ", ASTEROS_COMMAND_EMPTY, "");
     expect_command("  HeLp   ", ASTEROS_COMMAND_HELP, "");
+    expect_command("help files", ASTEROS_COMMAND_HELP, "files");
+    expect_command("HELP control panel", ASTEROS_COMMAND_HELP, "control panel");
+    expect_command("help not-an-app", ASTEROS_COMMAND_HELP, "not-an-app");
     expect_command("clear", ASTEROS_COMMAND_CLEAR, "");
     expect_command("CLS ", ASTEROS_COMMAND_CLEAR, "");
     expect_command("apps", ASTEROS_COMMAND_APPS, "");
@@ -75,7 +78,7 @@ int main(void) {
     expect_command("!! now", ASTEROS_COMMAND_UNKNOWN, "");
 
     /* Recognized commands must not silently accept unsupported arguments. */
-    expect_command("help now", ASTEROS_COMMAND_UNKNOWN, "");
+    expect_command("help now", ASTEROS_COMMAND_HELP, "now");
     expect_command("pwd /tmp", ASTEROS_COMMAND_UNKNOWN, "");
     expect_command("echoes are not echo", ASTEROS_COMMAND_UNKNOWN, "");
     expect_command("not-a-command", ASTEROS_COMMAND_UNKNOWN, "");

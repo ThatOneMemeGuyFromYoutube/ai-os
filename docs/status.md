@@ -1,3 +1,11 @@
+## 2026-11-26 — Add shared application help and service-limit catalog
+
+Added fixed, allocation-free `kernel/app_catalog.c`/`.h`; the existing Run resolver now delegates to it, and the Programs window and Terminal read the same entries. Terminal accepts `help [app]` (including multi-word aliases such as `help control panel`) and `apps`; each topic reports purpose, controls, Run aliases, and concrete limitations. The catalog calls out volatile-only Files storage, the syntax-only IDE F5 check, the absence of a transient-program loader, and the fact that Programs is an inventory rather than an executable launcher.
+
+Added standalone catalog boundary/alias tests, parser tests for topic help, GUI VGA-surface tests for every catalog row and invalid topics, and extended the existing QEMU monitor-driven desktop smoke test to type `help files`, `help ide`, and `apps` into the running guest before exercising Start/Run. A single fixed catalog now owns app names, aliases, summaries, usage, and limitations so Run/help/Programs cannot drift independently.
+
+Validation is pending the associated PR's host, i386 build, ISO, and real-QEMU guest interaction workflows. No framebuffer GUI, persistent filesystem, guest compiler, or transient executable loader is claimed by this change.
+
 ## 2026-11-26 — Add a usable Start menu and bounded Run dialog
 
 Advanced the next scheduled Windows-98-inspired user-environment milestone after the November 16–29 networking foundation completed early on November 24. The taskbar's previous `[ START ]` hit target only returned to the desktop; it did not open a menu. It now opens an actual menu of Terminal, Files, Programs, IDE, Settings, About, and Run. The menu is keyboard- and mouse-navigable, wraps selection, and preserves the foreground app when dismissed.
