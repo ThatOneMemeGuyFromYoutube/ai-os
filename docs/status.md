@@ -4,7 +4,7 @@ Added fixed, allocation-free `kernel/app_catalog.c`/`.h`; the existing Run resol
 
 Added standalone catalog boundary/alias tests, parser tests for topic help, GUI VGA-surface tests for every catalog row and invalid topics, and extended the existing QEMU monitor-driven desktop smoke test to type `help files`, `help ide`, and `apps` into the running guest before exercising Start/Run. A single fixed catalog now owns app names, aliases, summaries, usage, and limitations so Run/help/Programs cannot drift independently.
 
-Validation is pending the associated PR's host, i386 build, ISO, and real-QEMU guest interaction workflows. No framebuffer GUI, persistent filesystem, guest compiler, or transient executable loader is claimed by this change.
+Validation passed on final PR head commit `e709d5ae0021dcd4e0cb0cdd2564c96c5e90f362`: `make check`, i386 kernel/ISO build, default SeaBIOS boot, the expanded QEMU guest Terminal-help/Start-menu/Run interaction, RTL8029/NE2K boot and deterministic ARP+IPv4/ICMP peer exchange, disposable ATA disk boot, tagged AsterOS volume boot, and AsterBIOS QEMU boot. See [AsterOS CI](https://github.com/ThatOneMemeGuyFromYoutube/ai-os/actions/runs/45935178647) and [build validation](https://github.com/ThatOneMemeGuyFromYoutube/ai-os/actions/runs/45935178744). Both workflows used `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true`. No framebuffer GUI, persistent filesystem, guest compiler, or transient executable loader is claimed by this change.
 
 ## 2026-11-26 — Add a usable Start menu and bounded Run dialog
 
