@@ -166,34 +166,34 @@ static void test_application_help_and_shared_program_catalog(void) {
     gui_handle_key('t');
     assert(row_contains(5,"AsterOS terminal"));
     type_text("help files");
-    gui_handle_key('\\r');
+    gui_handle_key('\r');
     assert(row_contains(9,"Files"));
     assert(row_contains(10,"Browse and open files"));
     assert(row_contains(13,"no disk mount"));
 
     type_text("help ide");
-    gui_handle_key('\\r');
+    gui_handle_key('\r');
     assert(row_contains(9,"IDE"));
     assert(row_contains(10,"Edit TinyLang source"));
     assert(row_contains(13,"F5 does not compile"));
 
     type_text("help control panel");
-    gui_handle_key('\\r');
+    gui_handle_key('\r');
     assert(row_contains(9,"Settings"));
     assert(row_contains(11,"V visibility"));
 
     type_text("help unknown");
-    gui_handle_key('\\r');
+    gui_handle_key('\r');
     assert(row_contains(9,"Unknown application topic"));
 
     type_text("apps");
-    gui_handle_key('\\r');
+    gui_handle_key('\r');
     for(index=0;index<ASTEROS_APP_COUNT;index++)
         assert(row_contains((uint8_t)(9u+index),names[index]));
     assert(row_contains(17,"help <app>"));
 
     type_text("menu");
-    gui_handle_key('\\r');
+    gui_handle_key('\r');
     gui_handle_key('p');
     assert(row_contains(7,"BUILT-IN APPLICATIONS"));
     for(index=0;index<ASTEROS_APP_COUNT;index++)
