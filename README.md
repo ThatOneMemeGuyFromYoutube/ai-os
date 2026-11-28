@@ -11,6 +11,12 @@ A small 32-bit x86 operating-system project inspired by the architecture and use
 - **Self-hosting path:** TinyLang's output format is simple enough to be emitted by a future native AsterOS compiler without changing the kernel/CCP boundary.
 - **Graphical desktop:** the current VGA text-mode shell is an interaction prototype; the planned desktop uses a validated linear framebuffer, pixel-rendered windows and icons, and a small testable 2D renderer while retaining keyboard-first access and a text fallback.
 
+## AI development and project ownership
+
+AsterOS is an AI-assisted operating-system project developed primarily with ChatGPT (OpenAI). ChatGPT has generated most of the implementation and has contributed substantially to the architecture, debugging, tests, and documentation. The human repository owner provides the project direction, priorities, and decisions about what should be built.
+
+Because much of the code is AI-generated, it may contain mistakes, fragile assumptions, inconsistent patterns, rough edges, technical debt, or incomplete implementations. Passing the available tests does not guarantee correctness, security, or compatibility with real hardware. Treat AsterOS as experimental software: review changes, test it in an appropriate environment, and do not rely on it for important data or safety-critical work. The project is an ongoing engineering effort, not a claim that every subsystem is production-ready.
+
 ## Build prerequisites
 
 A Unix-like host with `make`, an i386-capable GCC/binutils toolchain, GRUB utilities, and QEMU is recommended. The default Makefile accepts `CC=i686-elf-gcc` and `LD=i686-elf-ld`; a host GCC with `-m32` can be used where available.
