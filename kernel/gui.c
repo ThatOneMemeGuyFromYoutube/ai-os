@@ -532,7 +532,19 @@ static void draw_programs(void){
     text(22,18,"No arbitrary transient programs can be launched.",ATTR_NORMAL);
     text(22,19,"Q, X, Esc or Alt+F4 closes this window.",ATTR_NORMAL);
 }
-static void draw_about(void){text(22,5,"About AsterOS",ATTR_STATUS);text(22,7,"32-bit x86 experimental operating system",ATTR_NORMAL);text(22,8,"GUI shell over the CCP/BDOS direction",ATTR_NORMAL);text(22,10,"Enter opens the selected app.",ATTR_NORMAL);text(22,11,"Arrow keys or W/S navigate.",ATTR_NORMAL);text(22,12,"1-6 or T/F/P/A/C/I launches apps directly.",ATTR_NORMAL);text(22,13,"Q, X, Esc or Alt+F4 closes this window.",ATTR_NORMAL);}
+static void draw_about(void){
+    text(22,5,"About AsterOS",ATTR_STATUS);
+    text(22,7,"32-bit x86 experimental operating system",ATTR_NORMAL);
+    text(22,8,"GUI shell over the CCP/BDOS direction",ATTR_NORMAL);
+    text(22,10,"Primarily developed with ChatGPT (OpenAI).",ATTR_STATUS);
+    text(22,11,"Human project owner sets direction and priorities.",ATTR_NORMAL);
+    text(22,13,"AI-generated code may contain bugs and rough edges.",ATTR_NORMAL);
+    text(22,14,"Expect technical debt and incomplete features.",ATTR_NORMAL);
+    text(22,15,"Review and test before relying on this software.",ATTR_STATUS);
+    text(22,17,"Enter opens the selected app; arrows or W/S navigate.",ATTR_NORMAL);
+    text(22,18,"1-6 or T/F/P/A/C/I launches apps directly.",ATTR_NORMAL);
+    text(22,19,"Q, X, Esc or Alt+F4 closes this window.",ATTR_NORMAL);
+}
 static void draw_cursor_settings(void){
     text(22,5,"Accessibility and cursor settings",ATTR_STATUS);
     text(22,7,"Pointer visible [V]:",ATTR_NORMAL);
