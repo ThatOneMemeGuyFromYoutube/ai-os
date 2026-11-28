@@ -167,6 +167,16 @@ static void test_start_button_mouse_and_menu_item(void) {
     assert(row_contains(4, "IDE"));
 }
 
+static void test_about_discloses_ai_development_and_experimental_status(void) {
+    gui_init();
+    gui_handle_key('a');
+    assert(row_contains(10, "Primarily developed with ChatGPT"));
+    assert(row_contains(11, "Human project owner sets direction"));
+    assert(row_contains(13, "AI-generated code may contain bugs"));
+    assert(row_contains(14, "technical debt and incomplete features"));
+    assert(row_contains(15, "Review and test before relying"));
+}
+
 static void test_application_help_and_shared_program_catalog(void) {
     uint8_t index;
     const char *names[] = {"Terminal","Files","Programs","About","Settings","IDE"};
@@ -217,6 +227,7 @@ int main(void) {
     test_volume_presence_is_reported_without_claiming_persistence();
     test_start_menu_keyboard_and_run_dialog();
     test_start_button_mouse_and_menu_item();
+    test_about_discloses_ai_development_and_experimental_status();
     test_application_help_and_shared_program_catalog();
     puts("gui: IDE, application help, and file workflow tests passed");
     return 0;
